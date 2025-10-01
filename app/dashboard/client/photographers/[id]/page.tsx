@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Star, MapPin, Phone, Mail, Camera, Heart, ArrowLeft, MessageCircle, CheckCircle, Award } from "lucide-react"
-import { demoPhotographers, demoReviews } from "@/lib/demo-data"
+import { Api } from "@/lib/api"
 import Link from "next/link"
 
 export default function PhotographerProfilePage() {
@@ -16,11 +16,33 @@ export default function PhotographerProfilePage() {
   const router = useRouter()
   const [selectedPackage, setSelectedPackage] = useState<string | null>(null)
   const [isFavorite, setIsFavorite] = useState(false)
+  const [photographer, setPhotographer] = useState<any | null>(null)
+  const [reviews, setReviews] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
 
-  const photographer = demoPhotographers.find((p) => p.id === params.id)
-  const photographerReviews = demoReviews.filter((r) => r.photographerId === params.id)
+  useEffect(() => {
+    const run = async () => {
+      const id = params.id as string
+      try {
+        const p = await Api.get<any>(`/photographers/${id}`)
+        setPhotographer(p)
+        const r = await Api.get<any>(`/reviews/photographer/${id}?page=1&perPage=12`)
+        setReviews(r.items || [])
+      } catch (e: any) {
+        setError(e?.message || "Failed to load photographer")
+      } finally {
+        setLoading(false)
+      }
+    }
+    run()
+  }, [params.id])
 
-  if (!photographer) {
+  if (loading) {
+    return <div className="p-6">Loading...</div>
+  }
+
+  if (error || !photographer) {
     return (
       <div className="p-6">
         <div className="text-center py-12">
@@ -65,7 +87,7 @@ export default function PhotographerProfilePage() {
           <div className="flex flex-col md:flex-row gap-8">
             <div className="flex-shrink-0">
               <Avatar className="h-40 w-40 ring-4 ring-primary/20 shadow-2xl animate-glow">
-                <AvatarImage src={photographer.avatar || "/professional-algerian-businessman-headshot.png"} />
+                <AvatarImage src={"/professional-algerian-businessman-headshot.png"} />
                 <AvatarFallback className="text-3xl bg-primary text-primary-foreground font-bold">
                   {photographer.name.charAt(0)}
                 </AvatarFallback>
@@ -75,31 +97,31 @@ export default function PhotographerProfilePage() {
             <div className="flex-1 space-y-6">
               <div>
                 <div className="flex items-center gap-3 mb-3">
-                  <h1 className="text-4xl font-bold">{photographer.name}</h1>
+                  <h1 className="text-4xl font-bold">{photographer.user?.name}</h1>
                   <Badge
-                    variant={photographer.availability ? "default" : "secondary"}
-                    className={`${photographer.availability ? "bg-primary text-primary-foreground animate-pulse" : ""} text-sm px-3 py-1`}
+                    variant={photographer.verified ? "default" : "secondary"}
+                    className={`${photographer.verified ? "bg-primary text-primary-foreground" : ""} text-sm px-3 py-1`}
                   >
-                    {photographer.availability ? "Available Now" : "Currently Busy"}
+                    {photographer.verified ? "Verified" : "Unverified"}
                   </Badge>
                 </div>
 
                 <div className="flex items-center gap-6 text-muted-foreground mb-3">
                   <div className="flex items-center gap-2">
                     <MapPin className="h-5 w-5" />
-                    <span className="font-medium">{photographer.state}</span>
+                    <span className="font-medium">{photographer.state?.name}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Camera className="h-5 w-5" />
-                    <span className="font-medium">{photographer.serviceType}</span>
+                    <span className="font-medium">{photographer.services?.[0]?.name}</span>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-6 mb-4">
                   <div className="flex items-center gap-2">
                     <Star className="h-6 w-6 fill-accent text-accent" />
-                    <span className="font-bold text-lg">{photographer.rating}</span>
-                    <span className="text-muted-foreground">({photographer.reviewCount} reviews)</span>
+                    <span className="font-bold text-lg">{photographer.ratingAvg ?? 0}</span>
+                    <span className="text-muted-foreground">({photographer.ratingCount ?? 0} reviews)</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Award className="h-5 w-5 text-primary" />
@@ -113,7 +135,7 @@ export default function PhotographerProfilePage() {
               </div>
 
               <div className="flex flex-wrap gap-2">
-                {photographer.specialties.map((specialty) => (
+                {(photographer.tags || []).map((specialty: string) => (
                   <Badge key={specialty} variant="outline" className="bg-primary/5 border-primary/20 text-primary">
                     {specialty}
                   </Badge>
@@ -153,13 +175,13 @@ export default function PhotographerProfilePage() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {photographer.portfolio.map((image, index) => (
+                {(photographer.portfolios?.[0]?.images || []).map((img: any, index: number) => (
                   <div
                     key={index}
                     className="aspect-square bg-muted rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                   >
                     <img
-                      src={image || `/portfolio-${(index % 3) + 1}.png`}
+                      src={img.url || `/portfolio-${(index % 3) + 1}.png`}
                       alt={`Portfolio ${index + 1}`}
                       className="w-full h-full object-cover hover:scale-110 transition-transform duration-500 cursor-pointer"
                     />
@@ -177,8 +199,8 @@ export default function PhotographerProfilePage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              {photographerReviews.length > 0 ? (
-                photographerReviews.map((review) => (
+              {reviews.length > 0 ? (
+                reviews.map((review) => (
                   <div key={review.id} className="border-b pb-6 last:border-b-0">
                     <div className="flex items-center gap-3 mb-3">
                       <div className="flex">
@@ -192,14 +214,14 @@ export default function PhotographerProfilePage() {
                         ))}
                       </div>
                       <span className="text-sm text-muted-foreground font-medium">
-                        {new Date(review.date).toLocaleDateString("en-US", {
+                        {new Date(review.createdAt).toLocaleDateString("en-US", {
                           year: "numeric",
                           month: "long",
                           day: "numeric",
                         })}
                       </span>
                     </div>
-                    <p className="text-muted-foreground leading-relaxed">{review.comment}</p>
+                    <p className="text-muted-foreground leading-relaxed">{review.text}</p>
                   </div>
                 ))
               ) : (

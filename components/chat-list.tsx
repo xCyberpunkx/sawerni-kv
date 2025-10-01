@@ -3,17 +3,25 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import type { ChatConversation } from "@/lib/chat-data"
+interface ConversationItem {
+  id: string
+  otherUser?: { id: string; name: string; avatarUrl?: string }
+  lastMessage?: { content?: string; createdAt?: string }
+  unreadCount?: number
+  lastActiveAt?: string
+}
 
 interface ChatListProps {
-  conversations: ChatConversation[]
+  conversations: ConversationItem[]
   selectedChatId?: string
   onSelectChat: (chatId: string) => void
   currentUserRole: "client" | "photographer"
 }
 
 export function ChatList({ conversations, selectedChatId, onSelectChat, currentUserRole }: ChatListProps) {
-  const formatTime = (date: Date) => {
+  const formatTime = (dateInput: Date | string | undefined) => {
+    if (!dateInput) return ""
+    const date = typeof dateInput === "string" ? new Date(dateInput) : dateInput
     const now = new Date()
     const diffInHours = Math.abs(now.getTime() - date.getTime()) / (1000 * 60 * 60)
 
@@ -34,10 +42,7 @@ export function ChatList({ conversations, selectedChatId, onSelectChat, currentU
   return (
     <div className="space-y-2">
       {conversations.map((conversation) => {
-        const otherUser =
-          currentUserRole === "client"
-            ? { name: conversation.photographerName, avatar: conversation.photographerAvatar }
-            : { name: conversation.clientName, avatar: conversation.clientAvatar }
+        const otherUser = conversation.otherUser || { name: "User", avatarUrl: undefined }
 
         const isSelected = selectedChatId === conversation.id
 
@@ -52,7 +57,7 @@ export function ChatList({ conversations, selectedChatId, onSelectChat, currentU
             <CardContent className="p-4">
               <div className="flex items-start gap-3">
                 <Avatar className="h-12 w-12">
-                  <AvatarImage src={otherUser.avatar || "/placeholder.svg"} alt={otherUser.name} />
+                  <AvatarImage src={otherUser.avatarUrl || "/placeholder.svg"} alt={otherUser.name} />
                   <AvatarFallback>
                     {otherUser.name
                       .split(" ")
@@ -64,18 +69,16 @@ export function ChatList({ conversations, selectedChatId, onSelectChat, currentU
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-1">
                     <h4 className="font-semibold text-sm truncate">{otherUser.name}</h4>
-                    <span className="text-xs text-muted-foreground">{formatTime(conversation.lastMessageTime)}</span>
+                    <span className="text-xs text-muted-foreground">{formatTime(conversation.lastMessage?.createdAt || conversation.lastActiveAt)}</span>
                   </div>
 
-                  <p className="text-xs text-muted-foreground mb-2">{conversation.projectType}</p>
-
-                  <p className="text-sm text-muted-foreground truncate mb-2">{conversation.lastMessage}</p>
+                  <p className="text-sm text-muted-foreground truncate mb-2">{conversation.lastMessage?.content || ""}</p>
 
                   <div className="flex items-center justify-between">
                     <Badge variant="secondary" className="text-xs">
-                      {conversation.status}
+                      {conversation.unreadCount && conversation.unreadCount > 0 ? "unread" : "read"}
                     </Badge>
-                    {conversation.unreadCount > 0 && (
+                    {conversation.unreadCount && conversation.unreadCount > 0 && (
                       <Badge className="bg-accent text-accent-foreground text-xs">{conversation.unreadCount}</Badge>
                     )}
                   </div>

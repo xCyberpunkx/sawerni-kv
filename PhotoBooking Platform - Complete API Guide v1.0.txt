@@ -1,0 +1,1777 @@
+# PhotoBooking Platform - Complete API Guide v1.0
+
+## 📋 Table of Contents
+1. [API Fundamentals](#api-fundamentals)
+2. [Authentication Endpoints](#authentication-endpoints)
+3. [User Management](#user-management)
+4. [Photographer Directory](#photographer-directory)
+5. [Booking System](#booking-system)
+6. [Calendar & Availability](#calendar--availability)
+7. [Messaging System](#messaging-system)
+8. [Contract Management](#contract-management)
+9. [Review System](#review-system)
+10. [Gallery Management](#gallery-management)
+11. [Package Management](#package-management)
+12. [Favorites System](#favorites-system)
+13. [Notification System](#notification-system)
+14. [Admin Endpoints](#admin-endpoints)
+
+## API Fundamentals
+
+### Base URL
+```
+http://localhost:4000/api/v1
+```
+
+### Headers
+**Required for authenticated endpoints:**
+```http
+Authorization: Bearer <access_token>
+Content-Type: application/json
+```
+
+**For file uploads:**
+```http
+Content-Type: multipart/form-data
+```
+
+### Response Format
+**Success Response:**
+```json
+{
+"data": {...},
+"meta": {...} // Optional pagination
+}
+```
+
+**Error Response:**
+```json
+{
+"error": "Descriptive error message",
+"code": "ERROR_CODE", // Optional
+"details": {...} // Optional additional context
+}
+```
+
+### HTTP Status Codes
+- `200` - Success
+- `201` - Created
+- `400` - Bad Request (Validation error)
+- `401` - Unauthorized (Invalid/missing token)
+- `403` - Forbidden (Insufficient permissions)
+- `404` - Not Found
+- `409` - Conflict (Duplicate resource)
+- `500` - Internal Server Error
+
+---
+
+## Authentication Endpoints
+
+### 1. Register User
+```http
+POST /auth/register
+```
+
+**Request Body:**
+```json
+{
+"email": "string (required, unique, email format)",
+"password": "string (required, min: 6 characters)",
+"name": "string (optional, max: 255 characters)"
+}
+```
+
+**Response (201 Created):**
+```json
+{
+"message": "User created. Please check your email to verify your account."
+}
+```
+
+**Error Responses:**
+- `400` - Email already exists
+- `400` - Validation failed
+
+### 2. Verify Email
+```http
+GET /auth/verify-email?token={token}&uid={user_id}
+```
+
+**Query Parameters:**
+- `token`: string (required) - Verification token from email
+- `uid`: string (required) - User ID
+
+**Response (200 OK):**
+```json
+{
+"message": "Email verified",
+"accessToken": "jwt_token_here"
+}
+```
+
+**Response Sets HTTP-only cookie with refresh token**
+
+### 3. Resend Verification Email
+```http
+POST /auth/resend-verification
+```
+
+**Request Body:**
+```json
+{
+"email": "string (required)"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+"message": "Verification email resent"
+}
+```
+
+### 4. Login
+```http
+POST /auth/login
+```
+
+**Request Body:**
+```json
+{
+"email": "string (required)",
+"password": "string (required)"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+"user": {
+"id": "string",
+"email": "string",
+"name": "string",
+"role": "CLIENT | PHOTOGRAPHER | ADMIN"
+},
+"accessToken": "jwt_token_here"
+}
+```
+
+**Error Responses:**
+- `401` - Invalid credentials
+- `403` - Email not verified
+- `403` - Account disabled
+
+### 5. Refresh Token
+```http
+POST /auth/refresh
+```
+
+**Headers:** Uses HTTP-only refresh token cookie
+
+**Response (200 OK):**
+```json
+{
+"accessToken": "new_jwt_token"
+}
+```
+
+### 6. Logout
+```http
+POST /auth/logout
+```
+
+**Response (200 OK):**
+```json
+{
+"ok": true
+}
+```
+
+### 7. Get Current User
+```http
+GET /auth/me
+```
+
+**Headers:** Requires Authorization Bearer token
+
+**Response (200 OK):**
+```json
+{
+"id": "string",
+"email": "string",
+"name": "string",
+"role": "CLIENT | PHOTOGRAPHER | ADMIN",
+"locale": "string",
+"phone": "string",
+"emailVerified": true,
+"state": {
+"id": "string",
+"code": "string",
+"name": "string"
+},
+"photographer": {
+"id": "string",
+"bio": "string",
+"priceBaseline": 5000,
+"verified": true,
+"tags": ["portrait", "wedding"],
+"state": {...},
+"services": [
+{
+"id": "string",
+"slug": "string",
+"name": "string"
+}
+],
+"portfolios": [
+{
+"id": "string",
+"title": "string"
+}
+]
+}
+}
+```
+
+---
+
+## User Management
+
+### 1. Get User Profile
+```http
+GET /me
+```
+
+**Response (200 OK):** Same as `/auth/me`
+
+### 2. Update User Profile
+```http
+PUT /me
+```
+
+**Request Body:**
+```json
+{
+"name": "string (optional)",
+"phone": "string (optional)",
+"locale": "string (optional)",
+"stateId": "string (optional, CUID)",
+"photographer": {
+"bio": "string (optional)",
+"priceBaseline": "number (optional)",
+"tags": ["string array (optional)"],
+"stateId": "string (optional, CUID)",
+"serviceIds": ["string array (optional, CUIDs)"]
+}
+}
+```
+
+**Response (200 OK):** Updated user profile
+
+**Error Responses:**
+- `400` - Invalid stateId or serviceIds
+- `403` - Cannot update photographer profile without PHOTOGRAPHER role
+
+---
+
+## Photographer Directory
+
+### 1. Search Photographers
+```http
+GET /photographers?q=search&stateId=id&serviceId=id&minPrice=1000&maxPrice=5000&tags=portrait,wedding&sort=rating_desc&page=1&perPage=12
+```
+
+**Query Parameters:**
+- `q`: string (optional) - Search term (name, tags, services)
+- `stateId`: string (optional, CUID) - Filter by state
+- `serviceId`: string (optional, CUID) - Filter by service
+- `minPrice`: number (optional) - Minimum price in cents
+- `maxPrice`: number (optional) - Maximum price in cents
+- `tags`: string (optional) - Comma-separated tags
+- `sort`: string (optional) - `rating_desc` | `price_asc` | `price_desc` | `newest`
+- `page`: number (optional, default: 1) - Page number
+- `perPage`: number (optional, default: 12, max: 100) - Items per page
+
+**Response (200 OK):**
+```json
+{
+"items": [
+{
+"id": "string",
+"user": {
+"id": "string",
+"name": "string"
+},
+"bio": "string",
+"priceBaseline": 5000,
+"ratingAvg": 4.8,
+"ratingCount": 47,
+"services": [
+{
+"id": "string",
+"name": "string",
+"slug": "string"
+}
+],
+"state": {
+"id": "string",
+"name": "string",
+"code": "string"
+},
+"portfolios": [
+{
+"id": "string",
+"title": "string",
+"images": [
+{
+"id": "string",
+"url": "string"
+}
+]
+}
+],
+"tags": ["portrait", "wedding"],
+"verified": true,
+"isFavorited": true
+}
+],
+"meta": {
+"total": 125,
+"page": 1,
+"perPage": 12,
+"pages": 11
+}
+}
+```
+
+### 2. Get Photographer Details
+```http
+GET /photographers/{id}
+```
+
+**Path Parameters:**
+- `id`: string (required, CUID) - Photographer ID
+
+**Response (200 OK):**
+```json
+{
+"id": "string",
+"user": {
+"id": "string",
+"name": "string",
+"email": "string"
+},
+"services": [
+{
+"id": "string",
+"name": "string",
+"slug": "string"
+}
+],
+"state": {
+"id": "string",
+"name": "string",
+"code": "string"
+},
+"portfolios": [
+{
+"id": "string",
+"title": "string"
+}
+]
+}
+```
+
+**Error Responses:**
+- `404` - Photographer not found
+
+---
+
+## Booking System
+
+### 1. Create Booking
+```http
+POST /bookings
+```
+
+**Headers:** Requires CLIENT role
+
+**Request Body:**
+```json
+{
+"photographerId": "string (required, CUID)",
+"packageId": "string (optional, CUID, nullable)",
+"startAt": "string (required, ISO 8601 date)",
+"endAt": "string (required, ISO 8601 date)",
+"location": {
+"address": "string (required)",
+"lat": "number (required, -90 to 90)",
+"lon": "number (required, -180 to 180)"
+},
+"notes": "string (optional, max: 2000 characters)",
+"priceCents": "number (optional, non-negative integer)"
+}
+```
+
+**Response (201 Created):**
+```json
+{
+"id": "string",
+"clientId": "string",
+"photographerId": "string",
+"packageId": "string | null",
+"startAt": "2024-02-15T10:00:00.000Z",
+"endAt": "2024-02-15T12:00:00.000Z",
+"location": {
+"address": "123 Main St",
+"lat": 34.0522,
+"lon": -118.2437
+},
+"priceCents": 15000,
+"state": "requested",
+"notes": "Additional requirements...",
+"createdAt": "2024-01-15T08:30:00.000Z",
+"updatedAt": "2024-01-15T08:30:00.000Z",
+"client": {
+"id": "string",
+"name": "string"
+},
+"photographer": {
+"id": "string",
+"user": {
+"id": "string",
+"name": "string"
+}
+}
+}
+```
+
+**Error Responses:**
+- `400` - Photographer not available
+- `400` - Package does not belong to photographer
+- `400` - endAt must be after startAt
+
+### 2. Get User Bookings
+```http
+GET /bookings/me?page=1&perPage=20
+```
+
+**Query Parameters:**
+- `page`: number (optional, default: 1)
+- `perPage`: number (optional, default: 20, max: 100)
+
+**Response (200 OK):**
+```json
+{
+"items": [
+{
+"id": "string",
+"photographerId": "string",
+"startAt": "2024-02-15T10:00:00.000Z",
+"endAt": "2024-02-15T12:00:00.000Z",
+"state": "confirmed",
+"priceCents": 15000,
+"photographer": {
+"id": "string",
+"user": {
+"id": "string",
+"name": "string",
+"email": "string"
+}
+},
+"contract": {...},
+"payment": {...},
+"review": {...}
+}
+],
+"meta": {
+"total": 15,
+"page": 1,
+"perPage": 20
+}
+}
+```
+
+### 3. Get Photographer Bookings
+```http
+GET /bookings/received?page=1&perPage=20
+```
+
+**Headers:** Requires PHOTOGRAPHER role
+
+**Response:** Same format as `/bookings/me`
+
+### 4. Get Booking by ID
+```http
+GET /bookings/{id}
+```
+
+**Path Parameters:**
+- `id`: string (required, CUID) - Booking ID
+
+**Response (200 OK):**
+```json
+{
+"id": "string",
+"clientId": "string",
+"photographerId": "string",
+"startAt": "2024-02-15T10:00:00.000Z",
+"endAt": "2024-02-15T12:00:00.000Z",
+"state": "confirmed",
+"stateHistory": [
+{
+"fromState": "requested",
+"toState": "confirmed",
+"reason": "Client confirmed availability",
+"byUserId": "string",
+"createdAt": "2024-01-15T09:00:00.000Z"
+}
+],
+"client": {
+"id": "string",
+"name": "string",
+"email": "string"
+},
+"photographer": {
+"id": "string",
+"user": {
+"id": "string",
+"name": "string",
+"email": "string"
+}
+}
+}
+```
+
+**Error Responses:**
+- `404` - Booking not found or access denied
+
+### 5. Update Booking State
+```http
+PATCH /bookings/{id}/state
+```
+
+**Headers:** Requires CLIENT, PHOTOGRAPHER, or ADMIN role
+
+**Path Parameters:**
+- `id`: string (required, CUID) - Booking ID
+
+**Request Body:**
+```json
+{
+"toState": "string (required: confirmed | cancelled_by_photographer | cancelled_by_client | in_progress | completed)",
+"reason": "string (optional, max: 500 characters)"
+}
+```
+
+**Response (200 OK):** Updated booking object
+
+**Allowed State Transitions:**
+- **CLIENT**: `requested` → `cancelled_by_client`, `confirmed` → `cancelled_by_client`
+- **PHOTOGRAPHER**: `requested` → `confirmed`/`cancelled_by_photographer`, `confirmed` → `in_progress`/`cancelled_by_photographer`, `in_progress` → `completed`/`cancelled_by_photographer`
+- **ADMIN**: All transitions
+
+**Error Responses:**
+- `403` - Transition not allowed for current role
+- `404` - Booking not found
+
+---
+
+## Calendar & Availability
+
+### 1. Create Calendar Block
+```http
+POST /calendar
+```
+
+**Headers:** Requires PHOTOGRAPHER role
+
+**Request Body:**
+```json
+{
+"startAt": "string (required, ISO 8601 date)",
+"endAt": "string (required, ISO 8601 date)",
+"title": "string (optional)",
+"type": "string (optional: blocked | available | note, default: blocked)"
+}
+```
+
+**Response (201 Created):**
+```json
+{
+"id": "string",
+"photographerId": "string",
+"startAt": "2024-02-20T00:00:00.000Z",
+"endAt": "2024-02-25T23:59:59.000Z",
+"title": "Vacation",
+"type": "blocked",
+"createdById": "string",
+"createdAt": "2024-01-15T10:00:00.000Z"
+}
+```
+
+**Error Responses:**
+- `400` - endAt must be after startAt
+
+### 2. Delete Calendar Block
+```http
+DELETE /calendar/{id}
+```
+
+**Headers:** Requires PHOTOGRAPHER role
+
+**Path Parameters:**
+- `id`: string (required, CUID) - Calendar event ID
+
+**Response (200 OK):**
+```json
+{
+"ok": true
+}
+```
+
+### 3. Get Photographer Calendar
+```http
+GET /calendar/photographer/{id}?from=2024-02-01&to=2024-02-28
+```
+
+**Path Parameters:**
+- `id`: string (required, CUID) - Photographer ID
+
+**Query Parameters:**
+- `from`: string (optional, ISO 8601 date, default: today)
+- `to`: string (optional, ISO 8601 date, default: 30 days from from)
+
+**Response (200 OK):**
+```json
+{
+"items": [
+{
+"id": "ce_123",
+"type": "blocked",
+"title": "Vacation",
+"startAt": "2024-02-20T00:00:00.000Z",
+"endAt": "2024-02-25T23:59:59.000Z",
+"source": "calendar_event"
+},
+{
+"id": "bk_456",
+"type": "booking",
+"title": "Booking (John Doe)",
+"startAt": "2024-02-15T10:00:00.000Z",
+"endAt": "2024-02-15T12:00:00.000Z",
+"bookingId": "booking_123",
+"source": "booking",
+"state": "confirmed"
+}
+]
+}
+```
+
+### 4. Check Availability
+```http
+GET /calendar/photographer/{id}/availability?start=2024-02-15T10:00:00Z&end=2024-02-15T12:00:00Z
+```
+
+**Path Parameters:**
+- `id`: string (required, CUID) - Photographer ID
+
+**Query Parameters:**
+- `start`: string (required, ISO 8601 date)
+- `end`: string (required, ISO 8601 date)
+
+**Response (200 OK):**
+```json
+{
+"available": false,
+"conflicts": [
+{
+"id": "bk_123",
+"type": "booking",
+"startAt": "2024-02-15T09:00:00.000Z",
+"endAt": "2024-02-15T11:00:00.000Z",
+"title": "Booking with Jane Smith"
+}
+]
+}
+```
+
+---
+
+## Messaging System
+
+### 1. Create Conversation
+```http
+POST /conversations
+```
+
+**Request Body:**
+```json
+{
+"participantId": "string (required, CUID)"
+}
+```
+
+**Response (201 Created):**
+```json
+{
+"id": "string",
+"participantAId": "string",
+"participantBId": "string",
+"lastActiveAt": "2024-01-15T10:30:00.000Z",
+"createdAt": "2024-01-15T10:30:00.000Z"
+}
+```
+
+**Error Responses:**
+- `400` - Cannot create conversation with self
+- `400` - One or both participants do not exist
+
+### 2. List Conversations
+```http
+GET /conversations?page=1&perPage=20
+```
+
+**Query Parameters:**
+- `page`: number (optional, default: 1)
+- `perPage`: number (optional, default: 20, max: 200)
+
+**Response (200 OK):**
+```json
+{
+"items": [
+{
+"id": "string",
+"otherUser": {
+"id": "string",
+"name": "string"
+},
+"lastActiveAt": "2024-01-15T10:30:00.000Z",
+"lastMessage": {
+"id": "string",
+"content": "Looking forward to our session!",
+"sender": {
+"id": "string",
+"name": "string"
+},
+"createdAt": "2024-01-15T10:30:00.000Z"
+},
+"unreadCount": 3
+}
+],
+"meta": {
+"total": 5,
+"page": 1,
+"perPage": 20,
+"pages": 1
+}
+}
+```
+
+### 3. Get Messages
+```http
+GET /conversations/{id}/messages?page=1&perPage=50
+```
+
+**Path Parameters:**
+- `id`: string (required, CUID) - Conversation ID
+
+**Query Parameters:**
+- `page`: number (optional, default: 1)
+- `perPage`: number (optional, default: 50, max: 200)
+
+**Response (200 OK):**
+```json
+{
+"items": [
+{
+"id": "string",
+"conversationId": "string",
+"senderId": "string",
+"content": "Hello there!",
+"attachments": [
+{
+"filename": "file123.jpg",
+"originalName": "photo.jpg",
+"mimetype": "image/jpeg",
+"size": 1024000,
+"url": "http://localhost:4000/uploads/file123.jpg"
+}
+],
+"readAt": null,
+"createdAt": "2024-01-15T10:25:00.000Z",
+"sender": {
+"id": "string",
+"name": "string"
+}
+}
+],
+"meta": {
+"total": 15,
+"page": 1,
+"perPage": 50,
+"pages": 1
+}
+}
+```
+
+### 4. Send Message
+```http
+POST /conversations/{id}/messages
+```
+
+**Content-Type:** `multipart/form-data`
+
+**Path Parameters:**
+- `id`: string (required, CUID) - Conversation ID
+
+**Form Data:**
+- `content`: string (optional if attachments present, max: 5000 characters)
+- `attachments[]`: file[] (optional, max 5 files, max 10MB each)
+
+**Response (201 Created):**
+```json
+{
+"id": "string",
+"conversationId": "string",
+"senderId": "string",
+"content": "Hello there!",
+"attachments": [
+{
+"filename": "file123.jpg",
+"originalName": "photo.jpg",
+"mimetype": "image/jpeg",
+"size": 1024000,
+"url": "http://localhost:4000/uploads/file123.jpg"
+}
+],
+"readAt": null,
+"createdAt": "2024-01-15T10:30:00.000Z",
+"sender": {
+"id": "string",
+"name": "string"
+}
+}
+```
+
+**Alternative: Send message without existing conversation**
+```http
+POST /messages
+```
+
+**Form Data:**
+- `recipientId`: string (required if no conversationId, CUID)
+- `conversationId`: string (optional, CUID)
+- `content`: string (optional if attachments present)
+- `attachments[]`: file[] (optional)
+
+### 5. Mark Conversation as Read
+```http
+PATCH /conversations/{id}/read
+```
+
+**Path Parameters:**
+- `id`: string (required, CUID) - Conversation ID
+
+**Response (200 OK):**
+```json
+{
+"marked": 3
+}
+```
+
+---
+
+## Contract Management
+
+### 1. Generate Contract
+```http
+POST /contracts/generate
+```
+
+**Request Body:**
+```json
+{
+"bookingId": "string (required, CUID)"
+}
+```
+
+**Response (201 Created):**
+```json
+{
+"contract": {
+"id": "string",
+"bookingId": "string",
+"status": "GENERATED",
+"pdfUrl": "http://localhost:4000/uploads/contracts/booking_123/contract_123.pdf",
+"signedAt": null,
+"createdAt": "2024-01-15T11:00:00.000Z"
+},
+"pdfPath": "/app/uploads/contracts/booking_123/contract_123.pdf"
+}
+```
+
+**Error Responses:**
+- `403` - Only booking participants can generate contract
+
+### 2. Sign Contract
+```http
+POST /contracts/{id}/sign
+```
+
+**Path Parameters:**
+- `id`: string (required, CUID) - Contract ID
+
+**Request Body:**
+```json
+{
+"signatureDataUrl": "string (required, base64 data URL)",
+"signerName": "string (optional, max: 200 characters)"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+"id": "string",
+"bookingId": "string",
+"status": "SIGNED",
+"pdfUrl": "http://localhost:4000/uploads/contracts/booking_123/contract_123.pdf",
+"signedAt": "2024-01-15T11:30:00.000Z",
+"createdAt": "2024-01-15T11:00:00.000Z"
+}
+```
+
+**Error Responses:**
+- `400` - Signature image too large (max 200KB)
+- `403` - Only booking client or photographer can sign
+
+### 3. Download Contract
+```http
+GET /contracts/{id}/download
+```
+
+**Path Parameters:**
+- `id`: string (required, CUID) - Contract ID
+
+**Response:** PDF file download
+
+### 4. Get Contract Status
+```http
+GET /contracts/{id}/status
+```
+
+**Path Parameters:**
+- `id`: string (required, CUID) - Contract ID
+
+**Response (200 OK):**
+```json
+{
+"id": "string",
+"status": "SIGNED",
+"pdfUrl": "http://localhost:4000/uploads/contracts/booking_123/contract_123.pdf",
+"signedAt": "2024-01-15T11:30:00.000Z"
+}
+```
+
+---
+
+## Review System
+
+### 1. Create Review
+```http
+POST /reviews
+```
+
+**Headers:** Requires CLIENT role
+
+**Request Body:**
+```json
+{
+"bookingId": "string (required, CUID)",
+"rating": "number (required, 1-5 integer)",
+"text": "string (optional, max: 2000 characters)"
+}
+```
+
+**Response (201 Created):**
+```json
+{
+"id": "string",
+"bookingId": "string",
+"photographerId": "string",
+"reviewerId": "string",
+"rating": 5,
+"text": "Excellent service!",
+"status": "PENDING",
+"createdAt": "2024-01-15T12:00:00.000Z"
+}
+```
+
+**Error Responses:**
+- `403` - Not allowed to review this booking
+- `400` - Review allowed only after booking completed
+- `409` - Review already exists for this booking
+
+### 2. Get Photographer Reviews
+```http
+GET /reviews/photographer/{id}?page=1&perPage=12
+```
+
+**Path Parameters:**
+- `id`: string (required, CUID) - Photographer ID
+
+**Query Parameters:**
+- `page`: number (optional, default: 1)
+- `perPage`: number (optional, default: 12, max: 100)
+
+**Response (200 OK):**
+```json
+{
+"items": [
+{
+"id": "string",
+"rating": 5,
+"text": "Amazing photos!",
+"status": "APPROVED",
+"createdAt": "2024-01-10T10:00:00.000Z",
+"reviewer": {
+"id": "string",
+"name": "string"
+}
+}
+],
+"meta": {
+"total": 47,
+"page": 1,
+"perPage": 12,
+"pages": 4
+}
+}
+```
+
+### 3. Get User Reviews
+```http
+GET /reviews/me?page=1&perPage=50
+```
+
+**Response (200 OK):**
+```json
+{
+"items": [
+{
+"id": "string",
+"bookingId": "string",
+"photographerId": "string",
+"rating": 5,
+"text": "Great experience!",
+"status": "APPROVED",
+"createdAt": "2024-01-15T12:00:00.000Z",
+"photographer": {
+"id": "string",
+"userId": "string"
+}
+}
+],
+"meta": {
+"total": 3,
+"page": 1,
+"perPage": 50,
+"pages": 1
+}
+}
+```
+
+---
+
+## Gallery Management
+
+### 1. Upload Image
+```http
+POST /gallery
+```
+
+**Headers:** Requires PHOTOGRAPHER role
+
+**Content-Type:** `multipart/form-data`
+
+**Form Data:**
+- `image`: file (required, image file)
+- `meta`: string (optional, JSON string with metadata)
+
+**Response (201 Created):**
+```json
+{
+"id": "string",
+"photographerId": "string",
+"url": "http://localhost:4000/uploads/image123.jpg",
+"meta": {
+"camera": "Canon EOS R5",
+"lens": "50mm f/1.8"
+},
+"createdAt": "2024-01-15T13:00:00.000Z"
+}
+```
+
+### 2. Delete Image
+```http
+DELETE /gallery/{id}
+```
+
+**Headers:** Requires PHOTOGRAPHER role
+
+**Path Parameters:**
+- `id`: string (required, CUID) - Image ID
+
+**Response (200 OK):**
+```json
+{
+"ok": true
+}
+```
+
+### 3. Get Photographer Gallery
+```http
+GET /gallery/photographer/{id}
+```
+
+**Path Parameters:**
+- `id`: string (required, CUID) - Photographer ID
+
+**Response (200 OK):**
+```json
+[
+{
+"id": "string",
+"photographerId": "string",
+"url": "http://localhost:4000/uploads/image123.jpg",
+"meta": {...},
+"createdAt": "2024-01-15T13:00:00.000Z"
+}
+]
+```
+
+---
+
+## Package Management
+
+### 1. Create Package
+```http
+POST /packages
+```
+
+**Headers:** Requires PHOTOGRAPHER role
+
+**Request Body:**
+```json
+{
+"title": "string (required, min: 2, max: 200)",
+"description": "string (optional, max: 2000)",
+"priceCents": "number (required, non-negative integer)"
+}
+```
+
+**Response (201 Created):**
+```json
+{
+"id": "string",
+"photographerId": "string",
+"title": "Basic Portrait Session",
+"description": "1-hour portrait session with 10 edited photos",
+"priceCents": 15000,
+"createdAt": "2024-01-15T14:00:00.000Z"
+}
+```
+
+### 2. Update Package
+```http
+PUT /packages/{id}
+```
+
+**Headers:** Requires PHOTOGRAPHER role
+
+**Path Parameters:**
+- `id`: string (required, CUID) - Package ID
+
+**Request Body:** Same as create, all fields optional
+
+**Response (200 OK):** Updated package
+
+### 3. Delete Package
+```http
+DELETE /packages/{id}
+```
+
+**Headers:** Requires PHOTOGRAPHER role
+
+**Path Parameters:**
+- `id`: string (required, CUID) - Package ID
+
+**Response (200 OK):**
+```json
+{
+"ok": true
+}
+```
+
+### 4. Get Photographer Packages
+```http
+GET /packages/photographer/{id}
+```
+
+**Path Parameters:**
+- `id`: string (required, CUID) - Photographer ID
+
+**Response (200 OK):**
+```json
+[
+{
+"id": "string",
+"title": "Basic Portrait Session",
+"description": "1-hour portrait session",
+"priceCents": 15000,
+"createdAt": "2024-01-15T14:00:00.000Z"
+}
+]
+```
+
+---
+
+## Favorites System
+
+### 1. Add Favorite
+```http
+POST /favorites/{photographerId}
+```
+
+**Headers:** Requires CLIENT role
+
+**Path Parameters:**
+- `photographerId`: string (required, CUID) - Photographer ID
+
+**Response (201 Created):**
+```json
+{
+"id": "string",
+"userId": "string",
+"photographerId": "string",
+"createdAt": "2024-01-15T15:00:00.000Z"
+}
+```
+
+### 2. Remove Favorite
+```http
+DELETE /favorites/{photographerId}
+```
+
+**Headers:** Requires CLIENT role
+
+**Path Parameters:**
+- `photographerId`: string (required, CUID) - Photographer ID
+
+**Response (200 OK):**
+```json
+{
+"ok": true
+}
+```
+
+### 3. List Favorites
+```http
+GET /favorites?page=1&perPage=12
+```
+
+**Headers:** Requires CLIENT role
+
+**Query Parameters:**
+- `page`: number (optional, default: 1)
+- `perPage`: number (optional, default: 12, max: 100)
+
+**Response (200 OK):**
+```json
+{
+"items": [
+{
+"id": "string",
+"favoritedAt": "2024-01-15T15:00:00.000Z",
+"photographer": {
+"id": "string",
+"user": {
+"id": "string",
+"name": "string",
+"email": "string"
+},
+"services": [...],
+"state": {...},
+"portfolios": [...]
+}
+}
+],
+"meta": {
+"total": 8,
+"page": 1,
+"perPage": 12,
+"pages": 1
+}
+}
+```
+
+---
+
+## Notification System
+
+### 1. List Notifications
+```http
+GET /notifications/me?page=1&perPage=20
+```
+
+**Query Parameters:**
+- `page`: number (optional, default: 1)
+- `perPage`: number (optional, default: 20, max: 200)
+
+**Response (200 OK):**
+```json
+{
+"items": [
+{
+"id": "string",
+"userId": "string",
+"type": "BOOKING_REQUESTED",
+"payload": {
+"bookingId": "string",
+"clientName": "string"
+},
+"readAt": null,
+"createdAt": "2024-01-15T16:00:00.000Z"
+}
+],
+"meta": {
+"total": 15,
+"page": 1,
+"perPage": 20,
+"pages": 1,
+"unreadCount": 5
+}
+}
+```
+
+### 2. Mark Notification as Read
+```http
+PATCH /notifications/{id}/read
+```
+
+**Path Parameters:**
+- `id`: string (required, CUID) - Notification ID
+
+**Response (200 OK):**
+```json
+{
+"id": "string",
+"userId": "string",
+"type": "BOOKING_REQUESTED",
+"payload": {...},
+"readAt": "2024-01-15T16:05:00.000Z",
+"createdAt": "2024-01-15T16:00:00.000Z"
+}
+```
+
+### 3. Mark Multiple Notifications as Read
+```http
+POST /notifications/read-bulk
+```
+
+**Request Body:**
+```json
+{
+"ids": ["string array (required, CUIDs)"]
+}
+```
+
+**Response (200 OK):**
+```json
+{
+"count": 3,
+"unreadCount": 2
+}
+```
+
+---
+
+## Admin Endpoints
+
+*All admin endpoints require ADMIN role*
+
+### 1. User Management
+
+#### List Users
+```http
+GET /admin/users?role=PHOTOGRAPHER&search=john&page=1&perPage=50
+```
+
+**Query Parameters:**
+- `role`: string (optional) - Filter by role
+- `search`: string (optional) - Search by email or name
+- `page`: number (optional, default: 1)
+- `perPage`: number (optional, default: 50, max: 200)
+
+**Response (200 OK):**
+```json
+{
+"items": [
+{
+"id": "string",
+"email": "string",
+"name": "string",
+"role": "PHOTOGRAPHER",
+"emailVerified": true,
+"disabled": false,
+"createdAt": "2024-01-15T00:00:00.000Z"
+}
+],
+"meta": {
+"total": 150,
+"page": 1,
+"perPage": 50,
+"pages": 3
+}
+}
+```
+
+#### Update User Status
+```http
+PATCH /admin/users/{id}/status
+```
+
+**Path Parameters:**
+- `id`: string (required, CUID) - User ID
+
+**Request Body:**
+```json
+{
+"disabled": "boolean (required)"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+"id": "string",
+"email": "string",
+"disabled": true,
+"role": "PHOTOGRAPHER",
+"updatedAt": "2024-01-15T17:00:00.000Z"
+}
+```
+
+### 2. Statistics Dashboard
+
+#### Overview Stats
+```http
+GET /admin/stats/overview
+```
+
+**Response (200 OK):**
+```json
+{
+"totals": {
+"users": 150,
+"photographers": 45,
+"bookings": 320,
+"bookingsLast7": 15,
+"reviews": 89,
+"pendingReviews": 5,
+"revenueCents": 4500000
+},
+"bookingsByState": {
+"requested": 12,
+"confirmed": 25,
+"completed": 45,
+"cancelled": 8
+},
+"recentUsers": [...],
+"topPhotographers": [...],
+"generatedAt": "2024-01-15T17:00:00.000Z"
+}
+```
+
+#### Bookings Time Series
+```http
+GET /admin/stats/bookings-timeseries?days=30
+```
+
+**Query Parameters:**
+- `days`: number (optional, default: 30, max: 180)
+
+**Response (200 OK):**
+```json
+{
+"series": [
+{
+"date": "2024-01-01",
+"count": 3
+},
+{
+"date": "2024-01-02",
+"count": 5
+}
+],
+"generatedAt": "2024-01-15T17:00:00.000Z"
+}
+```
+
+#### Revenue by Month
+```http
+GET /admin/stats/revenue-by-month?months=6
+```
+
+**Query Parameters:**
+- `months`: number (optional, default: 6, max: 24)
+
+**Response (200 OK):**
+```json
+{
+"result": [
+{
+"month": "2024-01",
+"revenueCents": 1500000
+},
+{
+"month": "2023-12",
+"revenueCents": 1200000
+}
+],
+"generatedAt": "2024-01-15T17:00:00.000Z"
+}
+```
+
+### 3. Review Moderation
+
+#### List All Reviews
+```http
+GET /admin/reviews?status=PENDING&page=1&perPage=50
+```
+
+**Query Parameters:**
+- `status`: string (optional) - PENDING, APPROVED, REJECTED
+- `page`: number (optional, default: 1)
+- `perPage`: number (optional, default: 50, max: 200)
+
+**Response (200 OK):**
+```json
+{
+"items": [
+{
+"id": "string",
+"bookingId": "string",
+"rating": 5,
+"text": "Great service!",
+"status": "PENDING",
+"createdAt": "2024-01-15T12:00:00.000Z",
+"reviewer": {
+"id": "string",
+"name": "string"
+},
+"booking": {...}
+}
+],
+"meta": {
+"total": 15,
+"page": 1,
+"perPage": 50,
+"pages": 1
+}
+}
+```
+
+#### Moderate Review
+```http
+PATCH /admin/reviews/{id}
+```
+
+**Path Parameters:**
+- `id`: string (required, CUID) - Review ID
+
+**Request Body:**
+```json
+{
+"action": "string (required: approve | reject)",
+"reason": "string (optional, max: 1000)"
+}
+```
+
+**Response (200 OK):** Updated review
+
+### 4. Catalog Management
+
+#### Categories
+```http
+POST /admin/categories
+GET /admin/categories?page=1&perPage=50
+PUT /admin/categories/{id}
+DELETE /admin/categories/{id}
+```
+
+**Category Object:**
+```json
+{
+"id": "string",
+"name": "string",
+"slug": "string",
+"description": "string",
+"createdAt": "2024-01-15T00:00:00.000Z"
+}
+```
+
+#### Services
+```http
+POST /admin/services
+GET /admin/services?categoryId=cat123&search=portrait&page=1&perPage=50
+PUT /admin/services/{id}
+DELETE /admin/services/{id}
+```
+
+**Service Object:**
+```json
+{
+"id": "string",
+"name": "string",
+"slug": "string",
+"description": "string",
+"categoryId": "string",
+"category": {
+"id": "string",
+"name": "string",
+"slug": "string"
+},
+"createdAt": "2024-01-15T00:00:00.000Z"
+}
+```
+
+---
+
+## WebSocket Events
+
+### Connection
+```javascript
+// Connect with authentication
+const socket = io('http://localhost:4000', {
+auth: {
+token: 'Bearer ' + accessToken
+}
+});
+
+socket.on('connected', (data) => {
+console.log('Connected as user:', data.userId);
+});
+```
+
+### Event Types
+
+#### Notifications
+```javascript
+socket.on('notification:created', (notification) => {
+// New notification
+console.log('New notification:', notification);
+});
+
+socket.on('notification:read', (data) => {
+// Notification marked as read
+console.log('Read notification:', data.id);
+updateUnreadCount(data.unreadCount);
+});
+```
+
+#### Messages
+```javascript
+socket.on('message:received', (message) => {
+// New message in conversation
+addMessageToChat(message);
+});
+```
+
+#### Booking Updates
+```javascript
+socket.on('booking:state_changed', (booking) => {
+// Booking state updated
+updateBookingStatus(booking);
+});
+```
+
+### Ping/Pong
+```javascript
+// Keep connection alive
+socket.emit('ping', { timestamp: Date.now() }, (response) => {
+console.log('Pong received:', response);
+});
+```
+
+---
+
+## Error Handling Examples
+
+### Validation Error
+```json
+{
+"error": "Validation failed",
+"details": {
+"issues": [
+{
+"code": "invalid_type",
+"expected": "string",
+"received": "undefined",
+"path": ["email"],
+"message": "Required"
+}
+]
+}
+}
+```
+
+### Authentication Error
+```json
+{
+"error": "Email not verified"
+}
+```
+
+### Authorization Error
+```json
+{
+"error": "Forbidden: admin only"
+}
+```
+
+### Business Logic Error
+```json
+{
+"error": "Photographer is not available for the requested time slot"
+}
+```
+
+---
+
+## File Upload Guidelines
+
+### Supported File Types
+- **Images**: JPEG, PNG, GIF, WebP (max 10MB)
+- **Documents**: PDF (max 5MB)
+- **All files**: Maximum 5 files per request
+
+### Upload Headers
+```http
+Content-Type: multipart/form-data
+Authorization: Bearer <token>
+```
+
+### Response Format
+```json
+{
+"filename": "generated_filename.jpg",
+"originalName": "original_filename.jpg",
+"mimetype": "image/jpeg",
+"size": 1024000,
+"url": "http://localhost:4000/uploads/generated_filename.jpg"
+}
+```
+
+

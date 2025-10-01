@@ -7,31 +7,61 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Camera, Calendar, MessageCircle, Star, Clock, MapPin, ArrowRight, Award } from "lucide-react"
 import { mockAuth } from "@/lib/auth"
-import { demoBookings, demoPhotographers, demoMessages } from "@/lib/demo-data"
+import { Api } from "@/lib/api"
 import Link from "next/link"
 
 export default function ClientDashboard() {
   const [user, setUser] = useState(mockAuth.getCurrentUser())
+  const [bookings, setBookings] = useState<any[]>([])
+  const [featured, setFeatured] = useState<any[]>([])
+  const [conversationsCount, setConversationsCount] = useState(0)
+  const [pendingReviewsCount, setPendingReviewsCount] = useState(0)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
 
   useEffect(() => {
+    if (!user) {
+      mockAuth.loadCurrentUser().then((u) => u && setUser(u))
+    }
     const unsubscribe = mockAuth.onAuthChange(setUser)
     return unsubscribe
   }, [])
 
-  if (!user) {
-    return <div>Loading...</div>
-  }
+  useEffect(() => {
+    const run = async () => {
+      if (!user) return
+      setLoading(true)
+      setError("")
+      try {
+        const [bk, conv, photogs, reviewsMe] = await Promise.all([
+          Api.get<{ items: any[] }>("/bookings/me?page=1&perPage=50"),
+          Api.get<{ items: any[]; meta?: any }>("/conversations?page=1&perPage=20"),
+          Api.get<{ items: any[] }>("/photographers?sort=rating_desc&page=1&perPage=3"),
+          Api.get<{ items: any[] }>("/reviews/me?page=1&perPage=50"),
+        ])
+        setBookings(bk.items || [])
+        setConversationsCount(conv.items?.length || 0)
+        setFeatured(photogs.items || [])
+        const pending = (reviewsMe.items || []).filter((r: any) => (r.status || "").toUpperCase() === "PENDING").length
+        setPendingReviewsCount(pending)
+      } catch (e: any) {
+        setError(e?.message || "Failed to load dashboard data")
+      } finally {
+        setLoading(false)
+      }
+    }
+    run()
+  }, [user])
 
-  const userBookings = demoBookings.filter((booking) => booking.clientId === user.id)
+  const userBookings = bookings
   const upcomingBookings = userBookings.filter(
-    (booking) => booking.status === "confirmed" && new Date(booking.date) > new Date(),
+    (booking) => booking.state === "confirmed" && new Date(booking.startAt) > new Date(),
   )
-  const recentMessages = demoMessages
-    .filter((msg) => msg.receiverId === user.id || msg.senderId === user.id)
-    .slice(0, 3)
 
   return (
     <div className="p-6 space-y-8 max-w-7xl mx-auto">
+      {loading && <div>Loading...</div>}
+      {error && <div className="text-red-600 text-sm">{error}</div>}
       <div className="flex items-center justify-between animate-fade-in-up">
         <div>
           <h1 className="text-4xl font-bold text-balance mb-2">Welcome back, {user.name}</h1>
@@ -84,7 +114,7 @@ export default function ClientDashboard() {
                 <MessageCircle className="h-8 w-8 text-primary" />
               </div>
               <div>
-                <p className="text-3xl font-bold text-primary">3</p>
+                <p className="text-3xl font-bold text-primary">{conversationsCount}</p>
                 <p className="text-sm text-muted-foreground font-medium">New Messages</p>
               </div>
             </div>
@@ -98,7 +128,7 @@ export default function ClientDashboard() {
                 <Star className="h-8 w-8 text-accent" />
               </div>
               <div>
-                <p className="text-3xl font-bold text-accent">2</p>
+                <p className="text-3xl font-bold text-accent">{pendingReviewsCount}</p>
                 <p className="text-sm text-muted-foreground font-medium">Pending Reviews</p>
               </div>
             </div>
@@ -123,30 +153,29 @@ export default function ClientDashboard() {
           <CardContent className="space-y-4">
             {upcomingBookings.length > 0 ? (
               upcomingBookings.slice(0, 3).map((booking) => {
-                const photographer = demoPhotographers.find((p) => p.id === booking.photographerId)
+                const photographerName = booking.photographer?.user?.name || "Photographer"
+                const dateStr = new Date(booking.startAt).toLocaleDateString("en-US", {
+                  weekday: "long",
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })
                 return (
                   <div
                     key={booking.id}
                     className="flex items-center gap-4 p-4 border rounded-xl hover:shadow-md transition-all duration-200 hover:bg-secondary/30"
                   >
                     <Avatar className="h-12 w-12 ring-2 ring-primary/20">
-                      <AvatarImage src={photographer?.avatar || "/placeholder.svg"} />
+                      <AvatarImage src={"/placeholder.svg"} />
                       <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                        {photographer?.name.charAt(0)}
+                        {photographerName.charAt(0)}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-lg truncate">{photographer?.name}</p>
+                      <p className="font-semibold text-lg truncate">{photographerName}</p>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Calendar className="h-4 w-4" />
-                        <span>
-                          {new Date(booking.date).toLocaleDateString("en-US", {
-                            weekday: "long",
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          })}
-                        </span>
+                        <span>{dateStr}</span>
                       </div>
                     </div>
                     <Badge className="bg-primary text-primary-foreground">Confirmed</Badge>
@@ -182,29 +211,28 @@ export default function ClientDashboard() {
             </Link>
           </CardHeader>
           <CardContent className="space-y-4">
-            {recentMessages.length > 0 ? (
-              recentMessages.map((message) => {
-                const otherUserId = message.senderId === user.id ? message.receiverId : message.senderId
-                const photographer = demoPhotographers.find((p) => p.id === otherUserId)
+            {/* Replace with conversations preview when messages UI is integrated */}
+            {conversationsCount > 0 ? (
+              userBookings.slice(0, 3).map((booking) => {
+                const title = booking.photographer?.user?.name || "Photographer"
+                const ts = new Date(booking.createdAt).toLocaleDateString("en-US")
                 return (
                   <div
-                    key={message.id}
+                    key={booking.id}
                     className="flex items-start gap-4 p-4 border rounded-xl hover:shadow-md transition-all duration-200 hover:bg-secondary/30"
                   >
                     <Avatar className="h-10 w-10 ring-2 ring-primary/20">
-                      <AvatarImage src={photographer?.avatar || "/placeholder.svg"} />
+                      <AvatarImage src={"/placeholder.svg"} />
                       <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                        {photographer?.name.charAt(0)}
+                        {title.charAt(0)}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm">{photographer?.name}</p>
-                      <p className="text-sm text-muted-foreground truncate">{message.content}</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {new Date(message.timestamp).toLocaleDateString("en-US")}
-                      </p>
+                      <p className="font-semibold text-sm">{title}</p>
+                      <p className="text-sm text-muted-foreground truncate">Recent activity</p>
+                      <p className="text-xs text-muted-foreground mt-1">{ts}</p>
                     </div>
-                    {!message.read && <div className="w-3 h-3 bg-accent rounded-full animate-pulse"></div>}
+                    <div className="w-3 h-3 bg-accent rounded-full animate-pulse"></div>
                   </div>
                 )
               })
@@ -234,39 +262,39 @@ export default function ClientDashboard() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {demoPhotographers.slice(0, 3).map((photographer, index) => (
+            {featured.slice(0, 3).map((p, index) => (
               <div
-                key={photographer.id}
+                key={p.id}
                 className={`border rounded-xl p-6 hover:shadow-xl transition-all duration-300 transform hover:scale-105 bg-gradient-to-br from-card to-secondary/10 animate-scale-in`}
                 style={{ animationDelay: `${index * 100}ms` }}
               >
                 <div className="flex items-center gap-4 mb-4">
                   <Avatar className="h-16 w-16 ring-2 ring-primary/20">
-                    <AvatarImage src={photographer.avatar || "/placeholder.svg"} />
+                    <AvatarImage src={"/placeholder.svg"} />
                     <AvatarFallback className="bg-primary/10 text-primary text-lg font-semibold">
-                      {photographer.name.charAt(0)}
+                      {(p.user?.name || "P").charAt(0)}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-lg truncate">{photographer.name}</p>
+                    <p className="font-bold text-lg truncate">{p.user?.name}</p>
                     <div className="flex items-center gap-1 text-sm text-muted-foreground">
                       <MapPin className="h-4 w-4" />
-                      <span>{photographer.state}</span>
+                      <span>{p.state?.name}</span>
                     </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 mb-3">
                   <div className="flex items-center gap-1">
                     <Star className="h-4 w-4 fill-accent text-accent" />
-                    <span className="text-sm font-semibold">{photographer.rating}</span>
+                    <span className="text-sm font-semibold">{p.ratingAvg ?? 0}</span>
                   </div>
-                  <span className="text-sm text-muted-foreground">({photographer.reviewCount} reviews)</span>
+                  <span className="text-sm text-muted-foreground">({p.ratingCount ?? 0} reviews)</span>
                   <Badge variant="secondary" className="ml-auto bg-accent/10 text-accent">
                     Featured
                   </Badge>
                 </div>
-                <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{photographer.bio}</p>
-                <Link href={`/dashboard/client/photographers/${photographer.id}`}>
+                <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{p.bio}</p>
+                <Link href={`/dashboard/client/photographers/${p.id}`}>
                   <Button className="w-full shadow-lg hover:shadow-xl transition-all duration-300">
                     View Portfolio
                   </Button>

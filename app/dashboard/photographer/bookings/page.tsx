@@ -6,25 +6,47 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Calendar, MapPin, Clock, Phone, Mail, Check, X, Eye } from "lucide-react"
-import { demoBookings } from "@/lib/demo-data"
+import { Api } from "@/lib/api"
 import { mockAuth } from "@/lib/auth"
 
 export default function BookingsPage() {
   const user = mockAuth.getCurrentUser()
-  const photographerBookings = demoBookings.filter((booking) => booking.photographerId === user?.id)
+  const [photographerBookings, setPhotographerBookings] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
 
-  const pendingBookings = photographerBookings.filter((booking) => booking.status === "pending")
-  const confirmedBookings = photographerBookings.filter((booking) => booking.status === "confirmed")
-  const completedBookings = photographerBookings.filter((booking) => booking.status === "completed")
+  useEffect(() => {
+    const run = async () => {
+      setLoading(true)
+      setError("")
+      try {
+        const data = await Api.get<{ items: any[] }>("/bookings/received?page=1&perPage=50")
+        setPhotographerBookings(data.items || [])
+      } catch (e: any) {
+        setError(e?.message || "Failed to load bookings")
+      } finally {
+        setLoading(false)
+      }
+    }
+    run()
+  }, [])
 
-  const handleAcceptBooking = (bookingId: string) => {
-    // In a real app, this would update the booking status
-    console.log("Accepting booking:", bookingId)
+  const pendingBookings = photographerBookings.filter((booking) => booking.state === "requested")
+  const confirmedBookings = photographerBookings.filter((booking) => booking.state === "confirmed")
+  const completedBookings = photographerBookings.filter((booking) => booking.state === "completed")
+
+  const handleAcceptBooking = async (bookingId: string) => {
+    try {
+      await Api.patch(`/bookings/${bookingId}/state`, { toState: "confirmed", reason: "Photographer accepted" })
+      setPhotographerBookings((prev) => prev.map((b) => (b.id === bookingId ? { ...b, state: "confirmed" } : b)))
+    } catch {}
   }
 
-  const handleRejectBooking = (bookingId: string) => {
-    // In a real app, this would update the booking status
-    console.log("Rejecting booking:", bookingId)
+  const handleRejectBooking = async (bookingId: string) => {
+    try {
+      await Api.patch(`/bookings/${bookingId}/state`, { toState: "cancelled_by_photographer", reason: "Not available" })
+      setPhotographerBookings((prev) => prev.map((b) => (b.id === bookingId ? { ...b, state: "cancelled_by_photographer" } : b)))
+    } catch {}
   }
 
   const BookingCard = ({ booking, showActions = false }: { booking: any; showActions?: boolean }) => (
@@ -54,18 +76,18 @@ export default function BookingsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
-                <span>{new Date(booking.date).toLocaleDateString("en-US")}</span>
+                <span>{new Date(booking.startAt).toLocaleDateString("en-US")}</span>
               </div>
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-muted-foreground" />
-                <span className="truncate">{booking.location}</span>
+                <span className="truncate">{booking.location?.address}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-muted-foreground" />
                 <span>8 hours</span>
               </div>
               <div className="flex items-center gap-2 font-medium text-primary">
-                <span>{booking.totalAmount.toLocaleString()} DA</span>
+                <span>{(booking.priceCents / 100).toLocaleString()} DA</span>
               </div>
             </div>
 
@@ -108,21 +130,19 @@ export default function BookingsPage() {
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <p className="text-sm font-medium">Date</p>
-                          <p className="text-sm text-muted-foreground">
-                            {new Date(booking.date).toLocaleDateString("en-US")}
-                          </p>
+                          <p className="text-sm text-muted-foreground">{new Date(booking.startAt).toLocaleDateString("en-US")}</p>
                         </div>
                         <div>
                           <p className="text-sm font-medium">Location</p>
-                          <p className="text-sm text-muted-foreground">{booking.location}</p>
+                          <p className="text-sm text-muted-foreground">{booking.location?.address}</p>
                         </div>
                         <div>
                           <p className="text-sm font-medium">Amount</p>
-                          <p className="text-sm text-muted-foreground">{booking.totalAmount.toLocaleString()} DA</p>
+                          <p className="text-sm text-muted-foreground">{(booking.priceCents / 100).toLocaleString()} DA</p>
                         </div>
                         <div>
                           <p className="text-sm font-medium">Status</p>
-                          <Badge variant="outline">{booking.status}</Badge>
+                          <Badge variant="outline">{booking.state}</Badge>
                         </div>
                       </div>
                       {booking.notes && (

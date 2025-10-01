@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AlertTriangle, Clock, CheckCircle, MessageCircle, User } from "lucide-react"
+import { Api } from "@/lib/api"
 
 interface Issue {
   id: string
@@ -20,55 +21,70 @@ interface Issue {
   category: string
 }
 
-const initialIssues: Issue[] = [
-  {
-    id: "1",
-    title: "Issue uploading photos",
-    description: "Unable to upload photos to portfolio, error message appears",
-    status: "open",
-    priority: "high",
-    reportedBy: "Fatima Zahra",
-    reportedAt: "2024-11-15T10:30:00Z",
-    category: "Technical",
-  },
-  {
-    id: "2",
-    title: "Booking notifications not received",
-    description: "I don't receive notifications when new bookings arrive",
-    status: "in-progress",
-    priority: "medium",
-    reportedBy: "Youssef Ben Mohamed",
-    reportedAt: "2024-11-14T15:45:00Z",
-    category: "Notifications",
-  },
-  {
-    id: "3",
-    title: "Payment issue",
-    description: "Payment failed despite valid card details",
-    status: "resolved",
-    priority: "high",
-    reportedBy: "Ahmed Ben Ali",
-    reportedAt: "2024-11-13T09:20:00Z",
-    category: "Payments",
-  },
-]
-
 export default function IssuesPage() {
-  const [issues, setIssues] = useState<Issue[]>(initialIssues)
+  const [issues, setIssues] = useState<Issue[]>([])
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null)
   const [response, setResponse] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
+
+  useEffect(() => {
+    const run = async () => {
+      setLoading(true)
+      setError("")
+      try {
+        // Use admin review moderation endpoints as the "issues" source
+        const pending = await Api.get<{ items: any[] }>("/admin/reviews?status=PENDING&page=1&perPage=50")
+        const approved = await Api.get<{ items: any[] }>("/admin/reviews?status=APPROVED&page=1&perPage=50")
+        const rejected = await Api.get<{ items: any[] }>("/admin/reviews?status=REJECTED&page=1&perPage=50")
+
+        const mapReviewToIssue = (r: any, status: Issue["status"]): Issue => ({
+          id: r.id,
+          title: `Review ${r.rating}/5`,
+          description: r.text || "",
+          status,
+          priority: r.rating <= 2 ? "high" : r.rating === 3 ? "medium" : "low",
+          reportedBy: r.reviewer?.name || "User",
+          reportedAt: r.createdAt,
+          category: "Review",
+        })
+
+        const mapped: Issue[] = [
+          ...(pending.items || []).map((r) => mapReviewToIssue(r, "open")),
+          ...(approved.items || []).map((r) => mapReviewToIssue(r, "resolved")),
+          ...(rejected.items || []).map((r) => mapReviewToIssue(r, "resolved")),
+        ]
+        setIssues(mapped)
+      } catch (e: any) {
+        setError(e?.message || "Failed to load issues")
+      } finally {
+        setLoading(false)
+      }
+    }
+    run()
+  }, [])
 
   const openIssues = issues.filter((issue) => issue.status === "open")
   const inProgressIssues = issues.filter((issue) => issue.status === "in-progress")
   const resolvedIssues = issues.filter((issue) => issue.status === "resolved")
 
-  const handleStatusChange = (issueId: string, newStatus: Issue["status"]) => {
-    setIssues((prev) => prev.map((issue) => (issue.id === issueId ? { ...issue, status: newStatus } : issue)))
+  const handleStatusChange = async (issueId: string, newStatus: Issue["status"]) => {
+    try {
+      if (newStatus === "in-progress") {
+        setIssues((prev) => prev.map((issue) => (issue.id === issueId ? { ...issue, status: newStatus } : issue)))
+        return
+      }
+      const action = "approve" // treat resolution as approve by default
+      await Api.patch(`/admin/reviews/${issueId}`, { action, reason: response || undefined })
+      setIssues((prev) => prev.map((issue) => (issue.id === issueId ? { ...issue, status: "resolved" } : issue)))
+    } catch {}
   }
 
-  const handleSendResponse = (issueId: string) => {
-    // In a real app, this would send the response to the user
-    console.log("Sending response to issue:", issueId, response)
+  const handleSendResponse = async (issueId: string) => {
+    try {
+      await Api.patch(`/admin/reviews/${issueId}`, { action: "approve", reason: response || undefined })
+      setIssues((prev) => prev.map((issue) => (issue.id === issueId ? { ...issue, status: "resolved" } : issue)))
+    } catch {}
     setResponse("")
   }
 
@@ -237,6 +253,8 @@ export default function IssuesPage() {
       </div>
 
       {/* Stats */}
+      {loading && <div>Loading...</div>}
+      {error && <div className="text-sm text-red-600">{error}</div>}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-6">

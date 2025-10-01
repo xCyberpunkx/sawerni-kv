@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -8,24 +8,47 @@ import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { Upload, Plus, Trash2, Eye, ImageIcon, Edit } from "lucide-react"
-import { demoPhotographers } from "@/lib/demo-data"
 import { mockAuth } from "@/lib/auth"
+import { Api } from "@/lib/api"
 
 export default function PortfolioPage() {
   const user = mockAuth.getCurrentUser()
-  const photographer = demoPhotographers.find((p) => p.id === user?.id)
-  const [portfolio, setPortfolio] = useState<string[]>(photographer?.portfolio || [])
+  const [photographerId, setPhotographerId] = useState<string | null>(null)
+  const [portfolio, setPortfolio] = useState<Array<{ id: string; url: string }>>([])
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
 
-  const handleAddImage = () => {
-    // In a real app, this would handle file upload
-    const newImage = `/placeholder.svg?height=400&width=600&query=professional photography sample ${portfolio.length + 1}`
-    setPortfolio((prev) => [...prev, newImage])
-    setUploadDialogOpen(false)
+  useEffect(() => {
+    const run = async () => {
+      const me = await Api.get<any>("/auth/me")
+      const pid = me?.photographer?.id as string | undefined
+      if (!pid) return
+      setPhotographerId(pid)
+      const items = await Api.get<any[]>(`/gallery/photographer/${pid}`)
+      setPortfolio((items || []).map((it) => ({ id: it.id, url: it.url })))
+    }
+    run()
+  }, [])
+
+  const handleAddImage = async () => {
+    const file = fileInputRef.current?.files?.[0]
+    if (!file) return
+    const form = new FormData()
+    form.append("image", file)
+    try {
+      const res = await Api.post<any>("/gallery", form as any, { "Content-Type": "multipart/form-data" } as any)
+      setPortfolio((prev) => [...prev, { id: res.id, url: res.url }])
+      setUploadDialogOpen(false)
+    } catch {}
   }
 
-  const handleDeleteImage = (index: number) => {
-    setPortfolio((prev) => prev.filter((_, i) => i !== index))
+  const handleDeleteImage = async (index: number) => {
+    const item = portfolio[index]
+    if (!item) return
+    try {
+      await Api.delete(`/gallery/${item.id}`)
+      setPortfolio((prev) => prev.filter((_, i) => i !== index))
+    } catch {}
   }
 
   return (
@@ -52,9 +75,12 @@ export default function PortfolioPage() {
                 <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                 <p className="text-lg font-medium mb-2">Drag photos here or click to select</p>
                 <p className="text-sm text-muted-foreground mb-4">You can upload JPG, PNG, WEBP up to 10MB</p>
-                <Button variant="outline" className="bg-transparent">
-                  Choose files
-                </Button>
+                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" id="pf-upload" />
+                <label htmlFor="pf-upload">
+                  <Button variant="outline" className="bg-transparent" asChild>
+                    <span>Choose file</span>
+                  </Button>
+                </label>
               </div>
 
               <div className="space-y-2">
@@ -141,7 +167,7 @@ export default function PortfolioPage() {
             <Card key={index} className="overflow-hidden group hover:shadow-lg transition-shadow">
               <div className="relative aspect-square">
                 <img
-                  src={image || "/placeholder.svg"}
+                  src={image.url || "/placeholder.svg"}
                   alt={`Portfolio ${index + 1}`}
                   className="w-full h-full object-cover"
                 />

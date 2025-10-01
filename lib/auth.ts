@@ -1,4 +1,12 @@
-import { demoCredentials, demoUsers, type User } from "./demo-data"
+import { Api, setAccessToken, getAccessToken } from "./api"
+
+export interface User {
+  id: string
+  email: string
+  name?: string
+  role: "CLIENT" | "PHOTOGRAPHER" | "ADMIN" | "client" | "photographer" | "admin"
+  avatar?: string
+}
 
 export interface AuthState {
   user: User | null
@@ -20,31 +28,25 @@ class MockAuth {
   }
 
   async login(email: string, password: string): Promise<{ success: boolean; user?: User; error?: string }> {
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
-    // Check credentials
-    const validCredential = Object.values(demoCredentials).find(
-      (cred) => cred.email === email && cred.password === password,
-    )
-
-    if (!validCredential) {
-      return { success: false, error: "Invalid email or password" }
+    try {
+      const res = await Api.post<{ user: any; accessToken: string }>("/auth/login", { email, password })
+      const mappedUser: User = {
+        id: res.user.id,
+        email: res.user.email,
+        name: res.user.name,
+        role: ((res.user.role || "client").toString().toLowerCase() as any),
+      }
+      setAccessToken(res.accessToken)
+      this.currentUser = mappedUser
+      if (typeof window !== "undefined") {
+        localStorage.setItem("sawerni_user", JSON.stringify(mappedUser))
+      }
+      this.notifyListeners()
+      return { success: true, user: mappedUser }
+    } catch (err: any) {
+      const message = err?.status === 403 ? "Email not verified or account disabled" : err?.message || "Login failed"
+      return { success: false, error: message }
     }
-
-    // Find user
-    const user = demoUsers.find((u) => u.email === email)
-    if (!user) {
-      return { success: false, error: "User not found" }
-    }
-
-    this.currentUser = user
-    if (typeof window !== "undefined") {
-      localStorage.setItem("sawerni_user", JSON.stringify(user))
-    }
-
-    this.notifyListeners()
-    return { success: true, user }
   }
 
   async signup(userData: {
@@ -55,42 +57,28 @@ class MockAuth {
     state?: string
     serviceType?: string
   }): Promise<{ success: boolean; user?: User; error?: string }> {
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-
-    // Check if email already exists
-    if (demoUsers.some((u) => u.email === userData.email)) {
-      return { success: false, error: "Email is already in use" }
+    try {
+      await Api.post("/auth/register", {
+        email: userData.email,
+        password: userData.password,
+        name: userData.name,
+      })
+      // The backend requires email verification after registration. Do not auto-login.
+      return { success: true }
+    } catch (err: any) {
+      const message = err?.message || "Signup failed"
+      return { success: false, error: message }
     }
-
-    // Create new user
-    const newUser: User = {
-      id: Date.now().toString(),
-      name: userData.name,
-      email: userData.email,
-      role: userData.role,
-      state: userData.state,
-      serviceType: userData.serviceType,
-      joinedDate: new Date().toISOString().split("T")[0],
-    }
-
-    // In a real app, this would be saved to the backend
-    demoUsers.push(newUser)
-
-    this.currentUser = newUser
-    if (typeof window !== "undefined") {
-      localStorage.setItem("sawerni_user", JSON.stringify(newUser))
-    }
-
-    this.notifyListeners()
-    return { success: true, user: newUser }
   }
 
   logout() {
     this.currentUser = null
+    setAccessToken(null)
     if (typeof window !== "undefined") {
       localStorage.removeItem("sawerni_user")
     }
+    // fire-and-forget server logout to clear refresh cookie
+    Api.post("/auth/logout").catch(() => {})
     this.notifyListeners()
   }
 
@@ -99,7 +87,28 @@ class MockAuth {
   }
 
   isAuthenticated(): boolean {
-    return this.currentUser !== null
+    return this.currentUser !== null && !!getAccessToken()
+  }
+
+  async loadCurrentUser(): Promise<User | null> {
+    try {
+      const me = await Api.get<any>("/auth/me")
+      const mapped: User = {
+        id: me.id,
+        email: me.email,
+        name: me.name,
+        role: (me.role || "client").toString().toLowerCase() as any,
+        avatar: undefined,
+      }
+      this.currentUser = mapped
+      if (typeof window !== "undefined") {
+        localStorage.setItem("sawerni_user", JSON.stringify(mapped))
+      }
+      this.notifyListeners()
+      return mapped
+    } catch {
+      return null
+    }
   }
 
   onAuthChange(callback: (user: User | null) => void) {

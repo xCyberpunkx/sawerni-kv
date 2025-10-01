@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -27,7 +27,16 @@ interface ClientSidebarProps {
 export function ClientSidebar({ className }: ClientSidebarProps) {
   const [isMobileOpen, setIsMobileOpen] = useState(false)
   const pathname = usePathname()
-  const user = mockAuth.getCurrentUser()
+  const [user, setUser] = useState(mockAuth.getCurrentUser())
+
+  useEffect(() => {
+    if (!user) {
+      mockAuth.loadCurrentUser().then(setUser)
+    }
+    const unsub = mockAuth.onAuthChange(setUser)
+    return unsub
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleLogout = () => {
     mockAuth.logout()

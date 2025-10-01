@@ -12,7 +12,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Camera, Mail, Lock, Eye, EyeOff } from "lucide-react"
 import { mockAuth } from "@/lib/auth"
-import { demoCredentials } from "@/lib/demo-data"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -54,31 +53,7 @@ export default function LoginPage() {
     }
   }
 
-  const handleDemoLogin = async (role: "client" | "photographer" | "admin") => {
-    const credentials = demoCredentials[role]
-    setEmail(credentials.email)
-    setPassword(credentials.password)
-
-    // Auto-submit after setting credentials
-    setTimeout(async () => {
-      setLoading(true)
-      const result = await mockAuth.login(credentials.email, credentials.password)
-      if (result.success && result.user) {
-        switch (result.user.role) {
-          case "client":
-            router.push("/dashboard/client")
-            break
-          case "photographer":
-            router.push("/dashboard/photographer")
-            break
-          case "admin":
-            router.push("/dashboard/admin")
-            break
-        }
-      }
-      setLoading(false)
-    }, 100)
-  }
+  const handleDemoLogin = undefined as unknown as never
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 flex items-center justify-center p-4">
@@ -105,21 +80,7 @@ export default function LoginPage() {
               </Alert>
             )}
 
-            {/* Demo Login Buttons */}
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground text-center">Demo login:</p>
-              <div className="grid grid-cols-3 gap-2">
-                <Button variant="outline" size="sm" onClick={() => handleDemoLogin("client")} disabled={loading}>
-                  Client
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => handleDemoLogin("photographer")} disabled={loading}>
-                  Photographer
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => handleDemoLogin("admin")} disabled={loading}>
-                  Admin
-                </Button>
-              </div>
-            </div>
+            {/* Demo login removed in production */}
 
             <div className="relative">
               <div className="absolute inset-0 flex items-center">

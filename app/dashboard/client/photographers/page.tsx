@@ -1,9 +1,9 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { PhotographerCard } from "@/components/photographer-card"
 import { PhotographerFilters, type FilterState } from "@/components/photographer-filters"
-import { demoPhotographers } from "@/lib/demo-data"
+import { Api } from "@/lib/api"
 
 export default function PhotographersPage() {
   const [filters, setFilters] = useState<FilterState>({
@@ -15,9 +15,48 @@ export default function PhotographersPage() {
     availability: "",
   })
   const [favorites, setFavorites] = useState<string[]>([])
+  const [items, setItems] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string>("")
+
+  const fetchPhotographers = async () => {
+    setLoading(true)
+    setError("")
+    try {
+      const params = new URLSearchParams()
+      if (filters.search) params.set("q", filters.search)
+      if (filters.state) params.set("stateId", filters.state)
+      if (filters.serviceType) params.set("serviceId", filters.serviceType)
+      // rating and availability are client-side UI hints; backend supports sort and filters as per docs
+      const data = await Api.get<{ items: any[]; meta: any }>(`/photographers?${params.toString()}`)
+      setItems(data.items || [])
+    } catch (e: any) {
+      setError(e?.message || "Failed to load photographers")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchPhotographers()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters.search, filters.state, filters.serviceType])
 
   const filteredPhotographers = useMemo(() => {
-    return demoPhotographers.filter((photographer) => {
+    return items.map((p: any) => ({
+      id: p.id,
+      name: p.user?.name || "",
+      avatar: p.user?.avatarUrl,
+      state: p.state?.name,
+      serviceType: p.services?.[0]?.name,
+      bio: p.bio,
+      portfolio: p.portfolios?.[0]?.images?.map((img: any) => img.url) || [],
+      rating: p.ratingAvg ?? 0,
+      reviewCount: p.ratingCount ?? 0,
+      specialties: p.tags || [],
+      priceRange: p.priceBaseline ? `${Math.round(p.priceBaseline / 100)}00 DA+` : "",
+      availability: true,
+    })).filter((photographer: any) => {
       // Search filter
       if (
         filters.search &&
@@ -59,7 +98,7 @@ export default function PhotographersPage() {
 
       return true
     })
-  }, [filters])
+  }, [filters, items])
 
   const toggleFavorite = (photographerId: string) => {
     setFavorites((prev) =>
@@ -78,8 +117,14 @@ export default function PhotographersPage() {
       {/* Filters */}
       <PhotographerFilters filters={filters} onFiltersChange={setFilters} resultsCount={filteredPhotographers.length} />
 
+      {error && (
+        <div className="text-sm text-red-600">{error}</div>
+      )}
+
       {/* Photographers Grid */}
-      {filteredPhotographers.length > 0 ? (
+      {loading ? (
+        <div>Loading...</div>
+      ) : filteredPhotographers.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredPhotographers.map((photographer) => (
             <PhotographerCard

@@ -1,34 +1,86 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { PackageForm } from "@/components/package-form"
 import { Edit, Trash2, Eye, Plus, CheckCircle } from "lucide-react"
-import { demoPhotographers } from "@/lib/demo-data"
+import { Api } from "@/lib/api"
 import { mockAuth } from "@/lib/auth"
-import type { Package } from "@/lib/demo-data"
+import type { PackageModel } from "@/components/package-form"
 
 export default function PackagesPage() {
   const user = mockAuth.getCurrentUser()
-  const photographer = demoPhotographers.find((p) => p.id === user?.id)
-  const [packages, setPackages] = useState<Package[]>(photographer?.packages || [])
+  const [packages, setPackages] = useState<PackageModel[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
 
-  const handleSavePackage = (packageData: Omit<Package, "id">) => {
-    const newPackage: Package = {
-      ...packageData,
-      id: `pkg_${Date.now()}`,
+  const loadPackages = async () => {
+    setLoading(true)
+    setError("")
+    try {
+      if (!user) return
+      const me = await Api.get<any>("/auth/me")
+      const photographerId = me?.photographer?.id
+      if (!photographerId) return setPackages([])
+      const res = await Api.get<PackageModel[]>(`/packages/photographer/${photographerId}`)
+      const mapped = (res as any[]).map((p) => ({
+        id: p.id,
+        name: p.title,
+        description: p.description,
+        price: p.priceCents / 100,
+        duration: "",
+        includes: [],
+      }))
+      setPackages(mapped)
+    } catch (e: any) {
+      setError(e?.message || "Failed to load packages")
+    } finally {
+      setLoading(false)
     }
-    setPackages((prev) => [...prev, newPackage])
   }
 
-  const handleUpdatePackage = (packageId: string, packageData: Omit<Package, "id">) => {
-    setPackages((prev) => prev.map((pkg) => (pkg.id === packageId ? { ...packageData, id: packageId } : pkg)))
+  useEffect(() => {
+    loadPackages()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const handleSavePackage = async (packageData: Omit<PackageModel, "id">) => {
+    try {
+      const me = await Api.get<any>("/auth/me")
+      const payload = {
+        title: packageData.name,
+        description: packageData.description,
+        priceCents: Math.round(packageData.price * 100),
+      }
+      const created = await Api.post<any>("/packages", payload)
+      setPackages((prev) => [
+        ...prev,
+        { id: created.id, name: created.title, description: created.description, price: created.priceCents / 100, duration: "", includes: [] },
+      ])
+    } catch (e) {
+      // noop minimal UI
+    }
   }
 
-  const handleDeletePackage = (packageId: string) => {
-    setPackages((prev) => prev.filter((pkg) => pkg.id !== packageId))
+  const handleUpdatePackage = async (packageId: string, packageData: Omit<PackageModel, "id">) => {
+    try {
+      const payload = {
+        title: packageData.name,
+        description: packageData.description,
+        priceCents: Math.round(packageData.price * 100),
+      }
+      const updated = await Api.put<any>(`/packages/${packageId}`, payload)
+      setPackages((prev) => prev.map((pkg) => (pkg.id === packageId ? { id: updated.id, name: updated.title, description: updated.description, price: updated.priceCents / 100, duration: "", includes: [] } : pkg)))
+    } catch (e) {}
+  }
+
+  const handleDeletePackage = async (packageId: string) => {
+    try {
+      await Api.delete(`/packages/${packageId}`)
+      setPackages((prev) => prev.filter((pkg) => pkg.id !== packageId))
+    } catch (e) {}
   }
 
   return (
@@ -88,6 +140,8 @@ export default function PackagesPage() {
       </div>
 
       {/* Packages Grid */}
+      {loading && <div>Loading...</div>}
+      {error && <div className="text-sm text-red-600">{error}</div>}
       {packages.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {packages.map((pkg) => (

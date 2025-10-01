@@ -2,15 +2,27 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
+import { Api } from "@/lib/api"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Send, Check, X, DollarSign, ImageIcon, Paperclip } from "lucide-react"
-import type { ChatConversation } from "@/lib/chat-data"
+interface ConversationMessage {
+  id: string
+  senderId: string
+  content?: string
+  createdAt: string
+}
+interface ConversationModel {
+  id: string
+  otherUser?: { id: string; name: string; avatarUrl?: string }
+  messages?: ConversationMessage[]
+  lastMessage?: { content?: string; createdAt?: string }
+}
 
 interface ChatInterfaceProps {
-  conversation: ChatConversation
+  conversation: ConversationModel
   currentUserId: string
   currentUserRole: "client" | "photographer"
 }
@@ -21,35 +33,40 @@ export function ChatInterface({ conversation, currentUserId, currentUserRole }: 
   const [proposalAmount, setProposalAmount] = useState("")
   const [proposalDescription, setProposalDescription] = useState("")
 
-  const otherUser =
-    currentUserRole === "client"
-      ? { name: conversation.photographerName, avatar: conversation.photographerAvatar }
-      : { name: conversation.clientName, avatar: conversation.clientAvatar }
+  const otherUser = conversation.otherUser || { name: "User", avatarUrl: undefined }
 
-  const handleSendMessage = () => {
-    if (newMessage.trim()) {
-      // In a real app, this would send the message to the backend
-      console.log("Sending message:", newMessage)
+  const handleSendMessage = async () => {
+    if (!newMessage.trim()) return
+    try {
+      const form = new FormData()
+      form.append("content", newMessage)
+      const created = await Api.post<any>(`/conversations/${conversation.id}/messages`, form, { "Content-Type": "multipart/form-data" } as any)
+      const updated = { ...(conversation as any) }
+      updated.messages = [...(conversation.messages || []), created]
+      ;(conversation as any).messages = updated.messages
       setNewMessage("")
-    }
+    } catch {}
   }
 
-  const handleSendProposal = () => {
-    if (proposalAmount && proposalDescription) {
-      // In a real app, this would send the proposal to the backend
-      console.log("Sending proposal:", { amount: proposalAmount, description: proposalDescription })
-      setShowPriceProposal(false)
-      setProposalAmount("")
-      setProposalDescription("")
-    }
+  const handleSendProposal = async () => {
+    if (!proposalAmount || !proposalDescription) return
+    try {
+      const form = new FormData()
+      form.append("content", `${proposalDescription} — ${proposalAmount} DA`)
+      const created = await Api.post<any>(`/conversations/${conversation.id}/messages`, form, { "Content-Type": "multipart/form-data" } as any)
+      const updated = { ...(conversation as any) }
+      updated.messages = [...(conversation.messages || []), created]
+      ;(conversation as any).messages = updated.messages
+    } catch {}
+    setShowPriceProposal(false)
+    setProposalAmount("")
+    setProposalDescription("")
   }
 
-  const handleProposalAction = (messageId: string, action: "accept" | "reject") => {
-    // In a real app, this would update the proposal status
-    console.log("Proposal action:", messageId, action)
-  }
+  const handleProposalAction = (_messageId: string, _action: "accept" | "reject") => {}
 
-  const formatTime = (date: Date) => {
+  const formatTime = (dateInput: Date | string) => {
+    const date = typeof dateInput === "string" ? new Date(dateInput) : dateInput
     return date.toLocaleTimeString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
@@ -82,7 +99,7 @@ export function ChatInterface({ conversation, currentUserId, currentUserRole }: 
           </Avatar>
           <div>
             <h3 className="font-semibold text-lg">{otherUser.name}</h3>
-            <p className="text-sm text-muted-foreground">{conversation.projectType}</p>
+            <p className="text-sm text-muted-foreground">Conversation</p>
           </div>
           <div className="ml-auto">
             <Badge variant="secondary" className="bg-primary/10 text-primary animate-pulse">
@@ -94,7 +111,7 @@ export function ChatInterface({ conversation, currentUserId, currentUserRole }: 
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {conversation.messages.map((message) => {
+        {(conversation.messages || []).map((message) => {
           const isCurrentUser = message.senderId === currentUserId
 
           return (
@@ -103,19 +120,16 @@ export function ChatInterface({ conversation, currentUserId, currentUserRole }: 
                 {!isCurrentUser && (
                   <div className="flex items-center gap-2 mb-1">
                     <Avatar className="h-6 w-6">
-                      <AvatarImage src={otherUser.avatar || "/placeholder.svg"} alt={message.senderName} />
+                      <AvatarImage src={otherUser.avatarUrl || "/placeholder.svg"} alt={otherUser.name} />
                       <AvatarFallback className="text-xs">
-                        {message.senderName
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")}
+                        {otherUser.name.split(" ").map((n) => n[0]).join("")}
                       </AvatarFallback>
                     </Avatar>
                     <span className="text-xs text-muted-foreground">{message.senderName}</span>
                   </div>
                 )}
 
-                {message.type === "text" && (
+                {message.content && (
                   <div
                     className={`p-3 rounded-lg ${isCurrentUser ? "bg-primary text-primary-foreground" : "bg-muted"}`}
                   >
@@ -125,60 +139,9 @@ export function ChatInterface({ conversation, currentUserId, currentUserRole }: 
                         isCurrentUser ? "text-primary-foreground/70" : "text-muted-foreground"
                       }`}
                     >
-                      {formatTime(message.timestamp)}
+                      {formatTime(message.createdAt)}
                     </p>
                   </div>
-                )}
-
-                {message.type === "price_proposal" && message.priceProposal && (
-                  <Card className="border-2 border-accent/20 card-hover animate-bounce-in">
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <DollarSign className="h-4 w-4 text-accent animate-pulse" />
-                        <span className="font-semibold text-accent">Price Proposal</span>
-                        <Badge
-                          variant={
-                            message.priceProposal.status === "accepted"
-                              ? "default"
-                              : message.priceProposal.status === "rejected"
-                                ? "destructive"
-                                : "secondary"
-                          }
-                          className="ml-auto animate-fade-in-up"
-                        >
-                          {message.priceProposal.status}
-                        </Badge>
-                      </div>
-                      <div className="text-2xl font-bold text-accent mb-2 animate-slide-in-left">
-                        {formatCurrency(message.priceProposal.amount)} {message.priceProposal.currency}
-                      </div>
-                      <p className="text-sm text-muted-foreground mb-3">{message.priceProposal.description}</p>
-
-                      {message.priceProposal.status === "pending" && !isCurrentUser && (
-                        <div className="flex gap-2 animate-fade-in-up animate-delay-200">
-                          <Button
-                            size="sm"
-                            onClick={() => handleProposalAction(message.id, "accept")}
-                            className="bg-primary hover:bg-primary/90 button-premium"
-                          >
-                            <Check className="h-4 w-4 mr-1" />
-                            Accept
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleProposalAction(message.id, "reject")}
-                            className="hover:bg-destructive/10 hover:text-destructive transition-all duration-300"
-                          >
-                            <X className="h-4 w-4 mr-1" />
-                            Decline
-                          </Button>
-                        </div>
-                      )}
-
-                      <p className="text-xs text-muted-foreground mt-2">{formatTime(message.timestamp)}</p>
-                    </CardContent>
-                  </Card>
                 )}
               </div>
             </div>

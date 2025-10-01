@@ -1,33 +1,50 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { ChatList } from "@/components/chat-list"
 import { ChatInterface } from "@/components/chat-interface"
-import { mockChatData, getChatById } from "@/lib/chat-data"
+import { Api } from "@/lib/api"
+import { mockAuth } from "@/lib/auth"
 import { Search, MessageCircle } from "lucide-react"
 
 export default function PhotographerMessagesPage() {
   const [selectedChatId, setSelectedChatId] = useState<string>()
   const [searchQuery, setSearchQuery] = useState("")
 
-  // Mock current user - in real app this would come from auth
-  const currentUserId = "photographer1"
-  const currentUserRole = "photographer" as const
+  const [conversations, setConversations] = useState<any[]>([])
+  const [currentUserRole] = useState("photographer" as const)
+  const currentUserId = mockAuth.getCurrentUser()?.id || ""
 
-  // Filter conversations for current photographer
-  const photographerConversations = mockChatData.filter((chat) => chat.photographerId === currentUserId)
+  useEffect(() => {
+    const run = async () => {
+      const data = await Api.get<{ items: any[] }>("/conversations?page=1&perPage=50")
+      setConversations(data.items || [])
+    }
+    run()
+  }, [])
 
   // Filter by search query
-  const filteredConversations = photographerConversations.filter(
+  const filteredConversations = conversations.filter(
     (chat) =>
-      chat.clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      chat.projectType.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      chat.lastMessage.toLowerCase().includes(searchQuery.toLowerCase()),
+      (chat.otherUser?.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (chat.lastMessage?.content || "").toLowerCase().includes(searchQuery.toLowerCase()),
   )
 
-  const selectedConversation = selectedChatId ? getChatById(selectedChatId) : null
+  const selectedConversation = conversations.find((c) => c.id === selectedChatId) || null
+
+  // Load messages for selected conversation
+  useEffect(() => {
+    const run = async () => {
+      if (!selectedChatId) return
+      try {
+        const res = await Api.get<{ items: any[] }>(`/conversations/${selectedChatId}/messages?page=1&perPage=50`)
+        setConversations((prev) => prev.map((c) => (c.id === selectedChatId ? { ...c, messages: res.items || [] } : c)))
+      } catch {}
+    }
+    run()
+  }, [selectedChatId])
 
   return (
     <div className="p-6 max-w-7xl mx-auto">

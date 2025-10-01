@@ -17,34 +17,56 @@ import {
   BarChart3,
 } from "lucide-react"
 import { mockAuth } from "@/lib/auth"
-import { demoUsers, demoBookings } from "@/lib/demo-data"
+import { Api } from "@/lib/api"
 import Link from "next/link"
 
 export default function AdminDashboard() {
   const [user, setUser] = useState(mockAuth.getCurrentUser())
+  const [stats, setStats] = useState<any | null>(null)
+  const [recentUsers, setRecentUsers] = useState<any[]>([])
+  const [recentBookings, setRecentBookings] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
+  const [pendingReviewsCount, setPendingReviewsCount] = useState(0)
 
   useEffect(() => {
     const unsubscribe = mockAuth.onAuthChange(setUser)
     return unsubscribe
   }, [])
 
-  if (!user) {
-    return <div>Loading...</div>
-  }
+  useEffect(() => {
+    const run = async () => {
+      setLoading(true)
+      setError("")
+      try {
+        const [overview, bookingsTs] = await Promise.all([
+          Api.get<any>("/admin/stats/overview"),
+          Api.get<any>("/admin/stats/bookings-timeseries?days=7"),
+        ])
+        setStats(overview)
+        const usersRes = await Api.get<any>("/admin/users?page=1&perPage=5")
+        setRecentUsers(usersRes.items || [])
+        const bookingsRes = await Api.get<any>("/admin/stats/bookings-timeseries?days=1")
+        setRecentBookings([])
+        const pendingReviews = await Api.get<{ items: any[]; meta?: any }>("/admin/reviews?status=PENDING&page=1&perPage=1")
+        setPendingReviewsCount(pendingReviews?.meta?.total || (pendingReviews.items?.length || 0))
+      } catch (e: any) {
+        setError(e?.message || "Failed to load admin data")
+      } finally {
+        setLoading(false)
+      }
+    }
+    run()
+  }, [])
 
-  const totalUsers = demoUsers.length
-  const totalClients = demoUsers.filter((u) => u.role === "client").length
-  const totalPhotographers = demoUsers.filter((u) => u.role === "photographer").length
-  const totalBookings = demoBookings.length
-  const pendingBookings = demoBookings.filter((b) => b.status === "pending").length
-  const completedBookings = demoBookings.filter((b) => b.status === "completed").length
-  const totalRevenue = demoBookings.reduce((sum, booking) => sum + booking.totalAmount, 0)
+  const totalUsers = stats?.totals?.users ?? 0
+  const totalPhotographers = stats?.totals?.photographers ?? 0
+  const totalBookings = stats?.totals?.bookings ?? 0
+  const pendingBookings = stats?.bookingsByState?.requested ?? 0
+  const completedBookings = stats?.bookingsByState?.completed ?? 0
+  const totalRevenue = (stats?.totals?.revenueCents ?? 0) / 100
 
-  const recentUsers = demoUsers
-    .sort((a, b) => new Date(b.joinedDate).getTime() - new Date(a.joinedDate).getTime())
-    .slice(0, 5)
-
-  const recentBookings = demoBookings.slice(0, 5)
+  
 
   return (
     <div className="p-6 space-y-6">
@@ -166,7 +188,7 @@ export default function AdminDashboard() {
                 <AlertTriangle className="h-6 w-6 text-red-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold">3</p>
+                <p className="text-2xl font-bold">{pendingReviewsCount}</p>
                 <p className="text-sm text-muted-foreground">Issues requiring attention</p>
               </div>
             </div>
@@ -201,7 +223,7 @@ export default function AdminDashboard() {
                     {user.role === "photographer" ? "Photographer" : "Client"}
                   </Badge>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {new Date(user.joinedDate).toLocaleDateString("en-US")}
+                    {new Date(user.createdAt || user.joinedDate || Date.now()).toLocaleDateString("en-US")}
                   </p>
                 </div>
               </div>

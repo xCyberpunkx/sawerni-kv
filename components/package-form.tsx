@@ -10,11 +10,18 @@ import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Plus, X } from "lucide-react"
-import type { Package } from "@/lib/demo-data"
+export interface PackageModel {
+  id: string
+  name: string
+  description: string
+  price: number
+  duration: string
+  includes: string[]
+}
 
 interface PackageFormProps {
-  package?: Package
-  onSave: (packageData: Omit<Package, "id">) => void
+  package?: PackageModel
+  onSave: (packageData: Omit<PackageModel, "id">) => void
   onCancel: () => void
   trigger?: React.ReactNode
 }

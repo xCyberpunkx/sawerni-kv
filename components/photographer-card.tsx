@@ -6,10 +6,23 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Star, MapPin, Camera, Heart } from "lucide-react"
-import type { Photographer } from "@/lib/demo-data"
+interface PhotographerCardModel {
+  id: string
+  name: string
+  avatar?: string
+  state?: string
+  serviceType?: string
+  bio?: string
+  portfolio: string[]
+  rating: number
+  reviewCount: number
+  specialties: string[]
+  priceRange?: string
+  availability?: boolean
+}
 
 interface PhotographerCardProps {
-  photographer: Photographer
+  photographer: PhotographerCardModel
   isFavorite?: boolean
   onToggleFavorite?: (id: string) => void
 }

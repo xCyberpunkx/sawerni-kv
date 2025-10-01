@@ -10,10 +10,29 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Search, Edit, Trash2, Ban, Eye } from "lucide-react"
-import { demoUsers, type User } from "@/lib/demo-data"
+import { Api } from "@/lib/api"
 
 export function UserManagementTable() {
-  const [users, setUsers] = useState<User[]>(demoUsers)
+  const [users, setUsers] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
+
+  const loadUsers = async () => {
+    setLoading(true)
+    setError("")
+    try {
+      const res = await Api.get<any>("/admin/users?page=1&perPage=50")
+      setUsers(res.items || [])
+    } catch (e: any) {
+      setError(e?.message || "Failed to load users")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadUsers()
+  }, [])
   const [searchTerm, setSearchTerm] = useState("")
   const [filterRole, setFilterRole] = useState<string>("all")
 
