@@ -69,42 +69,42 @@ export function PackageForm({ package: existingPackage, onSave, onCancel, trigge
         {trigger || (
           <Button className="gap-2">
             <Plus className="h-4 w-4" />
-            إضافة باقة جديدة
+            Add new package
           </Button>
         )}
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{existingPackage ? "تعديل الباقة" : "إضافة باقة جديدة"}</DialogTitle>
+          <DialogTitle>{existingPackage ? "Edit package" : "Add new package"}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="name">اسم الباقة</Label>
+              <Label htmlFor="name">Package name</Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-                placeholder="مثال: باقة الزفاف الذهبية"
+                placeholder="e.g., Golden wedding package"
                 required
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="duration">المدة</Label>
+              <Label htmlFor="duration">Duration</Label>
               <Input
                 id="duration"
                 value={formData.duration}
                 onChange={(e) => setFormData((prev) => ({ ...prev, duration: e.target.value }))}
-                placeholder="مثال: 8 ساعات"
+                placeholder="e.g., 8 hours"
                 required
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="price">السعر (دج)</Label>
+            <Label htmlFor="price">Price (DA)</Label>
             <Input
               id="price"
               type="number"
@@ -116,35 +116,35 @@ export function PackageForm({ package: existingPackage, onSave, onCancel, trigge
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">وصف الباقة</Label>
+            <Label htmlFor="description">Package description</Label>
             <Textarea
               id="description"
               value={formData.description}
               onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
-              placeholder="وصف مفصل للباقة وما تتضمنه..."
+              placeholder="Detailed description of the package and inclusions..."
               rows={3}
               required
             />
           </div>
 
           <div className="space-y-4">
-            <Label>ما تتضمنه الباقة</Label>
+            <Label>Package includes</Label>
 
             <div className="flex gap-2">
               <Input
                 value={newInclude}
                 onChange={(e) => setNewInclude(e.target.value)}
-                placeholder="مثال: 100 صورة معدلة"
+                placeholder="e.g., 100 edited photos"
                 onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addInclude())}
               />
               <Button type="button" onClick={addInclude} size="sm">
-                إضافة
+                Add
               </Button>
             </div>
 
             {formData.includes.length > 0 && (
               <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">العناصر المضافة:</p>
+                <p className="text-sm text-muted-foreground">Added items:</p>
                 <div className="flex flex-wrap gap-2">
                   {formData.includes.map((item, index) => (
                     <Badge key={index} variant="secondary" className="gap-1">
@@ -159,10 +159,10 @@ export function PackageForm({ package: existingPackage, onSave, onCancel, trigge
 
           <div className="flex gap-2 pt-4">
             <Button type="submit" className="flex-1">
-              {existingPackage ? "حفظ التغييرات" : "إضافة الباقة"}
+              {existingPackage ? "Save changes" : "Add package"}
             </Button>
             <Button type="button" variant="outline" onClick={() => setOpen(false)} className="flex-1 bg-transparent">
-              إلغاء
+              Cancel
             </Button>
           </div>
         </form>

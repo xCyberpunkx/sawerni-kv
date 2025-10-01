@@ -49,13 +49,13 @@ export function UserManagementTable() {
         <div className="flex items-center gap-2 mb-1">
           <h3 className="font-medium truncate">{user.name}</h3>
           <Badge variant={user.role === "admin" ? "default" : user.role === "photographer" ? "secondary" : "outline"}>
-            {user.role === "admin" ? "مدير" : user.role === "photographer" ? "مصور" : "عميل"}
+            {user.role === "admin" ? "Admin" : user.role === "photographer" ? "Photographer" : "Client"}
           </Badge>
         </div>
         <p className="text-sm text-muted-foreground truncate">{user.email}</p>
         <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
           {user.state && <span>{user.state}</span>}
-          <span>انضم في {new Date(user.joinedDate).toLocaleDateString("ar-DZ")}</span>
+          <span>Joined {new Date(user.joinedDate).toLocaleDateString("en-US")}</span>
         </div>
       </div>
 
@@ -68,7 +68,7 @@ export function UserManagementTable() {
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>تفاصيل المستخدم</DialogTitle>
+              <DialogTitle>User Details</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div className="flex items-center gap-4">
@@ -84,22 +84,22 @@ export function UserManagementTable() {
               </div>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <p className="font-medium">الولاية</p>
-                  <p className="text-muted-foreground">{user.state || "غير محدد"}</p>
+                  <p className="font-medium">State</p>
+                  <p className="text-muted-foreground">{user.state || "Not specified"}</p>
                 </div>
                 <div>
-                  <p className="font-medium">تاريخ الانضمام</p>
-                  <p className="text-muted-foreground">{new Date(user.joinedDate).toLocaleDateString("ar-DZ")}</p>
+                  <p className="font-medium">Joined</p>
+                  <p className="text-muted-foreground">{new Date(user.joinedDate).toLocaleDateString("en-US")}</p>
                 </div>
                 {user.serviceType && (
                   <div className="col-span-2">
-                    <p className="font-medium">نوع الخدمة</p>
+                    <p className="font-medium">Service type</p>
                     <p className="text-muted-foreground">{user.serviceType}</p>
                   </div>
                 )}
                 {user.bio && (
                   <div className="col-span-2">
-                    <p className="font-medium">النبذة</p>
+                    <p className="font-medium">Bio</p>
                     <p className="text-muted-foreground">{user.bio}</p>
                   </div>
                 )}
@@ -130,7 +130,7 @@ export function UserManagementTable() {
         <div className="relative flex-1">
           <Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="ابحث عن مستخدم..."
+            placeholder="Search for a user..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pr-10"
@@ -138,13 +138,13 @@ export function UserManagementTable() {
         </div>
         <Select value={filterRole} onValueChange={setFilterRole}>
           <SelectTrigger className="w-48">
-            <SelectValue placeholder="فلترة حسب النوع" />
+            <SelectValue placeholder="Filter by role" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">جميع المستخدمين</SelectItem>
-            <SelectItem value="client">العملاء</SelectItem>
-            <SelectItem value="photographer">المصورون</SelectItem>
-            <SelectItem value="admin">المديرون</SelectItem>
+            <SelectItem value="all">All users</SelectItem>
+            <SelectItem value="client">Clients</SelectItem>
+            <SelectItem value="photographer">Photographers</SelectItem>
+            <SelectItem value="admin">Admins</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -155,7 +155,7 @@ export function UserManagementTable() {
           <CardContent className="p-4">
             <div className="text-center">
               <div className="text-2xl font-bold">{users.length}</div>
-              <div className="text-sm text-muted-foreground">إجمالي المستخدمين</div>
+              <div className="text-sm text-muted-foreground">Total users</div>
             </div>
           </CardContent>
         </Card>
@@ -163,7 +163,7 @@ export function UserManagementTable() {
           <CardContent className="p-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-primary">{clients.length}</div>
-              <div className="text-sm text-muted-foreground">العملاء</div>
+              <div className="text-sm text-muted-foreground">Clients</div>
             </div>
           </CardContent>
         </Card>
@@ -171,7 +171,7 @@ export function UserManagementTable() {
           <CardContent className="p-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-accent">{photographers.length}</div>
-              <div className="text-sm text-muted-foreground">المصورون</div>
+              <div className="text-sm text-muted-foreground">Photographers</div>
             </div>
           </CardContent>
         </Card>
@@ -179,7 +179,7 @@ export function UserManagementTable() {
           <CardContent className="p-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-secondary">{admins.length}</div>
-              <div className="text-sm text-muted-foreground">المديرون</div>
+              <div className="text-sm text-muted-foreground">Admins</div>
             </div>
           </CardContent>
         </Card>
@@ -188,10 +188,10 @@ export function UserManagementTable() {
       {/* Users Tabs */}
       <Tabs defaultValue="all" className="space-y-4">
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="all">الكل ({filteredUsers.length})</TabsTrigger>
-          <TabsTrigger value="clients">العملاء ({clients.length})</TabsTrigger>
-          <TabsTrigger value="photographers">المصورون ({photographers.length})</TabsTrigger>
-          <TabsTrigger value="admins">المديرون ({admins.length})</TabsTrigger>
+          <TabsTrigger value="all">All ({filteredUsers.length})</TabsTrigger>
+          <TabsTrigger value="clients">Clients ({clients.length})</TabsTrigger>
+          <TabsTrigger value="photographers">Photographers ({photographers.length})</TabsTrigger>
+          <TabsTrigger value="admins">Admins ({admins.length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="all" className="space-y-4">

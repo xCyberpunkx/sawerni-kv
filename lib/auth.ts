@@ -29,13 +29,13 @@ class MockAuth {
     )
 
     if (!validCredential) {
-      return { success: false, error: "بيانات الدخول غير صحيحة" }
+      return { success: false, error: "Invalid email or password" }
     }
 
     // Find user
     const user = demoUsers.find((u) => u.email === email)
     if (!user) {
-      return { success: false, error: "المستخدم غير موجود" }
+      return { success: false, error: "User not found" }
     }
 
     this.currentUser = user
@@ -60,7 +60,7 @@ class MockAuth {
 
     // Check if email already exists
     if (demoUsers.some((u) => u.email === userData.email)) {
-      return { success: false, error: "البريد الإلكتروني مستخدم بالفعل" }
+      return { success: false, error: "Email is already in use" }
     }
 
     // Create new user

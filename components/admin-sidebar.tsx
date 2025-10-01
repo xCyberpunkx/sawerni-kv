@@ -23,12 +23,12 @@ import { mockAuth } from "@/lib/auth"
 import { cn } from "@/lib/utils"
 
 const navigation = [
-  { name: "لوحة التحكم", href: "/dashboard/admin", icon: LayoutDashboard },
-  { name: "المستخدمون", href: "/dashboard/admin/users", icon: Users },
-  { name: "الخدمات", href: "/dashboard/admin/services", icon: Settings },
-  { name: "الفئات", href: "/dashboard/admin/categories", icon: Tags },
-  { name: "الإحصائيات", href: "/dashboard/admin/stats", icon: BarChart3 },
-  { name: "المشاكل", href: "/dashboard/admin/issues", icon: AlertTriangle, badge: 3 },
+  { name: "Dashboard", href: "/dashboard/admin", icon: LayoutDashboard },
+  { name: "Users", href: "/dashboard/admin/users", icon: Users },
+  { name: "Services", href: "/dashboard/admin/services", icon: Settings },
+  { name: "Categories", href: "/dashboard/admin/categories", icon: Tags },
+  { name: "Stats", href: "/dashboard/admin/stats", icon: BarChart3 },
+  { name: "Issues", href: "/dashboard/admin/issues", icon: AlertTriangle, badge: 3 },
 ]
 
 interface AdminSidebarProps {
@@ -60,7 +60,7 @@ export function AdminSidebar({ className }: AdminSidebarProps) {
             <p className="text-sm font-medium truncate">{user?.name}</p>
             <div className="flex items-center gap-1 mt-1">
               <Shield className="h-3 w-3 text-primary" />
-              <span className="text-xs text-muted-foreground">مدير النظام</span>
+              <span className="text-xs text-muted-foreground">Administrator</span>
             </div>
           </div>
           <Button variant="ghost" size="sm">
@@ -71,14 +71,14 @@ export function AdminSidebar({ className }: AdminSidebarProps) {
 
       {/* Quick Stats */}
       <div className="p-4 border-b">
-        <div className="grid grid-cols-2 gap-3 text-center">
+            <div className="grid grid-cols-2 gap-3 text-center">
           <div className="p-2 bg-primary/5 rounded-lg">
             <div className="text-lg font-bold text-primary">156</div>
-            <div className="text-xs text-muted-foreground">مستخدم نشط</div>
+                <div className="text-xs text-muted-foreground">Active users</div>
           </div>
           <div className="p-2 bg-accent/5 rounded-lg">
             <div className="text-lg font-bold text-accent">89</div>
-            <div className="text-xs text-muted-foreground">حجز اليوم</div>
+                <div className="text-xs text-muted-foreground">Bookings today</div>
           </div>
         </div>
       </div>
@@ -114,7 +114,7 @@ export function AdminSidebar({ className }: AdminSidebarProps) {
       <div className="p-4 border-t">
         <Button variant="ghost" className="w-full justify-start gap-3 h-12" onClick={handleLogout}>
           <LogOut className="h-5 w-5" />
-          <span className="flex-1 text-right">تسجيل الخروج</span>
+          <span className="flex-1 text-right">Log out</span>
         </Button>
       </div>
     </div>

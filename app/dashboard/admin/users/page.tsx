@@ -7,8 +7,8 @@ export default function UsersPage() {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold">إدارة المستخدمين</h1>
-        <p className="text-muted-foreground">أدر جميع مستخدمي المنصة من مكان واحد</p>
+        <h1 className="text-3xl font-bold">User management</h1>
+        <p className="text-muted-foreground">Manage all platform users in one place</p>
       </div>
 
       <UserManagementTable />

@@ -36,8 +36,8 @@ export default function PackagesPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">إدارة الباقات</h1>
-          <p className="text-muted-foreground">أضف وعدّل باقات التصوير الخاصة بك</p>
+          <h1 className="text-3xl font-bold">Manage packages</h1>
+          <p className="text-muted-foreground">Add and edit your photography packages</p>
         </div>
         <PackageForm onSave={handleSavePackage} onCancel={() => {}} />
       </div>
@@ -52,7 +52,7 @@ export default function PackagesPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{packages.length}</p>
-                <p className="text-sm text-muted-foreground">إجمالي الباقات</p>
+                <p className="text-sm text-muted-foreground">Total packages</p>
               </div>
             </div>
           </CardContent>
@@ -66,7 +66,7 @@ export default function PackagesPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{packages.length}</p>
-                <p className="text-sm text-muted-foreground">باقات نشطة</p>
+                <p className="text-sm text-muted-foreground">Active packages</p>
               </div>
             </div>
           </CardContent>
@@ -80,7 +80,7 @@ export default function PackagesPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold">156</p>
-                <p className="text-sm text-muted-foreground">مشاهدات الباقات</p>
+                <p className="text-sm text-muted-foreground">Package views</p>
               </div>
             </div>
           </CardContent>
@@ -120,10 +120,10 @@ export default function PackagesPage() {
               <CardContent className="space-y-4">
                 <p className="text-sm text-muted-foreground line-clamp-2">{pkg.description}</p>
 
-                <div className="text-2xl font-bold text-primary">{pkg.price.toLocaleString()} دج</div>
+                <div className="text-2xl font-bold text-primary">{pkg.price.toLocaleString()} DA</div>
 
                 <div className="space-y-2">
-                  <p className="text-sm font-medium">ما تتضمنه الباقة:</p>
+                  <p className="text-sm font-medium">Package includes:</p>
                   <div className="space-y-1">
                     {pkg.includes.slice(0, 3).map((item, index) => (
                       <div key={index} className="flex items-center gap-2 text-sm">
@@ -132,19 +132,19 @@ export default function PackagesPage() {
                       </div>
                     ))}
                     {pkg.includes.length > 3 && (
-                      <p className="text-xs text-muted-foreground">+{pkg.includes.length - 3} عنصر إضافي</p>
+                      <p className="text-xs text-muted-foreground">+{pkg.includes.length - 3} more items</p>
                     )}
                   </div>
                 </div>
 
                 <div className="pt-2 border-t">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">الحجوزات:</span>
-                    <span className="font-medium">12 حجز</span>
+                    <span className="text-muted-foreground">Bookings:</span>
+                    <span className="font-medium">12 bookings</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">المشاهدات:</span>
-                    <span className="font-medium">89 مشاهدة</span>
+                    <span className="text-muted-foreground">Views:</span>
+                    <span className="font-medium">89 views</span>
                   </div>
                 </div>
               </CardContent>
@@ -158,8 +158,8 @@ export default function PackagesPage() {
               <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
                 <Plus className="h-12 w-12 text-muted-foreground" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">لا توجد باقات بعد</h3>
-              <p className="text-muted-foreground mb-6">ابدأ بإضافة باقات التصوير الخاصة بك لجذب المزيد من العملاء</p>
+              <h3 className="text-xl font-semibold mb-2">No packages yet</h3>
+              <p className="text-muted-foreground mb-6">Start adding your photography packages to attract more clients</p>
               <PackageForm onSave={handleSavePackage} onCancel={() => {}} />
             </div>
           </CardContent>

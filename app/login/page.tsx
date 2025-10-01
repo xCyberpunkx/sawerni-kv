@@ -45,10 +45,10 @@ export default function LoginPage() {
             router.push("/")
         }
       } else {
-        setError(result.error || "حدث خطأ في تسجيل الدخول")
+        setError(result.error || "An error occurred while signing in")
       }
     } catch (err) {
-      setError("حدث خطأ غير متوقع")
+      setError("An unexpected error occurred")
     } finally {
       setLoading(false)
     }
@@ -89,14 +89,14 @@ export default function LoginPage() {
             <Camera className="h-8 w-8 text-primary" />
             <span className="text-2xl font-bold text-primary">Sawerni</span>
           </Link>
-          <h1 className="text-2xl font-bold mb-2">أهلاً بعودتك!</h1>
+          <h1 className="text-2xl font-bold mb-2">Welcome back!</h1>
           <p className="text-muted-foreground">Nice to see you again!</p>
         </div>
 
         <Card className="shadow-lg border-0">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-xl text-center">تسجيل الدخول</CardTitle>
-            <CardDescription className="text-center">أدخل بياناتك للوصول إلى حسابك</CardDescription>
+            <CardTitle className="text-xl text-center">Sign in</CardTitle>
+            <CardDescription className="text-center">Enter your details to access your account</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {error && (
@@ -107,16 +107,16 @@ export default function LoginPage() {
 
             {/* Demo Login Buttons */}
             <div className="space-y-2">
-              <p className="text-sm text-muted-foreground text-center">تسجيل دخول تجريبي:</p>
+              <p className="text-sm text-muted-foreground text-center">Demo login:</p>
               <div className="grid grid-cols-3 gap-2">
                 <Button variant="outline" size="sm" onClick={() => handleDemoLogin("client")} disabled={loading}>
-                  عميل
+                  Client
                 </Button>
                 <Button variant="outline" size="sm" onClick={() => handleDemoLogin("photographer")} disabled={loading}>
-                  مصور
+                  Photographer
                 </Button>
                 <Button variant="outline" size="sm" onClick={() => handleDemoLogin("admin")} disabled={loading}>
-                  مدير
+                  Admin
                 </Button>
               </div>
             </div>
@@ -126,13 +126,13 @@ export default function LoginPage() {
                 <span className="w-full border-t" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">أو</span>
+                <span className="bg-background px-2 text-muted-foreground">or</span>
               </div>
             </div>
 
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">البريد الإلكتروني</Label>
+                <Label htmlFor="email">Email</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -148,7 +148,7 @@ export default function LoginPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">كلمة المرور</Label>
+                <Label htmlFor="password">Password</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -178,12 +178,12 @@ export default function LoginPage() {
 
               <div className="flex items-center justify-between">
                 <Link href="#" className="text-sm text-primary hover:underline">
-                  نسيت كلمة المرور؟
+                  Forgot password?
                 </Link>
               </div>
 
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "جاري تسجيل الدخول..." : "تسجيل الدخول"}
+                {loading ? "Signing in..." : "Sign in"}
               </Button>
             </form>
 
@@ -194,7 +194,7 @@ export default function LoginPage() {
                   <span className="w-full border-t" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">أو سجل دخولك بـ</span>
+                  <span className="bg-background px-2 text-muted-foreground">or sign in with</span>
                 </div>
               </div>
 
@@ -212,9 +212,9 @@ export default function LoginPage() {
             </div>
 
             <div className="text-center text-sm">
-              <span className="text-muted-foreground">ليس لديك حساب؟ </span>
+              <span className="text-muted-foreground">Don't have an account? </span>
               <Link href="/signup" className="text-primary hover:underline">
-                إنشاء حساب جديد
+                Create a new account
               </Link>
             </div>
           </CardContent>

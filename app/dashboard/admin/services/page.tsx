@@ -21,36 +21,36 @@ interface Service {
 const initialServices: Service[] = [
   {
     id: "1",
-    name: "تصوير الأعراس",
-    description: "خدمات التصوير الفوتوغرافي للأعراس والمناسبات الخاصة",
+    name: "Wedding photography",
+    description: "Photography services for weddings and private events",
     isActive: true,
     userCount: 45,
   },
   {
     id: "2",
-    name: "تصوير المناسبات",
-    description: "تصوير المناسبات العامة والخاصة والاحتفالات",
+    name: "Event photography",
+    description: "Photography for public and private events and celebrations",
     isActive: true,
     userCount: 32,
   },
   {
     id: "3",
-    name: "التصوير الشخصي",
-    description: "جلسات التصوير الشخصية والبورتريه",
+    name: "Portrait photography",
+    description: "Personal and portrait photo sessions",
     isActive: true,
     userCount: 28,
   },
   {
     id: "4",
-    name: "تصوير الأطفال",
-    description: "تصوير الأطفال والعائلات",
+    name: "Kids photography",
+    description: "Photography for children and families",
     isActive: true,
     userCount: 19,
   },
   {
     id: "5",
-    name: "التصوير التجاري",
-    description: "التصوير للشركات والمنتجات",
+    name: "Commercial photography",
+    description: "Photography for businesses and products",
     isActive: false,
     userCount: 12,
   },
@@ -112,8 +112,8 @@ export default function ServicesPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">إدارة الخدمات</h1>
-          <p className="text-muted-foreground">أدر أنواع الخدمات المتاحة في المنصة</p>
+          <h1 className="text-3xl font-bold">Service management</h1>
+          <p className="text-muted-foreground">Manage the service types available on the platform</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
@@ -125,25 +125,25 @@ export default function ServicesPage() {
               }}
             >
               <Plus className="h-4 w-4" />
-              إضافة خدمة جديدة
+              Add new service
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>{editingService ? "تعديل الخدمة" : "إضافة خدمة جديدة"}</DialogTitle>
+              <DialogTitle>{editingService ? "Edit service" : "Add new service"}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">اسم الخدمة</Label>
+                <Label htmlFor="name">Service name</Label>
                 <Input
                   id="name"
                   value={formData.name}
                   onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-                  placeholder="مثال: تصوير الأعراس"
+                  placeholder="e.g., Wedding photography"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="description">وصف الخدمة</Label>
+                <Label htmlFor="description">Service description</Label>
                 <Textarea
                   id="description"
                   value={formData.description}
@@ -153,7 +153,7 @@ export default function ServicesPage() {
                       description: e.target.value,
                     }))
                   }
-                  placeholder="وصف مفصل للخدمة..."
+                  placeholder="Detailed description of the service..."
                   rows={3}
                 />
               </div>
@@ -169,14 +169,14 @@ export default function ServicesPage() {
                     }))
                   }
                 />
-                <Label htmlFor="isActive">خدمة نشطة</Label>
+                <Label htmlFor="isActive">Active service</Label>
               </div>
               <div className="flex gap-2">
                 <Button onClick={handleSaveService} className="flex-1">
-                  {editingService ? "حفظ التغييرات" : "إضافة الخدمة"}
+                  {editingService ? "Save changes" : "Add service"}
                 </Button>
                 <Button variant="outline" onClick={() => setDialogOpen(false)} className="flex-1 bg-transparent">
-                  إلغاء
+                  Cancel
                 </Button>
               </div>
             </div>
@@ -194,7 +194,7 @@ export default function ServicesPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{services.length}</p>
-                <p className="text-sm text-muted-foreground">إجمالي الخدمات</p>
+                <p className="text-sm text-muted-foreground">Total services</p>
               </div>
             </div>
           </CardContent>
@@ -208,7 +208,7 @@ export default function ServicesPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{services.filter((s) => s.isActive).length}</p>
-                <p className="text-sm text-muted-foreground">خدمات نشطة</p>
+                <p className="text-sm text-muted-foreground">Active services</p>
               </div>
             </div>
           </CardContent>
@@ -222,7 +222,7 @@ export default function ServicesPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{services.reduce((sum, s) => sum + s.userCount, 0)}</p>
-                <p className="text-sm text-muted-foreground">إجمالي المستخدمين</p>
+                <p className="text-sm text-muted-foreground">Total users</p>
               </div>
             </div>
           </CardContent>
@@ -238,7 +238,7 @@ export default function ServicesPage() {
                 <div className="flex-1">
                   <CardTitle className="text-lg mb-2">{service.name}</CardTitle>
                   <Badge variant={service.isActive ? "default" : "secondary"}>
-                    {service.isActive ? "نشط" : "غير نشط"}
+                    {service.isActive ? "Active" : "Inactive"}
                   </Badge>
                 </div>
                 <div className="flex gap-1">
@@ -255,8 +255,8 @@ export default function ServicesPage() {
               <p className="text-sm text-muted-foreground line-clamp-3">{service.description}</p>
 
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">المستخدمون:</span>
-                <span className="font-medium">{service.userCount} مصور</span>
+                <span className="text-muted-foreground">Users:</span>
+                <span className="font-medium">{service.userCount} photographers</span>
               </div>
 
               <Button
@@ -265,7 +265,7 @@ export default function ServicesPage() {
                 className="w-full bg-transparent"
                 onClick={() => toggleServiceStatus(service.id)}
               >
-                {service.isActive ? "إلغاء التفعيل" : "تفعيل"}
+                {service.isActive ? "Deactivate" : "Activate"}
               </Button>
             </CardContent>
           </Card>

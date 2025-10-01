@@ -51,20 +51,20 @@ export default function AdminDashboard() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">لوحة تحكم المدير</h1>
-          <p className="text-muted-foreground">نظرة عامة على منصة Sawerni</p>
+          <h1 className="text-3xl font-bold">Admin dashboard</h1>
+          <p className="text-muted-foreground">Overview of the Sawerni platform</p>
         </div>
         <div className="flex gap-2">
           <Link href="/dashboard/admin/users">
             <Button variant="outline" className="gap-2 bg-transparent">
               <Users className="h-4 w-4" />
-              إدارة المستخدمين
+              Manage users
             </Button>
           </Link>
           <Link href="/dashboard/admin/stats">
             <Button className="gap-2">
               <BarChart3 className="h-4 w-4" />
-              الإحصائيات التفصيلية
+              Detailed statistics
             </Button>
           </Link>
         </div>
@@ -80,7 +80,7 @@ export default function AdminDashboard() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{totalUsers}</p>
-                <p className="text-sm text-muted-foreground">إجمالي المستخدمين</p>
+                <p className="text-sm text-muted-foreground">Total users</p>
               </div>
             </div>
           </CardContent>
@@ -94,7 +94,7 @@ export default function AdminDashboard() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{totalPhotographers}</p>
-                <p className="text-sm text-muted-foreground">المصورون</p>
+                <p className="text-sm text-muted-foreground">Photographers</p>
               </div>
             </div>
           </CardContent>
@@ -108,7 +108,7 @@ export default function AdminDashboard() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{totalBookings}</p>
-                <p className="text-sm text-muted-foreground">إجمالي الحجوزات</p>
+                <p className="text-sm text-muted-foreground">Total bookings</p>
               </div>
             </div>
           </CardContent>
@@ -122,7 +122,7 @@ export default function AdminDashboard() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{totalRevenue.toLocaleString()}</p>
-                <p className="text-sm text-muted-foreground">إجمالي الإيرادات (دج)</p>
+                <p className="text-sm text-muted-foreground">Total revenue (DA)</p>
               </div>
             </div>
           </CardContent>
@@ -139,7 +139,7 @@ export default function AdminDashboard() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{pendingBookings}</p>
-                <p className="text-sm text-muted-foreground">حجوزات في الانتظار</p>
+                <p className="text-sm text-muted-foreground">Pending bookings</p>
               </div>
             </div>
           </CardContent>
@@ -153,7 +153,7 @@ export default function AdminDashboard() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{completedBookings}</p>
-                <p className="text-sm text-muted-foreground">حجوزات مكتملة</p>
+                <p className="text-sm text-muted-foreground">Completed bookings</p>
               </div>
             </div>
           </CardContent>
@@ -167,7 +167,7 @@ export default function AdminDashboard() {
               </div>
               <div>
                 <p className="text-2xl font-bold">3</p>
-                <p className="text-sm text-muted-foreground">مشاكل تحتاج حل</p>
+                <p className="text-sm text-muted-foreground">Issues requiring attention</p>
               </div>
             </div>
           </CardContent>
@@ -177,11 +177,11 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Users */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-xl">المستخدمون الجدد</CardTitle>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-xl">New users</CardTitle>
             <Link href="/dashboard/admin/users">
               <Button variant="ghost" size="sm" className="gap-2">
-                عرض الكل
+                View all
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
@@ -198,10 +198,10 @@ export default function AdminDashboard() {
                 </div>
                 <div className="text-right">
                   <Badge variant={user.role === "photographer" ? "secondary" : "outline"}>
-                    {user.role === "photographer" ? "مصور" : "عميل"}
+                    {user.role === "photographer" ? "Photographer" : "Client"}
                   </Badge>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {new Date(user.joinedDate).toLocaleDateString("ar-DZ")}
+                    {new Date(user.joinedDate).toLocaleDateString("en-US")}
                   </p>
                 </div>
               </div>
@@ -212,9 +212,9 @@ export default function AdminDashboard() {
         {/* Recent Bookings */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-xl">الحجوزات الأخيرة</CardTitle>
+            <CardTitle className="text-xl">Recent bookings</CardTitle>
             <Button variant="ghost" size="sm" className="gap-2">
-              عرض الكل
+              View all
               <ArrowRight className="h-4 w-4" />
             </Button>
           </CardHeader>
@@ -225,7 +225,7 @@ export default function AdminDashboard() {
                   <Calendar className="h-4 w-4 text-accent" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium">حجز #{booking.id}</p>
+                  <p className="font-medium">Booking #{booking.id}</p>
                   <p className="text-sm text-muted-foreground truncate">{booking.location}</p>
                 </div>
                 <div className="text-right">
@@ -238,13 +238,9 @@ export default function AdminDashboard() {
                           : "outline"
                     }
                   >
-                    {booking.status === "confirmed"
-                      ? "مؤكد"
-                      : booking.status === "pending"
-                        ? "في الانتظار"
-                        : booking.status}
+                    {booking.status}
                   </Badge>
-                  <p className="text-xs text-muted-foreground mt-1">{booking.totalAmount.toLocaleString()} دج</p>
+                  <p className="text-xs text-muted-foreground mt-1">{booking.totalAmount.toLocaleString()} DA</p>
                 </div>
               </div>
             ))}
@@ -254,8 +250,8 @@ export default function AdminDashboard() {
 
       {/* Platform Health */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-xl">صحة المنصة</CardTitle>
+          <CardHeader>
+            <CardTitle className="text-xl">Platform health</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -264,8 +260,8 @@ export default function AdminDashboard() {
                 <TrendingUp className="h-5 w-5 text-green-500" />
                 <span className="text-lg font-bold">98.5%</span>
               </div>
-              <p className="text-sm text-muted-foreground">وقت التشغيل</p>
-              <p className="text-xs text-green-600 mt-1">ممتاز</p>
+              <p className="text-sm text-muted-foreground">Uptime</p>
+              <p className="text-xs text-green-600 mt-1">Excellent</p>
             </div>
 
             <div className="text-center p-4 border rounded-lg">
@@ -273,8 +269,8 @@ export default function AdminDashboard() {
                 <Users className="h-5 w-5 text-primary" />
                 <span className="text-lg font-bold">156</span>
               </div>
-              <p className="text-sm text-muted-foreground">مستخدمون نشطون</p>
-              <p className="text-xs text-green-600 mt-1">+12% من الأمس</p>
+              <p className="text-sm text-muted-foreground">Active users</p>
+              <p className="text-xs text-green-600 mt-1">+12% since yesterday</p>
             </div>
 
             <div className="text-center p-4 border rounded-lg">
@@ -282,8 +278,8 @@ export default function AdminDashboard() {
                 <Calendar className="h-5 w-5 text-accent" />
                 <span className="text-lg font-bold">89</span>
               </div>
-              <p className="text-sm text-muted-foreground">حجوزات اليوم</p>
-              <p className="text-xs text-green-600 mt-1">+8% من الأمس</p>
+              <p className="text-sm text-muted-foreground">Bookings today</p>
+              <p className="text-xs text-green-600 mt-1">+8% since yesterday</p>
             </div>
 
             <div className="text-center p-4 border rounded-lg">
@@ -291,8 +287,8 @@ export default function AdminDashboard() {
                 <CheckCircle className="h-5 w-5 text-green-500" />
                 <span className="text-lg font-bold">4.8</span>
               </div>
-              <p className="text-sm text-muted-foreground">متوسط التقييم</p>
-              <p className="text-xs text-green-600 mt-1">ممتاز</p>
+              <p className="text-sm text-muted-foreground">Average rating</p>
+              <p className="text-xs text-green-600 mt-1">Excellent</p>
             </div>
           </div>
         </CardContent>

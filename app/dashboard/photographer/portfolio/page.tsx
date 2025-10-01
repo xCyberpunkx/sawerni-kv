@@ -33,41 +33,41 @@ export default function PortfolioPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">معرض الأعمال</h1>
-          <p className="text-muted-foreground">أضف وأدر صور أعمالك لجذب العملاء</p>
+          <h1 className="text-3xl font-bold">Portfolio</h1>
+          <p className="text-muted-foreground">Add and manage your work photos to attract clients</p>
         </div>
         <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
           <DialogTrigger asChild>
             <Button className="gap-2">
               <Plus className="h-4 w-4" />
-              إضافة صور
+              Add photos
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>إضافة صور جديدة</DialogTitle>
+              <DialogTitle>Add new photos</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center">
                 <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-lg font-medium mb-2">اسحب الصور هنا أو انقر للتحديد</p>
-                <p className="text-sm text-muted-foreground mb-4">يمكنك رفع ملفات JPG, PNG, WEBP حتى 10MB</p>
+                <p className="text-lg font-medium mb-2">Drag photos here or click to select</p>
+                <p className="text-sm text-muted-foreground mb-4">You can upload JPG, PNG, WEBP up to 10MB</p>
                 <Button variant="outline" className="bg-transparent">
-                  اختر الملفات
+                  Choose files
                 </Button>
               </div>
 
               <div className="space-y-2">
-                <Label>وصف الصورة (اختياري)</Label>
-                <Input placeholder="وصف مختصر للصورة..." />
+                <Label>Photo description (optional)</Label>
+                <Input placeholder="Short description of the photo..." />
               </div>
 
               <div className="flex gap-2">
                 <Button onClick={handleAddImage} className="flex-1">
-                  إضافة الصور
+                  Add photos
                 </Button>
                 <Button variant="outline" onClick={() => setUploadDialogOpen(false)} className="flex-1 bg-transparent">
-                  إلغاء
+                  Cancel
                 </Button>
               </div>
             </div>
@@ -85,7 +85,7 @@ export default function PortfolioPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{portfolio.length}</p>
-                <p className="text-sm text-muted-foreground">إجمالي الصور</p>
+                <p className="text-sm text-muted-foreground">Total photos</p>
               </div>
             </div>
           </CardContent>
@@ -99,7 +99,7 @@ export default function PortfolioPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold">2,456</p>
-                <p className="text-sm text-muted-foreground">مشاهدات المعرض</p>
+                <p className="text-sm text-muted-foreground">Portfolio views</p>
               </div>
             </div>
           </CardContent>
@@ -113,7 +113,7 @@ export default function PortfolioPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold">12</p>
-                <p className="text-sm text-muted-foreground">رفع هذا الشهر</p>
+                <p className="text-sm text-muted-foreground">Uploads this month</p>
               </div>
             </div>
           </CardContent>
@@ -127,7 +127,7 @@ export default function PortfolioPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold">4.9</p>
-                <p className="text-sm text-muted-foreground">تقييم الصور</p>
+                <p className="text-sm text-muted-foreground">Photo rating</p>
               </div>
             </div>
           </CardContent>
@@ -159,8 +159,8 @@ export default function PortfolioPage() {
               </div>
               <CardContent className="p-3">
                 <div className="flex items-center justify-between">
-                  <Badge variant="outline" className="text-xs">
-                    صورة {index + 1}
+                    <Badge variant="outline" className="text-xs">
+                    Photo {index + 1}
                   </Badge>
                   <div className="flex items-center gap-1 text-xs text-muted-foreground">
                     <Eye className="h-3 w-3" />
@@ -178,11 +178,11 @@ export default function PortfolioPage() {
               <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
                 <ImageIcon className="h-12 w-12 text-muted-foreground" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">معرض فارغ</h3>
-              <p className="text-muted-foreground mb-6">ابدأ بإضافة صور أعمالك لإظهار مهاراتك للعملاء المحتملين</p>
+              <h3 className="text-xl font-semibold mb-2">Empty portfolio</h3>
+              <p className="text-muted-foreground mb-6">Start adding your work to showcase your skills to potential clients</p>
               <Button onClick={() => setUploadDialogOpen(true)} className="gap-2">
                 <Plus className="h-4 w-4" />
-                إضافة أول صورة
+                Add first photo
               </Button>
             </div>
           </CardContent>

@@ -23,33 +23,33 @@ interface Issue {
 const initialIssues: Issue[] = [
   {
     id: "1",
-    title: "مشكلة في رفع الصور",
-    description: "لا أستطيع رفع الصور إلى معرض الأعمال، تظهر رسالة خطأ",
+    title: "Issue uploading photos",
+    description: "Unable to upload photos to portfolio, error message appears",
     status: "open",
     priority: "high",
-    reportedBy: "فاطمة زهراء",
+    reportedBy: "Fatima Zahra",
     reportedAt: "2024-11-15T10:30:00Z",
-    category: "تقني",
+    category: "Technical",
   },
   {
     id: "2",
-    title: "عدم وصول إشعارات الحجز",
-    description: "لا تصلني إشعارات عند وجود حجوزات جديدة",
+    title: "Booking notifications not received",
+    description: "I don't receive notifications when new bookings arrive",
     status: "in-progress",
     priority: "medium",
-    reportedBy: "يوسف بن محمد",
+    reportedBy: "Youssef Ben Mohamed",
     reportedAt: "2024-11-14T15:45:00Z",
-    category: "إشعارات",
+    category: "Notifications",
   },
   {
     id: "3",
-    title: "مشكلة في الدفع",
-    description: "فشل في عملية الدفع رغم صحة بيانات البطاقة",
+    title: "Payment issue",
+    description: "Payment failed despite valid card details",
     status: "resolved",
     priority: "high",
-    reportedBy: "أحمد بن علي",
+    reportedBy: "Ahmed Ben Ali",
     reportedAt: "2024-11-13T09:20:00Z",
-    category: "دفع",
+    category: "Payments",
   },
 ]
 
@@ -88,11 +88,11 @@ export default function IssuesPage() {
   const getPriorityText = (priority: Issue["priority"]) => {
     switch (priority) {
       case "high":
-        return "عالية"
+        return "High"
       case "medium":
-        return "متوسطة"
+        return "Medium"
       case "low":
-        return "منخفضة"
+        return "Low"
       default:
         return priority
     }
@@ -117,7 +117,7 @@ export default function IssuesPage() {
             </div>
             <div className="flex items-center gap-1">
               <Clock className="h-3 w-3" />
-              <span>{new Date(issue.reportedAt).toLocaleDateString("ar-DZ")}</span>
+              <span>{new Date(issue.reportedAt).toLocaleDateString("en-US")}</span>
             </div>
             <Badge variant="outline" className="text-xs">
               {issue.category}
@@ -134,12 +134,12 @@ export default function IssuesPage() {
                   onClick={() => setSelectedIssue(issue)}
                 >
                   <MessageCircle className="h-4 w-4" />
-                  عرض التفاصيل
+                  View details
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-2xl">
                 <DialogHeader>
-                  <DialogTitle>تفاصيل المشكلة #{issue.id}</DialogTitle>
+                  <DialogTitle>Issue details #{issue.id}</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-6">
                   <div className="space-y-4">
@@ -150,36 +150,36 @@ export default function IssuesPage() {
 
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
-                        <p className="font-medium">المبلغ عنها بواسطة</p>
+                        <p className="font-medium">Reported by</p>
                         <p className="text-muted-foreground">{issue.reportedBy}</p>
                       </div>
                       <div>
-                        <p className="font-medium">التاريخ</p>
+                        <p className="font-medium">Date</p>
                         <p className="text-muted-foreground">
-                          {new Date(issue.reportedAt).toLocaleDateString("ar-DZ")}
+                          {new Date(issue.reportedAt).toLocaleDateString("en-US")}
                         </p>
                       </div>
                       <div>
-                        <p className="font-medium">الأولوية</p>
+                        <p className="font-medium">Priority</p>
                         <Badge variant={getPriorityColor(issue.priority)}>{getPriorityText(issue.priority)}</Badge>
                       </div>
                       <div>
-                        <p className="font-medium">الفئة</p>
+                        <p className="font-medium">Category</p>
                         <p className="text-muted-foreground">{issue.category}</p>
                       </div>
                     </div>
                   </div>
 
                   <div className="space-y-4">
-                    <h4 className="font-semibold">إرسال رد</h4>
+                    <h4 className="font-semibold">Send response</h4>
                     <Textarea
                       value={response}
                       onChange={(e) => setResponse(e.target.value)}
-                      placeholder="اكتب ردك هنا..."
+                      placeholder="Type your response here..."
                       rows={4}
                     />
                     <Button onClick={() => handleSendResponse(issue.id)} className="w-full">
-                      إرسال الرد
+                      Send response
                     </Button>
                   </div>
 
@@ -190,12 +190,12 @@ export default function IssuesPage() {
                         variant="outline"
                         className="flex-1 bg-transparent"
                       >
-                        بدء المعالجة
+                        Start processing
                       </Button>
                     )}
                     {issue.status === "in-progress" && (
                       <Button onClick={() => handleStatusChange(issue.id, "resolved")} className="flex-1">
-                        تم الحل
+                        Resolved
                       </Button>
                     )}
                     {issue.status !== "resolved" && (
@@ -204,7 +204,7 @@ export default function IssuesPage() {
                         variant="outline"
                         className="flex-1 bg-transparent"
                       >
-                        إغلاق
+                        Close
                       </Button>
                     )}
                   </div>
@@ -213,13 +213,13 @@ export default function IssuesPage() {
             </Dialog>
 
             {issue.status === "open" && (
-              <Button size="sm" onClick={() => handleStatusChange(issue.id, "in-progress")}>
-                بدء المعالجة
+              <Button size="sm" onClick={() => handleStatusChange(issue.id, "in-progress")}}>
+                Start processing
               </Button>
             )}
             {issue.status === "in-progress" && (
               <Button size="sm" onClick={() => handleStatusChange(issue.id, "resolved")}>
-                تم الحل
+                Resolved
               </Button>
             )}
           </div>
@@ -232,8 +232,8 @@ export default function IssuesPage() {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold">إدارة المشاكل</h1>
-        <p className="text-muted-foreground">تابع وحل مشاكل المستخدمين</p>
+        <h1 className="text-3xl font-bold">Issue management</h1>
+        <p className="text-muted-foreground">Track and resolve user issues</p>
       </div>
 
       {/* Stats */}
@@ -246,7 +246,7 @@ export default function IssuesPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{openIssues.length}</p>
-                <p className="text-sm text-muted-foreground">مشاكل جديدة</p>
+                <p className="text-sm text-muted-foreground">New issues</p>
               </div>
             </div>
           </CardContent>
@@ -260,7 +260,7 @@ export default function IssuesPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{inProgressIssues.length}</p>
-                <p className="text-sm text-muted-foreground">قيد المعالجة</p>
+                <p className="text-sm text-muted-foreground">In progress</p>
               </div>
             </div>
           </CardContent>
@@ -274,7 +274,7 @@ export default function IssuesPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{resolvedIssues.length}</p>
-                <p className="text-sm text-muted-foreground">تم حلها</p>
+                <p className="text-sm text-muted-foreground">Resolved</p>
               </div>
             </div>
           </CardContent>
@@ -288,7 +288,7 @@ export default function IssuesPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{issues.length}</p>
-                <p className="text-sm text-muted-foreground">إجمالي المشاكل</p>
+                <p className="text-sm text-muted-foreground">Total issues</p>
               </div>
             </div>
           </CardContent>
@@ -298,9 +298,9 @@ export default function IssuesPage() {
       {/* Issues Tabs */}
       <Tabs defaultValue="open" className="space-y-6">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="open">جديدة ({openIssues.length})</TabsTrigger>
-          <TabsTrigger value="in-progress">قيد المعالجة ({inProgressIssues.length})</TabsTrigger>
-          <TabsTrigger value="resolved">محلولة ({resolvedIssues.length})</TabsTrigger>
+          <TabsTrigger value="open">Open ({openIssues.length})</TabsTrigger>
+          <TabsTrigger value="in-progress">In progress ({inProgressIssues.length})</TabsTrigger>
+          <TabsTrigger value="resolved">Resolved ({resolvedIssues.length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="open" className="space-y-4">
@@ -314,8 +314,8 @@ export default function IssuesPage() {
             <Card>
               <CardContent className="p-12 text-center">
                 <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-500" />
-                <h3 className="text-lg font-semibold mb-2">لا توجد مشاكل جديدة</h3>
-                <p className="text-muted-foreground">جميع المشاكل تم التعامل معها</p>
+                <h3 className="text-lg font-semibold mb-2">No new issues</h3>
+                <p className="text-muted-foreground">All issues have been handled</p>
               </CardContent>
             </Card>
           )}
@@ -332,8 +332,8 @@ export default function IssuesPage() {
             <Card>
               <CardContent className="p-12 text-center">
                 <Clock className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-lg font-semibold mb-2">لا توجد مشاكل قيد المعالجة</h3>
-                <p className="text-muted-foreground">لا توجد مشاكل يتم العمل عليها حالياً</p>
+                <h3 className="text-lg font-semibold mb-2">No issues in progress</h3>
+                <p className="text-muted-foreground">There are no issues being worked on currently</p>
               </CardContent>
             </Card>
           )}
@@ -350,8 +350,8 @@ export default function IssuesPage() {
             <Card>
               <CardContent className="p-12 text-center">
                 <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-lg font-semibold mb-2">لا توجد مشاكل محلولة</h3>
-                <p className="text-muted-foreground">لم يتم حل أي مشاكل بعد</p>
+                <h3 className="text-lg font-semibold mb-2">No resolved issues</h3>
+                <p className="text-muted-foreground">No issues have been resolved yet</p>
               </CardContent>
             </Card>
           )}

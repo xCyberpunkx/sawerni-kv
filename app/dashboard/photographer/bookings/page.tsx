@@ -33,34 +33,28 @@ export default function BookingsPage() {
         <div className="flex items-start gap-4">
           <Avatar className="h-12 w-12">
             <AvatarImage src="/placeholder.svg" />
-            <AvatarFallback>عميل</AvatarFallback>
+            <AvatarFallback>Client</AvatarFallback>
           </Avatar>
 
           <div className="flex-1 space-y-3">
             <div className="flex items-start justify-between">
               <div>
-                <h3 className="font-semibold text-lg">حجز #{booking.id}</h3>
-                <p className="text-sm text-muted-foreground">عميل جديد</p>
+                <h3 className="font-semibold text-lg">Booking #{booking.id}</h3>
+                <p className="text-sm text-muted-foreground">New client</p>
               </div>
               <Badge
                 variant={
                   booking.status === "confirmed" ? "default" : booking.status === "pending" ? "secondary" : "outline"
                 }
               >
-                {booking.status === "confirmed"
-                  ? "مؤكد"
-                  : booking.status === "pending"
-                    ? "في الانتظار"
-                    : booking.status === "completed"
-                      ? "مكتمل"
-                      : booking.status}
+                {booking.status}
               </Badge>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
-                <span>{new Date(booking.date).toLocaleDateString("ar-DZ")}</span>
+                <span>{new Date(booking.date).toLocaleDateString("en-US")}</span>
               </div>
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-muted-foreground" />
@@ -68,10 +62,10 @@ export default function BookingsPage() {
               </div>
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-muted-foreground" />
-                <span>8 ساعات</span>
+                <span>8 hours</span>
               </div>
               <div className="flex items-center gap-2 font-medium text-primary">
-                <span>{booking.totalAmount.toLocaleString()} دج</span>
+                <span>{booking.totalAmount.toLocaleString()} DA</span>
               </div>
             </div>
 
@@ -86,7 +80,7 @@ export default function BookingsPage() {
                 <>
                   <Button size="sm" onClick={() => handleAcceptBooking(booking.id)} className="gap-2">
                     <Check className="h-4 w-4" />
-                    قبول
+                    Accept
                   </Button>
                   <Button
                     size="sm"
@@ -95,7 +89,7 @@ export default function BookingsPage() {
                     className="gap-2 bg-transparent"
                   >
                     <X className="h-4 w-4" />
-                    رفض
+                    Reject
                   </Button>
                 </>
               ) : (
@@ -103,37 +97,37 @@ export default function BookingsPage() {
                   <DialogTrigger asChild>
                     <Button size="sm" variant="outline" className="gap-2 bg-transparent">
                       <Eye className="h-4 w-4" />
-                      عرض التفاصيل
+                      View details
                     </Button>
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>تفاصيل الحجز #{booking.id}</DialogTitle>
+                      <DialogTitle>Booking details #{booking.id}</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4">
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <p className="text-sm font-medium">التاريخ</p>
+                          <p className="text-sm font-medium">Date</p>
                           <p className="text-sm text-muted-foreground">
-                            {new Date(booking.date).toLocaleDateString("ar-DZ")}
+                            {new Date(booking.date).toLocaleDateString("en-US")}
                           </p>
                         </div>
                         <div>
-                          <p className="text-sm font-medium">المكان</p>
+                          <p className="text-sm font-medium">Location</p>
                           <p className="text-sm text-muted-foreground">{booking.location}</p>
                         </div>
                         <div>
-                          <p className="text-sm font-medium">المبلغ</p>
-                          <p className="text-sm text-muted-foreground">{booking.totalAmount.toLocaleString()} دج</p>
+                          <p className="text-sm font-medium">Amount</p>
+                          <p className="text-sm text-muted-foreground">{booking.totalAmount.toLocaleString()} DA</p>
                         </div>
                         <div>
-                          <p className="text-sm font-medium">الحالة</p>
+                          <p className="text-sm font-medium">Status</p>
                           <Badge variant="outline">{booking.status}</Badge>
                         </div>
                       </div>
                       {booking.notes && (
                         <div>
-                          <p className="text-sm font-medium mb-2">ملاحظات</p>
+                          <p className="text-sm font-medium mb-2">Notes</p>
                           <p className="text-sm text-muted-foreground p-3 bg-muted rounded-lg">{booking.notes}</p>
                         </div>
                       )}
@@ -143,11 +137,11 @@ export default function BookingsPage() {
               )}
               <Button size="sm" variant="ghost" className="gap-2">
                 <Phone className="h-4 w-4" />
-                اتصال
+                Call
               </Button>
               <Button size="sm" variant="ghost" className="gap-2">
                 <Mail className="h-4 w-4" />
-                رسالة
+                Message
               </Button>
             </div>
           </div>
@@ -160,8 +154,8 @@ export default function BookingsPage() {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold">إدارة الحجوزات</h1>
-        <p className="text-muted-foreground">تابع وأدر جميع حجوزاتك</p>
+        <h1 className="text-3xl font-bold">Manage bookings</h1>
+        <p className="text-muted-foreground">Track and manage all your bookings</p>
       </div>
 
       {/* Stats */}
@@ -174,7 +168,7 @@ export default function BookingsPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{pendingBookings.length}</p>
-                <p className="text-sm text-muted-foreground">في الانتظار</p>
+                <p className="text-sm text-muted-foreground">Pending</p>
               </div>
             </div>
           </CardContent>
@@ -188,7 +182,7 @@ export default function BookingsPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{confirmedBookings.length}</p>
-                <p className="text-sm text-muted-foreground">مؤكدة</p>
+                <p className="text-sm text-muted-foreground">Confirmed</p>
               </div>
             </div>
           </CardContent>
@@ -202,7 +196,7 @@ export default function BookingsPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{completedBookings.length}</p>
-                <p className="text-sm text-muted-foreground">مكتملة</p>
+                <p className="text-sm text-muted-foreground">Completed</p>
               </div>
             </div>
           </CardContent>
@@ -216,7 +210,7 @@ export default function BookingsPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{photographerBookings.length}</p>
-                <p className="text-sm text-muted-foreground">إجمالي الحجوزات</p>
+                <p className="text-sm text-muted-foreground">Total bookings</p>
               </div>
             </div>
           </CardContent>
@@ -226,9 +220,9 @@ export default function BookingsPage() {
       {/* Bookings Tabs */}
       <Tabs defaultValue="pending" className="space-y-6">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="pending">في الانتظار ({pendingBookings.length})</TabsTrigger>
-          <TabsTrigger value="confirmed">مؤكدة ({confirmedBookings.length})</TabsTrigger>
-          <TabsTrigger value="completed">مكتملة ({completedBookings.length})</TabsTrigger>
+          <TabsTrigger value="pending">Pending ({pendingBookings.length})</TabsTrigger>
+          <TabsTrigger value="confirmed">Confirmed ({confirmedBookings.length})</TabsTrigger>
+          <TabsTrigger value="completed">Completed ({completedBookings.length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="pending" className="space-y-4">
@@ -238,8 +232,8 @@ export default function BookingsPage() {
             <Card>
               <CardContent className="p-12 text-center">
                 <Clock className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-lg font-semibold mb-2">لا توجد حجوزات في الانتظار</h3>
-                <p className="text-muted-foreground">ستظهر الحجوزات الجديدة هنا</p>
+                <h3 className="text-lg font-semibold mb-2">No pending bookings</h3>
+                <p className="text-muted-foreground">New bookings will show up here</p>
               </CardContent>
             </Card>
           )}
@@ -252,8 +246,8 @@ export default function BookingsPage() {
             <Card>
               <CardContent className="p-12 text-center">
                 <Check className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-lg font-semibold mb-2">لا توجد حجوزات مؤكدة</h3>
-                <p className="text-muted-foreground">ستظهر الحجوزات المؤكدة هنا</p>
+                <h3 className="text-lg font-semibold mb-2">No confirmed bookings</h3>
+                <p className="text-muted-foreground">Confirmed bookings will show up here</p>
               </CardContent>
             </Card>
           )}
@@ -266,8 +260,8 @@ export default function BookingsPage() {
             <Card>
               <CardContent className="p-12 text-center">
                 <Calendar className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-lg font-semibold mb-2">لا توجد حجوزات مكتملة</h3>
-                <p className="text-muted-foreground">ستظهر الحجوزات المكتملة هنا</p>
+                <h3 className="text-lg font-semibold mb-2">No completed bookings</h3>
+                <p className="text-muted-foreground">Completed bookings will show up here</p>
               </CardContent>
             </Card>
           )}

@@ -10,39 +10,39 @@ import { Badge } from "@/components/ui/badge"
 import { Search, Filter, X } from "lucide-react"
 
 const algerianStates = [
-  "الجزائر العاصمة",
-  "وهران",
-  "قسنطينة",
-  "عنابة",
-  "باتنة",
-  "سطيف",
-  "سيدي بلعباس",
-  "بسكرة",
-  "تلمسان",
-  "بجاية",
-  "تيزي وزو",
-  "ورقلة",
-  "بشار",
-  "المسيلة",
-  "الشلف",
+  "Algiers",
+  "Oran",
+  "Constantine",
+  "Annaba",
+  "Batna",
+  "Setif",
+  "Sidi Bel Abbes",
+  "Biskra",
+  "Tlemcen",
+  "Bejaia",
+  "Tizi Ouzou",
+  "Ouargla",
+  "Bechar",
+  "M'sila",
+  "Chlef",
 ]
 
 const serviceTypes = [
-  "تصوير الأعراس",
-  "تصوير المناسبات",
-  "التصوير الشخصي",
-  "تصوير الأطفال",
-  "التصوير التجاري",
-  "تصوير الطبيعة",
-  "التصوير الصحفي",
-  "تصوير المنتجات",
+  "Wedding photography",
+  "Event photography",
+  "Portrait photography",
+  "Kids photography",
+  "Commercial photography",
+  "Nature photography",
+  "Photojournalism",
+  "Product photography",
 ]
 
 const priceRanges = [
-  { label: "أقل من 20,000 دج", value: "0-20000" },
-  { label: "20,000 - 50,000 دج", value: "20000-50000" },
-  { label: "50,000 - 100,000 دج", value: "50000-100000" },
-  { label: "أكثر من 100,000 دج", value: "100000+" },
+  { label: "Less than 20,000 DA", value: "0-20000" },
+  { label: "20,000 - 50,000 DA", value: "20000-50000" },
+  { label: "50,000 - 100,000 DA", value: "50000-100000" },
+  { label: "More than 100,000 DA", value: "100000+" },
 ]
 
 export interface FilterState {
@@ -87,7 +87,7 @@ export function PhotographerFilters({ filters, onFiltersChange, resultsCount }: 
         <div className="relative flex-1">
           <Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="ابحث عن مصور..."
+            placeholder="Search for a photographer..."
             value={filters.search}
             onChange={(e) => updateFilter("search", e.target.value)}
             className="pr-10"
@@ -95,7 +95,7 @@ export function PhotographerFilters({ filters, onFiltersChange, resultsCount }: 
         </div>
         <Button variant="outline" onClick={() => setShowFilters(!showFilters)} className="gap-2">
           <Filter className="h-4 w-4" />
-          فلترة
+          Filter
           {activeFiltersCount > 0 && (
             <Badge variant="secondary" className="bg-primary text-primary-foreground">
               {activeFiltersCount}
@@ -106,11 +106,11 @@ export function PhotographerFilters({ filters, onFiltersChange, resultsCount }: 
 
       {/* Results Count */}
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">تم العثور على {resultsCount} مصور</p>
+        <p className="text-sm text-muted-foreground">Found {resultsCount} photographers</p>
         {activeFiltersCount > 0 && (
           <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-2">
             <X className="h-4 w-4" />
-            مسح الفلاتر
+            Clear filters
           </Button>
         )}
       </div>
@@ -143,18 +143,18 @@ export function PhotographerFilters({ filters, onFiltersChange, resultsCount }: 
       {showFilters && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">خيارات الفلترة</CardTitle>
+            <CardTitle className="text-lg">Filter options</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>الولاية</Label>
+                <Label>State</Label>
                 <Select value={filters.state} onValueChange={(value) => updateFilter("state", value)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="اختر الولاية" />
+                    <SelectValue placeholder="Choose state" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">جميع الولايات</SelectItem>
+                    <SelectItem value="all">All states</SelectItem>
                     {algerianStates.map((state) => (
                       <SelectItem key={state} value={state}>
                         {state}
@@ -165,13 +165,13 @@ export function PhotographerFilters({ filters, onFiltersChange, resultsCount }: 
               </div>
 
               <div className="space-y-2">
-                <Label>نوع الخدمة</Label>
+                <Label>Service type</Label>
                 <Select value={filters.serviceType} onValueChange={(value) => updateFilter("serviceType", value)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="اختر نوع الخدمة" />
+                    <SelectValue placeholder="Choose service type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">جميع الخدمات</SelectItem>
+                    <SelectItem value="all">All services</SelectItem>
                     {serviceTypes.map((service) => (
                       <SelectItem key={service} value={service}>
                         {service}
@@ -182,13 +182,13 @@ export function PhotographerFilters({ filters, onFiltersChange, resultsCount }: 
               </div>
 
               <div className="space-y-2">
-                <Label>النطاق السعري</Label>
+                <Label>Price range</Label>
                 <Select value={filters.priceRange} onValueChange={(value) => updateFilter("priceRange", value)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="اختر النطاق السعري" />
+                    <SelectValue placeholder="Choose price range" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">جميع الأسعار</SelectItem>
+                    <SelectItem value="all">All prices</SelectItem>
                     {priceRanges.map((range) => (
                       <SelectItem key={range.value} value={range.value}>
                         {range.label}
@@ -199,31 +199,31 @@ export function PhotographerFilters({ filters, onFiltersChange, resultsCount }: 
               </div>
 
               <div className="space-y-2">
-                <Label>التقييم</Label>
+                <Label>Rating</Label>
                 <Select value={filters.rating} onValueChange={(value) => updateFilter("rating", value)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="اختر التقييم" />
+                    <SelectValue placeholder="Choose rating" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">جميع التقييمات</SelectItem>
-                    <SelectItem value="4.5">4.5+ نجوم</SelectItem>
-                    <SelectItem value="4.0">4.0+ نجوم</SelectItem>
-                    <SelectItem value="3.5">3.5+ نجوم</SelectItem>
+                    <SelectItem value="all">All ratings</SelectItem>
+                    <SelectItem value="4.5">4.5+ stars</SelectItem>
+                    <SelectItem value="4.0">4.0+ stars</SelectItem>
+                    <SelectItem value="3.5">3.5+ stars</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label>التوفر</Label>
+              <Label>Availability</Label>
               <Select value={filters.availability} onValueChange={(value) => updateFilter("availability", value)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="اختر التوفر" />
+                  <SelectValue placeholder="Choose availability" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">الكل</SelectItem>
-                  <SelectItem value="available">متاح</SelectItem>
-                  <SelectItem value="unavailable">غير متاح</SelectItem>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="available">Available</SelectItem>
+                  <SelectItem value="unavailable">Unavailable</SelectItem>
                 </SelectContent>
               </Select>
             </div>

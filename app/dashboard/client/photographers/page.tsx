@@ -71,8 +71,8 @@ export default function PhotographersPage() {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold mb-2">المصورون</h1>
-        <p className="text-muted-foreground">اكتشف أفضل المصورين في الجزائر</p>
+        <h1 className="text-3xl font-bold mb-2">Photographers</h1>
+        <p className="text-muted-foreground">Discover the best photographers in Algeria</p>
       </div>
 
       {/* Filters */}
@@ -96,8 +96,8 @@ export default function PhotographersPage() {
             <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
               <span className="text-4xl">📷</span>
             </div>
-            <h3 className="text-xl font-semibold mb-2">لم يتم العثور على مصورين</h3>
-            <p className="text-muted-foreground mb-4">جرب تعديل معايير البحث للعثور على مصورين مناسبين</p>
+            <h3 className="text-xl font-semibold mb-2">No photographers found</h3>
+            <p className="text-muted-foreground mb-4">Try adjusting your search criteria to find suitable photographers</p>
           </div>
         </div>
       )}
