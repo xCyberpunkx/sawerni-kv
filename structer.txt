@@ -1,0 +1,75 @@
+Project Structure - sawerni-kv
+
+app/
+├── dashboard/
+│   ├── admin/
+│   │   ├── issues/
+│   │   │   └── page.tsx
+│   │   ├── services/
+│   │   │   └── page.tsx
+│   │   ├── users/
+│   │   │   └── page.tsx
+│   │   ├── layout.tsx
+│   │   └── page.tsx
+│   ├── client/
+│   │   ├── messages/
+│   │   │   ├── loading.tsx
+│   │   │   └── page.tsx
+│   │   ├── photographers/
+│   │   │   ├── [id]/
+│   │   │   │   └── page.tsx
+│   │   │   └── page.tsx
+│   │   ├── layout.tsx
+│   │   └── page.tsx
+│   └── photographer/
+│       ├── bookings/
+│       │   └── page.tsx
+│       ├── messages/
+│       │   ├── loading.tsx
+│       │   └── page.tsx
+│       ├── packages/
+│       │   └── page.tsx
+│       ├── portfolio/
+│       │   └── page.tsx
+│       ├── layout.tsx
+│       └── page.tsx
+├── login/
+│   └── page.tsx
+├── signup/
+│   └── page.tsx
+├── globals.css
+├── layout.tsx
+└── page.tsx
+
+components/
+├── ui/
+│   ├── alert.tsx
+│   ├── avatar.tsx
+│   ├── badge.tsx
+│   ├── button.tsx
+│   ├── card.tsx
+│   ├── dialog.tsx
+│   ├── input.tsx
+│   ├── label.tsx
+│   ├── select.tsx
+│   ├── tabs.tsx
+│   └── textarea.tsx
+├── admin-sidebar.tsx
+├── chat-interface.tsx
+├── chat-list.tsx
+├── client-sidebar.tsx
+├── language-toggle.tsx
+├── package-form.tsx
+├── photographer-card.tsx
+├── photographer-filters.tsx
+├── photographer-sidebar.tsx
+├── premium-navbar.tsx
+├── theme-provider.tsx
+└── user-management-table.tsx
+
+lib/
+├── api.ts
+├── auth.ts
+├── chat-data.ts
+├── demo-data.ts
+└── utils.ts

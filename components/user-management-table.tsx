@@ -9,8 +9,9 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Search, Edit, Trash2, Ban, Eye } from "lucide-react"
+import { Search, Edit, Trash2, Ban, Eye, Loader2 } from "lucide-react"
 import { Api } from "@/lib/api"
+import { toast } from "sonner"
 
 // Define the User type based on backend response
 interface User {
@@ -36,6 +37,14 @@ export function UserManagementTable() {
   const [error, setError] = useState("")
   const [searchTerm, setSearchTerm] = useState("")
   const [filterRole, setFilterRole] = useState<string>("all")
+  const [editingUser, setEditingUser] = useState<User | null>(null)
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [editFormData, setEditFormData] = useState({
+    name: "",
+    email: "",
+    role: "" as "CLIENT" | "PHOTOGRAPHER" | "ADMIN"
+  })
 
   const loadUsers = async () => {
     setLoading(true)
@@ -68,14 +77,20 @@ export function UserManagementTable() {
   const admins = filteredUsers.filter((user) => user.role === "ADMIN")
 
   const handleDeleteUser = async (userId: string) => {
-    if (!confirm("Are you sure you want to delete this user?")) return
+    const user = users.find(u => u.id === userId)
+    if (!user) return
+    
+    if (!confirm(`Are you sure you want to permanently delete ${user.name}? This action cannot be undone and will remove all their data including bookings, reviews, and messages.`)) {
+      return
+    }
     
     try {
       await Api.delete(`/admin/users/${userId}`)
       setUsers((prev) => prev.filter((user) => user.id !== userId))
+      toast.success("User deleted successfully")
     } catch (e: any) {
       console.error("Failed to delete user:", e)
-      alert(e?.message || "Failed to delete user")
+      toast.error(e?.message || "Failed to delete user")
     }
   }
 
@@ -92,9 +107,49 @@ export function UserManagementTable() {
       setUsers(prev => prev.map(u => 
         u.id === userId ? { ...u, disabled: !u.disabled } : u
       ))
+      
+      toast.success(`User ${user.disabled ? 'unbanned' : 'banned'} successfully`)
     } catch (e: any) {
       console.error("Failed to update user status:", e)
-      alert(e?.message || "Failed to update user status")
+      toast.error(e?.message || "Failed to update user status")
+    }
+  }
+
+  const handleEditUser = (user: User) => {
+    setEditingUser(user)
+    setEditFormData({
+      name: user.name,
+      email: user.email,
+      role: user.role
+    })
+    setEditDialogOpen(true)
+  }
+
+  const handleSaveUserEdit = async () => {
+    if (!editingUser) return
+    
+    if (!editFormData.name.trim() || !editFormData.email.trim()) {
+      toast.error("Name and email are required")
+      return
+    }
+
+    setSubmitting(true)
+    try {
+      await Api.put(`/admin/users/${editingUser.id}`, editFormData)
+      
+      // Update local state
+      setUsers(prev => prev.map(u => 
+        u.id === editingUser.id ? { ...u, ...editFormData } : u
+      ))
+      
+      setEditDialogOpen(false)
+      setEditingUser(null)
+      toast.success("User updated successfully")
+    } catch (e: any) {
+      console.error("Failed to update user:", e)
+      toast.error(e?.message || "Failed to update user")
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -206,7 +261,12 @@ export function UserManagementTable() {
           </DialogContent>
         </Dialog>
 
-        <Button variant="ghost" size="sm" disabled>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={() => handleEditUser(user)}
+          title="Edit User"
+        >
           <Edit className="h-4 w-4" />
         </Button>
 
@@ -243,21 +303,22 @@ export function UserManagementTable() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Error Display */}
-      {error && (
-        <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-lg">
-          <p>{error}</p>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={loadUsers}
-            className="mt-2"
-          >
-            Retry
-          </Button>
-        </div>
-      )}
+    <>
+      <div className="space-y-6">
+        {/* Error Display */}
+        {error && (
+          <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-lg">
+            <p>{error}</p>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={loadUsers}
+              className="mt-2"
+            >
+              Retry
+            </Button>
+          </div>
+        )}
 
       {/* Search and Filters */}
       <div className="flex gap-4">
@@ -376,6 +437,81 @@ export function UserManagementTable() {
           )}
         </TabsContent>
       </Tabs>
-    </div>
+      </div>
+
+      {/* Edit User Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label htmlFor="edit-name" className="text-sm font-medium">Name *</label>
+              <Input
+                id="edit-name"
+                value={editFormData.name}
+                onChange={(e) => setEditFormData(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="User's full name"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="edit-email" className="text-sm font-medium">Email *</label>
+              <Input
+                id="edit-email"
+                type="email"
+                value={editFormData.email}
+                onChange={(e) => setEditFormData(prev => ({ ...prev, email: e.target.value }))}
+                placeholder="user@example.com"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="edit-role" className="text-sm font-medium">Role *</label>
+              <Select 
+                value={editFormData.role} 
+                onValueChange={(value: "CLIENT" | "PHOTOGRAPHER" | "ADMIN") => 
+                  setEditFormData(prev => ({ ...prev, role: value }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="CLIENT">Client</SelectItem>
+                  <SelectItem value="PHOTOGRAPHER">Photographer</SelectItem>
+                  <SelectItem value="ADMIN">Admin</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex gap-2 pt-4">
+              <Button 
+                onClick={handleSaveUserEdit} 
+                className="flex-1" 
+                disabled={submitting}
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Saving...
+                  </>
+                ) : (
+                  "Save Changes"
+                )}
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => setEditDialogOpen(false)} 
+                className="flex-1"
+                disabled={submitting}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }
