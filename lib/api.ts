@@ -42,13 +42,16 @@ async function refreshAccessToken(): Promise<string | null> {
   }
 }
 
-export async function apiFetch<T = unknown>(path: string, options: {
-  method?: HttpMethod
-  body?: any
-  headers?: Record<string, string>
-  signal?: AbortSignal
-  multipart?: boolean
-} = {}): Promise<T> {
+export async function apiFetch<T = unknown>(
+  path: string,
+  options: {
+    method?: HttpMethod
+    body?: any
+    headers?: Record<string, string>
+    signal?: AbortSignal
+    multipart?: boolean
+  } = {}
+): Promise<T> {
   const url = path.startsWith("http") ? path : `${API_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`
 
   const token = getAccessToken()
@@ -81,10 +84,12 @@ export async function apiFetch<T = unknown>(path: string, options: {
   const payload = isJson ? await res.json().catch(() => ({})) : await res.text()
 
   if (!res.ok) {
-    const err = new Error((payload as any)?.error || res.statusText) as ApiError
+    // Extract error message from backend response format
+    const errorMessage = payload?.error || payload?.message || res.statusText
+    const err = new Error(errorMessage) as ApiError
     err.status = res.status
-    err.code = (payload as any)?.code
-    err.details = (payload as any)?.details
+    err.code = payload?.code
+    err.details = payload?.details
     throw err
   }
 
@@ -93,10 +98,11 @@ export async function apiFetch<T = unknown>(path: string, options: {
 
 export const Api = {
   get: <T>(path: string, headers?: Record<string, string>) => apiFetch<T>(path, { method: "GET", headers }),
-  post: <T>(path: string, body?: any, headers?: Record<string, string>) => apiFetch<T>(path, { method: "POST", body, headers }),
-  put: <T>(path: string, body?: any, headers?: Record<string, string>) => apiFetch<T>(path, { method: "PUT", body, headers }),
-  patch: <T>(path: string, body?: any, headers?: Record<string, string>) => apiFetch<T>(path, { method: "PATCH", body, headers }),
+  post: <T>(path: string, body?: any, headers?: Record<string, string>) =>
+    apiFetch<T>(path, { method: "POST", body, headers }),
+  put: <T>(path: string, body?: any, headers?: Record<string, string>) =>
+    apiFetch<T>(path, { method: "PUT", body, headers }),
+  patch: <T>(path: string, body?: any, headers?: Record<string, string>) =>
+    apiFetch<T>(path, { method: "PATCH", body, headers }),
   delete: <T>(path: string, headers?: Record<string, string>) => apiFetch<T>(path, { method: "DELETE", headers }),
 }
-
-

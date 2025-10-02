@@ -28,9 +28,13 @@ export default function LoginPage() {
 
     try {
       const result = await mockAuth.login(email, password)
+      
       if (result.success && result.user) {
+        // Convert role to lowercase for consistent routing
+        const userRole = result.user.role.toLowerCase()
+        
         // Redirect based on user role
-        switch (result.user.role) {
+        switch (userRole) {
           case "client":
             router.push("/dashboard/client")
             break
@@ -41,6 +45,7 @@ export default function LoginPage() {
             router.push("/dashboard/admin")
             break
           default:
+            console.warn("Unknown user role:", userRole)
             router.push("/")
         }
       } else {
@@ -48,12 +53,11 @@ export default function LoginPage() {
       }
     } catch (err) {
       setError("An unexpected error occurred")
+      console.error("Login error:", err)
     } finally {
       setLoading(false)
     }
   }
-
-  const handleDemoLogin = undefined as unknown as never
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 flex items-center justify-center p-4">
@@ -80,8 +84,6 @@ export default function LoginPage() {
               </Alert>
             )}
 
-            {/* Demo login removed in production */}
-
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t" />
@@ -104,6 +106,7 @@ export default function LoginPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     className="pl-10"
                     required
+                    disabled={loading}
                   />
                 </div>
               </div>
@@ -120,6 +123,7 @@ export default function LoginPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     className="pl-10 pr-10"
                     required
+                    disabled={loading}
                   />
                   <Button
                     type="button"
@@ -127,6 +131,7 @@ export default function LoginPage() {
                     size="sm"
                     className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                     onClick={() => setShowPassword(!showPassword)}
+                    disabled={loading}
                   >
                     {showPassword ? (
                       <EyeOff className="h-4 w-4 text-muted-foreground" />
@@ -138,7 +143,7 @@ export default function LoginPage() {
               </div>
 
               <div className="flex items-center justify-between">
-                <Link href="#" className="text-sm text-primary hover:underline">
+                <Link href="/forgot-password" className="text-sm text-primary hover:underline">
                   Forgot password?
                 </Link>
               </div>

@@ -30,12 +30,15 @@ class MockAuth {
   async login(email: string, password: string): Promise<{ success: boolean; user?: User; error?: string }> {
     try {
       const res = await Api.post<{ user: any; accessToken: string }>("/auth/login", { email, password })
+      
+      // Map user with proper role handling (convert to lowercase for frontend consistency)
       const mappedUser: User = {
         id: res.user.id,
         email: res.user.email,
         name: res.user.name,
-        role: ((res.user.role || "client").toString().toLowerCase() as any),
+        role: (res.user.role?.toLowerCase() as User["role"]) || "client",
       }
+      
       setAccessToken(res.accessToken)
       this.currentUser = mappedUser
       if (typeof window !== "undefined") {
@@ -44,8 +47,21 @@ class MockAuth {
       this.notifyListeners()
       return { success: true, user: mappedUser }
     } catch (err: any) {
-      const message = err?.status === 403 ? "Email not verified or account disabled" : err?.message || "Login failed"
-      return { success: false, error: message }
+      // Extract error message from backend response format
+      const errorMessage = err?.error || err?.message || "Login failed"
+      let finalMessage = errorMessage
+      
+      // Handle specific error cases
+      if (err?.status === 403) {
+        finalMessage = "Email not verified or account disabled"
+      } else if (err?.status === 401) {
+        finalMessage = "Invalid email or password"
+      } else if (err?.details?.issues) {
+        // Handle validation errors
+        finalMessage = err.details.issues[0]?.message || errorMessage
+      }
+      
+      return { success: false, error: finalMessage }
     }
   }
 
@@ -66,8 +82,18 @@ class MockAuth {
       // The backend requires email verification after registration. Do not auto-login.
       return { success: true }
     } catch (err: any) {
-      const message = err?.message || "Signup failed"
-      return { success: false, error: message }
+      // Extract error message from backend response format
+      const errorMessage = err?.error || err?.message || "Signup failed"
+      let finalMessage = errorMessage
+      
+      if (err?.details?.issues) {
+        // Handle validation errors
+        finalMessage = err.details.issues[0]?.message || errorMessage
+      } else if (err?.status === 409) {
+        finalMessage = "Email already exists"
+      }
+      
+      return { success: false, error: finalMessage }
     }
   }
 
@@ -97,7 +123,7 @@ class MockAuth {
         id: me.id,
         email: me.email,
         name: me.name,
-        role: (me.role || "client").toString().toLowerCase() as any,
+        role: (me.role?.toLowerCase() as User["role"]) || "client",
         avatar: undefined,
       }
       this.currentUser = mapped
