@@ -229,7 +229,7 @@ export default function IssuesPage() {
             </Dialog>
 
             {issue.status === "open" && (
-              <Button size="sm" onClick={() => handleStatusChange(issue.id, "in-progress")}}>
+              <Button size="sm" onClick={() => handleStatusChange(issue.id, "in-progress")}>
                 Start processing
               </Button>
             )}

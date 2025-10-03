@@ -34,7 +34,7 @@ interface BookingTimeSeriesData {
 
 interface TopPhotographer {
   id: string
-  user: {
+  user?: {
     id: string
     name: string
     email: string
@@ -151,6 +151,19 @@ export default function StatsPage() {
   const calculatePercentageChange = (current: number, previous: number) => {
     if (previous === 0) return 0
     return ((current - previous) / previous) * 100
+  }
+
+  // Safe data access functions
+  const getPhotographerName = (photographer: TopPhotographer) => {
+    return photographer.user?.name || "Unknown Photographer"
+  }
+
+  const getPhotographerEmail = (photographer: TopPhotographer) => {
+    return photographer.user?.email || "No email"
+  }
+
+  const getPhotographerInitial = (photographer: TopPhotographer) => {
+    return photographer.user?.name?.charAt(0).toUpperCase() || "U"
   }
 
   if (loading) {
@@ -506,15 +519,15 @@ export default function StatsPage() {
                       </div>
                       
                       <Avatar className="h-12 w-12">
-                        <AvatarImage src="/placeholder.svg" alt={photographer.user.name} />
+                        <AvatarImage src="/placeholder.svg" alt={getPhotographerName(photographer)} />
                         <AvatarFallback className="bg-primary/10 text-primary">
-                          {photographer.user.name.charAt(0).toUpperCase()}
+                          {getPhotographerInitial(photographer)}
                         </AvatarFallback>
                       </Avatar>
                       
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <h4 className="font-medium truncate">{photographer.user.name}</h4>
+                          <h4 className="font-medium truncate">{getPhotographerName(photographer)}</h4>
                           <div className="flex items-center gap-1">
                             <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
                             <span className="text-sm text-muted-foreground">
@@ -522,7 +535,7 @@ export default function StatsPage() {
                             </span>
                           </div>
                         </div>
-                        <p className="text-sm text-muted-foreground truncate">{photographer.user.email}</p>
+                        <p className="text-sm text-muted-foreground truncate">{getPhotographerEmail(photographer)}</p>
                       </div>
                       
                       <div className="text-right">
