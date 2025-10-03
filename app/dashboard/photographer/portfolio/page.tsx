@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge"
 import { Upload, Plus, Trash2, Eye, ImageIcon, Edit } from "lucide-react"
 import { mockAuth } from "@/lib/auth"
-import { Api } from "@/lib/api"
+import { Api, apiFetch } from "@/lib/api"
 
 export default function PortfolioPage() {
   const user = mockAuth.getCurrentUser()
@@ -17,6 +17,8 @@ export default function PortfolioPage() {
   const [portfolio, setPortfolio] = useState<Array<{ id: string; url: string }>>([])
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
+  const [description, setDescription] = useState("")
+  const [error, setError] = useState("")
 
   useEffect(() => {
     const run = async () => {
@@ -35,11 +37,18 @@ export default function PortfolioPage() {
     if (!file) return
     const form = new FormData()
     form.append("image", file)
+    if (description) {
+      form.append("meta", JSON.stringify({ description }))
+    }
     try {
-      const res = await Api.post<any>("/gallery", form as any, { "Content-Type": "multipart/form-data" } as any)
+      const res = await apiFetch<any>("/gallery", { method: "POST", body: form, multipart: true })
       setPortfolio((prev) => [...prev, { id: res.id, url: res.url }])
       setUploadDialogOpen(false)
-    } catch {}
+      setDescription("")
+      setError("")
+    } catch (e: any) {
+      setError(e?.message || "Failed to upload image")
+    }
   }
 
   const handleDeleteImage = async (index: number) => {
@@ -48,7 +57,9 @@ export default function PortfolioPage() {
     try {
       await Api.delete(`/gallery/${item.id}`)
       setPortfolio((prev) => prev.filter((_, i) => i !== index))
-    } catch {}
+    } catch (e: any) {
+      setError(e?.message || "Failed to delete image")
+    }
   }
 
   return (
@@ -85,8 +96,10 @@ export default function PortfolioPage() {
 
               <div className="space-y-2">
                 <Label>Photo description (optional)</Label>
-                <Input placeholder="Short description of the photo..." />
+                <Input placeholder="Short description of the photo..." value={description} onChange={(e) => setDescription(e.target.value)} />
               </div>
+
+              {error && <div className="text-sm text-red-600">{error}</div>}
 
               <div className="flex gap-2">
                 <Button onClick={handleAddImage} className="flex-1">

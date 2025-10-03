@@ -1,4 +1,5 @@
 "use client"
+import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -36,17 +37,25 @@ export default function BookingsPage() {
   const completedBookings = photographerBookings.filter((booking) => booking.state === "completed")
 
   const handleAcceptBooking = async (bookingId: string) => {
+    const booking = photographerBookings.find((b) => b.id === bookingId)
+    if (!booking || booking.state !== "requested") return
     try {
       await Api.patch(`/bookings/${bookingId}/state`, { toState: "confirmed", reason: "Photographer accepted" })
       setPhotographerBookings((prev) => prev.map((b) => (b.id === bookingId ? { ...b, state: "confirmed" } : b)))
-    } catch {}
+    } catch (e: any) {
+      setError(e?.message || "Failed to accept booking")
+    }
   }
 
   const handleRejectBooking = async (bookingId: string) => {
+    const booking = photographerBookings.find((b) => b.id === bookingId)
+    if (!booking || (booking.state !== "requested" && booking.state !== "confirmed" && booking.state !== "in_progress")) return
     try {
       await Api.patch(`/bookings/${bookingId}/state`, { toState: "cancelled_by_photographer", reason: "Not available" })
       setPhotographerBookings((prev) => prev.map((b) => (b.id === bookingId ? { ...b, state: "cancelled_by_photographer" } : b)))
-    } catch {}
+    } catch (e: any) {
+      setError(e?.message || "Failed to reject booking")
+    }
   }
 
   const BookingCard = ({ booking, showActions = false }: { booking: any; showActions?: boolean }) => (
@@ -66,10 +75,10 @@ export default function BookingsPage() {
               </div>
               <Badge
                 variant={
-                  booking.status === "confirmed" ? "default" : booking.status === "pending" ? "secondary" : "outline"
+                  booking.state === "confirmed" ? "default" : booking.state === "requested" ? "secondary" : "outline"
                 }
               >
-                {booking.status}
+                {booking.state}
               </Badge>
             </div>
 
@@ -84,7 +93,7 @@ export default function BookingsPage() {
               </div>
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-muted-foreground" />
-                <span>8 hours</span>
+                <span>{Math.max(0, (new Date(booking.endAt).getTime() - new Date(booking.startAt).getTime()) / 3600000)} hours</span>
               </div>
               <div className="flex items-center gap-2 font-medium text-primary">
                 <span>{(booking.priceCents / 100).toLocaleString()} DA</span>

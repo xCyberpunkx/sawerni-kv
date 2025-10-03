@@ -16,11 +16,22 @@ export default function PhotographerMessagesPage() {
   const [conversations, setConversations] = useState<any[]>([])
   const [currentUserRole] = useState("photographer" as const)
   const currentUserId = mockAuth.getCurrentUser()?.id || ""
+  const [listLoading, setListLoading] = useState(false)
+  const [listError, setListError] = useState("")
+  const [threadError, setThreadError] = useState("")
 
   useEffect(() => {
     const run = async () => {
-      const data = await Api.get<{ items: any[] }>("/conversations?page=1&perPage=50")
-      setConversations(data.items || [])
+      setListLoading(true)
+      setListError("")
+      try {
+        const data = await Api.get<{ items: any[]; meta?: any }>("/conversations?page=1&perPage=50")
+        setConversations(data.items || [])
+      } catch (e: any) {
+        setListError(e?.message || "Failed to load conversations")
+      } finally {
+        setListLoading(false)
+      }
     }
     run()
   }, [])
@@ -40,8 +51,12 @@ export default function PhotographerMessagesPage() {
       if (!selectedChatId) return
       try {
         const res = await Api.get<{ items: any[] }>(`/conversations/${selectedChatId}/messages?page=1&perPage=50`)
-        setConversations((prev) => prev.map((c) => (c.id === selectedChatId ? { ...c, messages: res.items || [] } : c)))
-      } catch {}
+        setConversations((prev) => prev.map((c) => (c.id === selectedChatId ? { ...c, messages: res.items || [], unreadCount: 0 } : c)))
+        await Api.patch(`/conversations/${selectedChatId}/read`)
+        setThreadError("")
+      } catch (e: any) {
+        setThreadError(e?.message || "Failed to load messages")
+      }
     }
     run()
   }, [selectedChatId])
@@ -73,7 +88,11 @@ export default function PhotographerMessagesPage() {
               </div>
             </CardHeader>
             <CardContent className="p-4 overflow-y-auto">
-              {filteredConversations.length > 0 ? (
+              {listLoading ? (
+                <div className="text-center py-8">Loading…</div>
+              ) : listError ? (
+                <div className="text-center py-8 text-red-600 text-sm">{listError}</div>
+              ) : filteredConversations.length > 0 ? (
                 <ChatList
                   conversations={filteredConversations}
                   selectedChatId={selectedChatId}
@@ -107,6 +126,7 @@ export default function PhotographerMessagesPage() {
                   <p className="text-muted-foreground">
                     Choose a conversation from the list to start chatting with clients
                   </p>
+                  {threadError && <p className="text-sm text-red-600 mt-3">{threadError}</p>}
                 </div>
               </CardContent>
             )}

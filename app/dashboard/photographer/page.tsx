@@ -67,11 +67,20 @@ export default function PhotographerDashboard() {
     .filter((booking) => booking.state === "completed")
     .reduce((sum, booking) => sum + (booking.priceCents || 0), 0) / 100
 
+  if (loading) {
+    return <div className="p-6">Loading…</div>
+  }
+
+  if (!user) {
+    return <div className="p-6">Authentication required.</div>
+  }
+
   return (
     <div className="p-6 space-y-8 max-w-7xl mx-auto">
+      {error && <div className="text-sm text-red-600">{error}</div>}
       <div className="flex items-center justify-between animate-fade-in-up">
         <div>
-          <h1 className="text-4xl font-bold text-balance mb-2">Welcome back, {user.name}</h1>
+          <h1 className="text-4xl font-bold text-balance mb-2">Welcome back, {user?.name || "Photographer"}</h1>
           <p className="text-xl text-muted-foreground">Here's how your photography business is performing</p>
         </div>
         <div className="flex gap-3">
@@ -303,7 +312,7 @@ export default function PhotographerDashboard() {
                   <Star className="h-6 w-6 text-accent" />
                 </div>
               </div>
-              <span className="text-3xl font-bold text-accent">4.8</span>
+              <span className="text-3xl font-bold text-accent">{rating.toFixed(1)}</span>
               <p className="text-sm text-muted-foreground font-medium mt-2">Average Rating</p>
               <p className="text-xs text-accent mt-1 font-semibold">+0.2 from last month</p>
             </div>
