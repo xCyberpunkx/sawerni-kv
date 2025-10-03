@@ -27,6 +27,7 @@ const navigation = [
   { name: "Packages", href: "/dashboard/photographer/packages", icon: Package },
   { name: "Portfolio", href: "/dashboard/photographer/portfolio", icon: Camera },
   { name: "Bookings", href: "/dashboard/photographer/bookings", icon: Calendar, badge: 2 },
+  { name: "Calendar", href: "/dashboard/photographer/calendar", icon: Calendar },
   { name: "Messages", href: "/dashboard/photographer/messages", icon: MessageCircle, badge: 5 },
   { name: "Reviews", href: "/dashboard/photographer/reviews", icon: Star },
   { name: "Profile", href: "/dashboard/photographer/profile", icon: User },
