@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { Space_Grotesk, DM_Sans } from "next/font/google"
 import { Toaster } from "sonner"
 import "./globals.css"
+import { I18nProvider } from "@/lib/i18n"
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -30,8 +31,10 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${spaceGrotesk.variable} ${dmSans.variable} antialiased`}>
       <body className="font-sans">
-        {children}
-        <Toaster position="top-right" richColors />
+        <I18nProvider>
+          {children}
+          <Toaster position="top-right" richColors />
+        </I18nProvider>
       </body>
     </html>
   )

@@ -8,6 +8,7 @@ import { ChatInterface } from "@/components/chat-interface"
 import { Api } from "@/lib/api"
 import { mockAuth } from "@/lib/auth"
 import { Search, MessageCircle } from "lucide-react"
+import { connectSocket } from "@/lib/socket"
 
 export default function PhotographerMessagesPage() {
   const [selectedChatId, setSelectedChatId] = useState<string>()
@@ -34,6 +35,22 @@ export default function PhotographerMessagesPage() {
       }
     }
     run()
+  }, [])
+
+  useEffect(() => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("sawerni_access_token") : null
+    if (!token) return
+    connectSocket(token, {
+      onMessage: (message) => {
+        setConversations((prev) =>
+          prev.map((c) =>
+            c.id === message.conversationId
+              ? { ...c, messages: [...(c.messages || []), message], unreadCount: (c.unreadCount || 0) + 1 }
+              : c,
+          ),
+        )
+      },
+    })
   }, [])
 
   // Filter by search query

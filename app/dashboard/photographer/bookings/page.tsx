@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Calendar, MapPin, Clock, Phone, Mail, Check, X, Eye } from "lucide-react"
 import { Api } from "@/lib/api"
 import { mockAuth } from "@/lib/auth"
+import { connectSocket } from "@/lib/socket"
 
 export default function BookingsPage() {
   const user = mockAuth.getCurrentUser()
@@ -30,6 +31,17 @@ export default function BookingsPage() {
       }
     }
     run()
+  }, [])
+
+  useEffect(() => {
+    // realtime booking state changes
+    const token = typeof window !== "undefined" ? localStorage.getItem("sawerni_access_token") : null
+    if (!token) return
+    connectSocket(token, {
+      onBookingStateChanged: (booking: any) => {
+        setPhotographerBookings((prev) => prev.map((b) => (b.id === booking.id ? booking : b)))
+      },
+    })
   }, [])
 
   const pendingBookings = photographerBookings.filter((booking) => booking.state === "requested")

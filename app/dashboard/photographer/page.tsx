@@ -18,12 +18,10 @@ import {
   Eye,
   Award,
 } from "lucide-react"
-import { mockAuth } from "@/lib/auth"
 import { Api } from "@/lib/api"
 import Link from "next/link"
 
 export default function PhotographerDashboard() {
-  const [user, setUser] = useState(mockAuth.getCurrentUser())
   const [bookings, setBookings] = useState<any[]>([])
   const [recentMessages, setRecentMessages] = useState<any[]>([])
   const [rating, setRating] = useState<number>(0)
@@ -32,13 +30,7 @@ export default function PhotographerDashboard() {
   const [error, setError] = useState("")
 
   useEffect(() => {
-    const unsubscribe = mockAuth.onAuthChange(setUser)
-    return unsubscribe
-  }, [])
-
-  useEffect(() => {
     const run = async () => {
-      if (!user) return
       setLoading(true)
       setError("")
       try {
@@ -58,7 +50,7 @@ export default function PhotographerDashboard() {
       }
     }
     run()
-  }, [user])
+  }, [])
 
   const photographerBookings = bookings
   const pendingBookings = photographerBookings.filter((booking) => booking.state === "requested")
@@ -71,16 +63,12 @@ export default function PhotographerDashboard() {
     return <div className="p-6">Loading…</div>
   }
 
-  if (!user) {
-    return <div className="p-6">Authentication required.</div>
-  }
-
   return (
     <div className="p-6 space-y-8 max-w-7xl mx-auto">
       {error && <div className="text-sm text-red-600">{error}</div>}
       <div className="flex items-center justify-between animate-fade-in-up">
         <div>
-          <h1 className="text-4xl font-bold text-balance mb-2">Welcome back, {user?.name || "Photographer"}</h1>
+          <h1 className="text-4xl font-bold text-balance mb-2">Welcome back, Photographer</h1>
           <p className="text-xl text-muted-foreground">Here's how your photography business is performing</p>
         </div>
         <div className="flex gap-3">

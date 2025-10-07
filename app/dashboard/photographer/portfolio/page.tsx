@@ -15,6 +15,8 @@ export default function PortfolioPage() {
   const user = mockAuth.getCurrentUser()
   const [photographerId, setPhotographerId] = useState<string | null>(null)
   const [portfolio, setPortfolio] = useState<Array<{ id: string; url: string }>>([])
+  const [page, setPage] = useState(1)
+  const [loading, setLoading] = useState(false)
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const [description, setDescription] = useState("")
@@ -26,11 +28,23 @@ export default function PortfolioPage() {
       const pid = me?.photographer?.id as string | undefined
       if (!pid) return
       setPhotographerId(pid)
-      const items = await Api.get<any[]>(`/gallery/photographer/${pid}`)
-      setPortfolio((items || []).map((it) => ({ id: it.id, url: it.url })))
     }
     run()
   }, [])
+
+  const loadMore = async () => {
+    if (!photographerId) return
+    setLoading(true)
+    const items = await Api.get<any[]>(`/gallery/photographer/${photographerId}`)
+    setPortfolio((prev) => [...prev, ...(items || []).map((it) => ({ id: it.id, url: it.url }))])
+    setPage((p) => p + 1)
+    setLoading(false)
+  }
+
+  useEffect(() => {
+    if (photographerId) loadMore()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [photographerId])
 
   const handleAddImage = async () => {
     const file = fileInputRef.current?.files?.[0]
@@ -227,6 +241,12 @@ export default function PortfolioPage() {
           </CardContent>
         </Card>
       )}
+
+      <div className="flex justify-center">
+        <Button variant="outline" className="bg-transparent" onClick={loadMore} disabled={loading || !photographerId}>
+          {loading ? "Loading…" : "Load more"}
+        </Button>
+      </div>
     </div>
   )
 }
