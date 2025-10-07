@@ -40,18 +40,19 @@ export default function PhotographerPackagesPage() {
 
   useEffect(() => {
     const run = async () => {
-      if (!user) return
+      if (!user) return;
       try {
-        const me = await Api.get<any>("/auth/me")
-        const pid = me?.photographer?.id as string | undefined
-        if (!pid) return
-        setPhotographerId(pid)
+        const me = await Api.get<any>("/auth/me");
+        console.log(me); // This should now include photographer data
+        const pid = me?.photographer?.id as string | undefined;
+        if (!pid) return;
+        setPhotographerId(pid);
       } catch (e: any) {
-        setError(e?.message || "Failed to load profile")
+        setError(e?.message || "Failed to load profile");
       }
-    }
-    run()
-  }, [user])
+    };
+    run();
+  }, [user]);
 
   const load = async () => {
     if (!photographerId) return
