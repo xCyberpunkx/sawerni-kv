@@ -107,10 +107,7 @@ export default function ContractsPage() {
       
       const res = await Api.post<any>("/contracts/generate", payload)
       setBookings((prev) => prev.map((b) => (b.id === bookingId ? { ...b, contract: res.contract } : b)))
-      if (res.contract?.pdfUrl) {
-        setActiveContractUrl(res.contract.pdfUrl)
-        toast.success("Contract generated successfully")
-      }
+      toast.success("Contract generated successfully")
     } catch (e: any) {
       const errorMessage = e?.message || "Failed to generate contract"
       setError(errorMessage)
@@ -506,6 +503,7 @@ export default function ContractsPage() {
                         </DropdownMenu>
                       ) : (
                         <div className="flex items-center gap-2">
+                          {/* Primary Action Buttons - Always Visible */}
                           <Button 
                             size="sm" 
                             variant="outline"
@@ -514,7 +512,31 @@ export default function ContractsPage() {
                             <Eye className="h-4 w-4 mr-2" />
                             View
                           </Button>
+
+                          {/* Sign Button - Show when contract is not signed */}
+                          {booking.contract.status !== "SIGNED" && (
+                            <Button 
+                              size="sm"
+                              onClick={() => setSigningId(booking.contract!.id)}
+                            >
+                              <Signature className="h-4 w-4 mr-2" />
+                              Sign
+                            </Button>
+                          )}
+
+                          {/* Send Button - Show when contract is draft */}
+                          {booking.contract.status === "DRAFT" && (
+                            <Button 
+                              size="sm"
+                              variant="outline"
+                              onClick={() => sendContract(booking.contract!.id)}
+                            >
+                              <Send className="h-4 w-4 mr-2" />
+                              Send
+                            </Button>
+                          )}
                           
+                          {/* Additional Actions Dropdown */}
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="sm">
@@ -526,20 +548,6 @@ export default function ContractsPage() {
                                 <Download className="h-4 w-4 mr-2" />
                                 Download PDF
                               </DropdownMenuItem>
-                              
-                              {booking.contract.status === "DRAFT" && (
-                                <DropdownMenuItem onClick={() => sendContract(booking.contract!.id)}>
-                                  <Send className="h-4 w-4 mr-2" />
-                                  Send to Client
-                                </DropdownMenuItem>
-                              )}
-                              
-                              {booking.contract.status === "SENT" && (
-                                <DropdownMenuItem onClick={() => setSigningId(booking.contract!.id)}>
-                                  <Signature className="h-4 w-4 mr-2" />
-                                  Sign Contract
-                                </DropdownMenuItem>
-                              )}
                               
                               <DropdownMenuSeparator />
                               
