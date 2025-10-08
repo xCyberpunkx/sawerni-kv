@@ -7,8 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Star, MapPin, Phone, Mail, Camera, Heart, ArrowLeft, MessageCircle, CheckCircle, Award } from "lucide-react"
+import { Star, MapPin, Phone, Mail, Camera, Heart, ArrowLeft, MessageCircle, Award } from "lucide-react"
 import { Api } from "@/lib/api"
+import { usePhotographerPackages, usePhotographerGallery, usePhotographerCalendar, useToggleFavorite } from "@/lib/hooks"
 import Link from "next/link"
 
 export default function PhotographerProfilePage() {
@@ -20,6 +21,11 @@ export default function PhotographerProfilePage() {
   const [reviews, setReviews] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
+  const id = params.id as string
+  const toggleFav = useToggleFavorite()
+  const { data: packages } = usePhotographerPackages(id)
+  const { data: gallery } = usePhotographerGallery(id)
+  const { data: calendar } = usePhotographerCalendar(id)
 
   useEffect(() => {
     const run = async () => {
@@ -72,7 +78,15 @@ export default function PhotographerProfilePage() {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => setIsFavorite(!isFavorite)}
+          onClick={async () => {
+            const next = !isFavorite
+            setIsFavorite(next)
+            try {
+              await toggleFav.mutateAsync({ photographerId: id, isFav: !next })
+            } catch {
+              setIsFavorite(!next)
+            }
+          }}
           className="gap-2 hover:bg-secondary transition-all duration-300"
         >
           <Heart
@@ -175,7 +189,7 @@ export default function PhotographerProfilePage() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {(photographer.portfolios?.[0]?.images || []).map((img: any, index: number) => (
+                {((gallery as any) || []).map((img: any, index: number) => (
                   <div
                     key={index}
                     className="aspect-square bg-muted rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
@@ -241,7 +255,7 @@ export default function PhotographerProfilePage() {
               <CardTitle className="text-2xl">Available Packages</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              {photographer.packages.map((pkg) => (
+              {((packages as any) || []).map((pkg: any) => (
                 <Card
                   key={pkg.id}
                   className="border-2 hover:border-primary/50 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
@@ -249,25 +263,15 @@ export default function PhotographerProfilePage() {
                   <CardContent className="p-6">
                     <div className="space-y-4">
                       <div>
-                        <h3 className="font-bold text-xl mb-2">{pkg.name}</h3>
+                        <h3 className="font-bold text-xl mb-2">{pkg.title}</h3>
                         <p className="text-sm text-muted-foreground leading-relaxed">{pkg.description}</p>
                       </div>
 
                       <div className="flex items-center justify-between">
-                        <span className="text-3xl font-bold text-primary">{pkg.price.toLocaleString()} DA</span>
-                        <Badge variant="outline" className="bg-accent/10 text-accent border-accent/20">
-                          {pkg.duration}
-                        </Badge>
+                        <span className="text-3xl font-bold text-primary">{(pkg.priceCents/100).toLocaleString()} DA</span>
                       </div>
 
-                      <div className="space-y-2">
-                        {pkg.includes.map((item, index) => (
-                          <div key={index} className="flex items-center gap-3 text-sm">
-                            <CheckCircle className="h-4 w-4 text-primary flex-shrink-0" />
-                            <span>{item}</span>
-                          </div>
-                        ))}
-                      </div>
+                      <div className="space-y-2"></div>
 
                       <Dialog>
                         <DialogTrigger asChild>
@@ -284,17 +288,25 @@ export default function PhotographerProfilePage() {
                           </DialogHeader>
                           <div className="space-y-6">
                             <div className="p-4 bg-gradient-to-r from-primary/5 to-accent/5 rounded-xl">
-                              <h4 className="font-bold text-lg">{pkg.name}</h4>
+                              <h4 className="font-bold text-lg">{pkg.title}</h4>
                               <p className="text-sm text-muted-foreground">{pkg.description}</p>
-                              <p className="text-2xl font-bold text-primary mt-2">{pkg.price.toLocaleString()} DA</p>
+                              <p className="text-2xl font-bold text-primary mt-2">{(pkg.priceCents/100).toLocaleString()} DA</p>
                             </div>
-                            <p className="text-sm text-muted-foreground">
-                              You'll be redirected to complete your booking and payment.
-                            </p>
+                            <p className="text-sm text-muted-foreground">Select date/time and continue.</p>
                             <div className="flex gap-3">
-                              <Button className="flex-1 shadow-lg hover:shadow-xl transition-all duration-300">
-                                Continue Booking
-                              </Button>
+                              <Button className="flex-1 shadow-lg hover:shadow-xl transition-all duration-300"
+                                onClick={async () => {
+                                  const start = new Date().toISOString()
+                                  const end = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString()
+                                  await Api.post("/bookings", {
+                                    photographerId: id,
+                                    packageId: selectedPackage,
+                                    startAt: start,
+                                    endAt: end,
+                                    location: { address: "Algeria", lat: 36.75, lon: 3.06 },
+                                  })
+                            }}
+                              >Continue Booking</Button>
                               <Button
                                 variant="outline"
                                 className="flex-1 border-2 hover:bg-secondary transition-all duration-300 bg-transparent"
@@ -309,6 +321,27 @@ export default function PhotographerProfilePage() {
                   </CardContent>
                 </Card>
               ))}
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-lg border-0 animate-fade-in-up animate-delay-500">
+            <CardHeader className="pb-6">
+              <CardTitle className="text-xl">Calendar</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2 text-sm">
+                {(calendar?.items || []).map((ev: any) => (
+                  <div key={`${ev.id}-${ev.startAt}`} className="flex items-center justify-between p-2 border rounded-md">
+                    <span className="font-medium">{ev.title || ev.type}</span>
+                    <span className="text-muted-foreground">
+                      {new Date(ev.startAt).toLocaleString()} → {new Date(ev.endAt).toLocaleString()}
+                    </span>
+                  </div>
+                ))}
+                {!(calendar?.items || []).length && (
+                  <div className="text-muted-foreground">No events in the selected range.</div>
+                )}
+              </div>
             </CardContent>
           </Card>
 

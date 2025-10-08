@@ -4,6 +4,7 @@ import { Space_Grotesk, DM_Sans } from "next/font/google"
 import { Toaster } from "sonner"
 import "./globals.css"
 import { I18nProvider } from "@/lib/i18n"
+import { ReactQueryProviders } from "@/lib/react-query"
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -32,8 +33,10 @@ export default function RootLayout({
     <html lang="en" className={`${spaceGrotesk.variable} ${dmSans.variable} antialiased`}>
       <body className="font-sans">
         <I18nProvider>
-          {children}
-          <Toaster position="top-right" richColors />
+          <ReactQueryProviders>
+            {children}
+            <Toaster position="top-right" richColors />
+          </ReactQueryProviders>
         </I18nProvider>
       </body>
     </html>

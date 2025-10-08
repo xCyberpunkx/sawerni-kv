@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import { PhotographerCard } from "@/components/photographer-card"
 import { PhotographerFilters, type FilterState } from "@/components/photographer-filters"
 import { Api } from "@/lib/api"
+import { useToggleFavorite } from "@/lib/hooks"
 
 export default function PhotographersPage() {
   const [filters, setFilters] = useState<FilterState>({
@@ -15,6 +16,7 @@ export default function PhotographersPage() {
     availability: "",
   })
   const [favorites, setFavorites] = useState<string[]>([])
+  const toggleFavMutation = useToggleFavorite()
   const [items, setItems] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string>("")
@@ -100,10 +102,15 @@ export default function PhotographersPage() {
     })
   }, [filters, items])
 
-  const toggleFavorite = (photographerId: string) => {
-    setFavorites((prev) =>
-      prev.includes(photographerId) ? prev.filter((id) => id !== photographerId) : [...prev, photographerId],
-    )
+  const toggleFavorite = async (photographerId: string) => {
+    const isFav = favorites.includes(photographerId)
+    setFavorites((prev) => (isFav ? prev.filter((id) => id !== photographerId) : [...prev, photographerId]))
+    try {
+      await toggleFavMutation.mutateAsync({ photographerId, isFav })
+    } catch {
+      // revert on error
+      setFavorites((prev) => (isFav ? [...prev, photographerId] : prev.filter((id) => id !== photographerId)))
+    }
   }
 
   return (
