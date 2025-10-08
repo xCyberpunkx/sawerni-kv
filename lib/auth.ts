@@ -30,16 +30,21 @@ class MockAuth {
   async login(email: string, password: string): Promise<{ success: boolean; user?: User; error?: string }> {
     try {
       const res = await Api.post<{ user: any; accessToken: string }>("/auth/login", { email, password })
-      
+
+      // Persist access token first so that the subsequent /auth/me call is authenticated
+      setAccessToken(res.accessToken)
+
+      // Fetch authoritative user profile (includes role)
+      const me = await Api.get<any>("/auth/me")
+
       // Map user with proper role handling (convert to lowercase for frontend consistency)
       const mappedUser: User = {
-        id: res.user.id,
-        email: res.user.email,
-        name: res.user.name,
-        role: (res.user.role?.toLowerCase() as User["role"]) || "client",
+        id: me.id,
+        email: me.email,
+        name: me.name,
+        role: (me.role?.toLowerCase() as User["role"]) || "client",
       }
-      
-      setAccessToken(res.accessToken)
+
       this.currentUser = mappedUser
       if (typeof window !== "undefined") {
         localStorage.setItem("sawerni_user", JSON.stringify(mappedUser))

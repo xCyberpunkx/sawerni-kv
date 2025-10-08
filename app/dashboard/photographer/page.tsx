@@ -307,10 +307,10 @@ export default function PhotographerDashboard() {
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="lg" className="gap-2">
+              {/* <Button variant="outline" size="lg" className="gap-2">
                 <Settings className="h-5 w-5" />
                 Settings
-              </Button>
+              </Button> */}
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem>
