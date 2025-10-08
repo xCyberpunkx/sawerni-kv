@@ -6,6 +6,8 @@ import { Api } from "@/lib/api"
 import { useToggleFavorite } from "@/lib/hooks"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export default function PhotographersPage() {
   const [favorites, setFavorites] = useState<string[]>([])
@@ -15,14 +17,17 @@ export default function PhotographersPage() {
   const [error, setError] = useState<string>("")
   const [states, setStates] = useState<Array<{ id: string; name: string }>>([])
   const [selectedStateId, setSelectedStateId] = useState<string>("")
+  const [search, setSearch] = useState("")
 
-  const fetchPhotographers = async (stateId?: string) => {
+  const fetchPhotographers = async (stateId?: string, q?: string) => {
     setLoading(true)
     setError("")
     try {
       const endpoint = stateId ? `/photographers/state/${stateId}` : `/photographers`
-      console.log(endpoint)
-      const data = await Api.get<{ items: any[]; meta: any }>(endpoint)
+      const qs = new URLSearchParams()
+      if (q) qs.set("q", q)
+      const url = qs.toString() ? `${endpoint}?${qs.toString()}` : endpoint
+      const data = await Api.get<{ items: any[]; meta: any }>(url)
       setItems(data.items || [])
     } catch (e: any) {
       setError(e?.message || "Failed to load photographers")
@@ -52,12 +57,12 @@ export default function PhotographersPage() {
 
   useEffect(() => {
     if (selectedStateId) {
-      fetchPhotographers(selectedStateId)
+      fetchPhotographers(selectedStateId, search)
     } else {
-      fetchPhotographers()
+      fetchPhotographers(undefined, search)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedStateId])
+  }, [selectedStateId, search])
 
   const mappedPhotographers = useMemo(() => {
     return items.map((p: any) => ({
@@ -96,24 +101,30 @@ export default function PhotographersPage() {
       </div>
 
       {/* State Filter */}
-      <div className="grid gap-2 max-w-sm">
-        <Label htmlFor="state-select">Filter by state</Label>
-        <Select
-          value={selectedStateId}
-          onValueChange={(value) => setSelectedStateId(value === "all" ? "" : value)}
-        >
-          <SelectTrigger id="state-select">
-            <SelectValue placeholder="All states" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All states</SelectItem>
-            {states.map((s) => (
-              <SelectItem key={s.id} value={s.id}>
-                {s.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <div className="grid gap-4 md:grid-cols-2 max-w-3xl">
+        <div className="grid gap-2">
+          <Label htmlFor="state-select">Filter by state</Label>
+          <Select
+            value={selectedStateId}
+            onValueChange={(value) => setSelectedStateId(value === "all" ? "" : value)}
+          >
+            <SelectTrigger id="state-select">
+              <SelectValue placeholder="All states" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All states</SelectItem>
+              {states.map((s) => (
+                <SelectItem key={s.id} value={s.id}>
+                  {s.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="search">Search</Label>
+          <Input id="search" placeholder="Search by name or tag" value={search} onChange={(e) => setSearch(e.target.value)} />
+        </div>
       </div>
 
       {error && (
@@ -122,7 +133,26 @@ export default function PhotographersPage() {
 
       {/* Photographers Grid */}
       {loading ? (
-        <div>Loading...</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="border rounded-xl p-6">
+              <div className="flex items-center gap-4 mb-4">
+                <Skeleton className="h-16 w-16 rounded-full" />
+                <div className="flex-1 min-w-0 space-y-2">
+                  <Skeleton className="h-5 w-40" />
+                  <Skeleton className="h-4 w-24" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-3/4" />
+              </div>
+              <div className="mt-4">
+                <Skeleton className="h-9 w-full" />
+              </div>
+            </div>
+          ))}
+        </div>
       ) : mappedPhotographers.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {mappedPhotographers.map((photographer) => (

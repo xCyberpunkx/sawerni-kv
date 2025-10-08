@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Bell } from "lucide-react"
 import { getAccessToken } from "@/lib/api"
 import { connectSocket } from "@/lib/socket"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export default function NotificationsPage() {
   const { data, isLoading, error, refetch } = useNotifications(1, 50)
@@ -31,10 +32,38 @@ export default function NotificationsPage() {
         </div>
       </div>
 
-      {isLoading && <div>Loading...</div>}
+      {isLoading && (
+        <div className="space-y-3">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i} className="overflow-hidden">
+              <CardHeader className="pb-2">
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-4 w-4 rounded" />
+                  <Skeleton className="h-4 w-32" />
+                </div>
+              </CardHeader>
+              <CardContent className="flex items-center justify-between">
+                <Skeleton className="h-4 w-40" />
+                <Skeleton className="h-8 w-24" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
       {error && <div className="text-red-600 text-sm">{(error as any)?.message || "Failed to load"}</div>}
 
       <div className="space-y-3">
+        {!isLoading && (data?.items || []).length === 0 && !error && (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <div className="max-w-md mx-auto space-y-2">
+                <Bell className="h-10 w-10 mx-auto text-muted-foreground opacity-60" />
+                <h3 className="text-lg font-semibold">No notifications</h3>
+                <p className="text-sm text-muted-foreground">You're all caught up for now.</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
         {(data?.items || []).map((n) => (
           <Card key={n.id} className="overflow-hidden">
             <CardHeader className="pb-2">
