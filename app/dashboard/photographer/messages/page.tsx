@@ -11,7 +11,7 @@ import { ChatInterface } from "@/components/chat-interface"
 import { Api } from "@/lib/api"
 import { mockAuth } from "@/lib/auth"
 import { Search, MessageCircle, Users, Filter, Plus, RefreshCw, Phone, Video, MoreVertical } from "lucide-react"
-import { connectSocket } from "@/lib/socket"
+import { connectSocket, disconnectSocket } from "@/lib/socket"
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -62,15 +62,50 @@ export default function PhotographerMessagesPage() {
   const [listError, setListError] = useState("")
   const [threadError, setThreadError] = useState("")
   const [messagesLoading, setMessagesLoading] = useState(false)
+  const [loadingMoreMessages, setLoadingMoreMessages] = useState(false)
+  const [hasMoreMessages, setHasMoreMessages] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [retryCount, setRetryCount] = useState(0)
   const [filter, setFilter] = useState<FilterType>("all")
   const [sort, setSort] = useState<SortType>("recent")
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set())
+  const [messageCache, setMessageCache] = useState<Map<string, { messages: any[], lastFetched: number }>>(new Map())
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const messagesStartRef = useRef<HTMLDivElement>(null)
 
   // Initialize current user
   useEffect(() => {
     setCurrentUser(mockAuth.getCurrentUser())
+  }, [])
+
+  // Utility function to deduplicate messages
+  const deduplicateMessages = useCallback((messages: any[]) => {
+    const seen = new Set()
+    return messages.filter(message => {
+      if (seen.has(message.id)) {
+        return false
+      }
+      seen.add(message.id)
+      return true
+    })
+  }, [])
+
+  // Check if messages are cached and still fresh (5 minutes)
+  const getCachedMessages = useCallback((conversationId: string) => {
+    const cached = messageCache.get(conversationId)
+    if (cached && Date.now() - cached.lastFetched < 5 * 60 * 1000) {
+      return cached.messages
+    }
+    return null
+  }, [messageCache])
+
+  // Cache messages
+  const cacheMessages = useCallback((conversationId: string, messages: any[]) => {
+    setMessageCache(prev => new Map(prev).set(conversationId, {
+      messages,
+      lastFetched: Date.now()
+    }))
   }, [])
 
   const loadConversations = useCallback(async (showRefresh = false) => {
@@ -132,7 +167,7 @@ export default function PhotographerMessagesPage() {
           }, 100)
         }
       },
-      onUserOnline: (userId) => {
+      onUserOnline: (userId: string) => {
         setOnlineUsers(prev => new Set(prev).add(userId))
         setConversations(prev => 
           prev.map(conv => 
@@ -142,7 +177,7 @@ export default function PhotographerMessagesPage() {
           )
         )
       },
-      onUserOffline: (userId) => {
+      onUserOffline: (userId: string) => {
         setOnlineUsers(prev => {
           const newSet = new Set(prev)
           newSet.delete(userId)
@@ -156,13 +191,13 @@ export default function PhotographerMessagesPage() {
           )
         )
       },
-      onConversationCreated: (newConversation) => {
+      onConversationCreated: (newConversation: Conversation) => {
         setConversations(prev => [newConversation, ...prev])
       }
     })
 
     return () => {
-      // socket?.disconnect()
+      disconnectSocket()
     }
   }, [selectedChatId])
 
@@ -204,17 +239,47 @@ export default function PhotographerMessagesPage() {
     const loadMessages = async () => {
       if (!selectedChatId) return
       
-      setMessagesLoading(true)
-      setThreadError("")
-      try {
-        const res = await Api.get<{ items: any[] }>(`/conversations/${selectedChatId}/messages?page=1&perPage=100`)
+      // Check cache first
+      const cachedMessages = getCachedMessages(selectedChatId)
+      if (cachedMessages) {
         setConversations((prev) => 
           prev.map((c) => 
             c.id === selectedChatId 
-              ? { ...c, messages: res.items || [], unreadCount: 0 } 
+              ? { ...c, messages: cachedMessages, unreadCount: 0 } 
               : c
           )
         )
+        setHasMoreMessages(true) // Assume there might be more
+        setCurrentPage(1)
+        
+        // Scroll to bottom after messages load
+        setTimeout(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+        }, 100)
+        return
+      }
+      
+      setMessagesLoading(true)
+      setThreadError("")
+      setCurrentPage(1)
+      setHasMoreMessages(true)
+      try {
+        const res = await Api.get<{ items: any[]; meta?: { total: number; pages: number } }>(`/conversations/${selectedChatId}/messages?page=1&perPage=100`)
+        const messages = deduplicateMessages(res.items || [])
+        const totalPages = res.meta?.pages || 1
+        
+        // Cache the messages
+        cacheMessages(selectedChatId, messages)
+        
+        setConversations((prev) => 
+          prev.map((c) => 
+            c.id === selectedChatId 
+              ? { ...c, messages, unreadCount: 0 } 
+              : c
+          )
+        )
+        
+        setHasMoreMessages(totalPages > 1)
         await Api.patch(`/conversations/${selectedChatId}/read`)
         
         // Scroll to bottom after messages load
@@ -224,14 +289,108 @@ export default function PhotographerMessagesPage() {
       } catch (e: any) {
         const errorMessage = e?.message || "Failed to load messages"
         setThreadError(errorMessage)
-        toast.error(errorMessage)
+        setRetryCount(prev => prev + 1)
+        
+        // Show different error messages based on error type
+        if (e?.status === 401) {
+          toast.error("Session expired. Please refresh the page.")
+        } else if (e?.status === 403) {
+          toast.error("You don't have permission to view this conversation.")
+        } else if (e?.status === 404) {
+          toast.error("Conversation not found.")
+        } else if (e?.status >= 500) {
+          toast.error("Server error. Please try again later.")
+        } else {
+          toast.error(errorMessage)
+        }
       } finally {
         setMessagesLoading(false)
       }
     }
     
     loadMessages()
-  }, [selectedChatId])
+  }, [selectedChatId, getCachedMessages, deduplicateMessages, cacheMessages])
+
+  // Load more messages function
+  const loadMoreMessages = useCallback(async () => {
+    if (!selectedChatId || loadingMoreMessages || !hasMoreMessages) return
+    
+    setLoadingMoreMessages(true)
+    try {
+      const nextPage = currentPage + 1
+      const res = await Api.get<{ items: any[]; meta?: { total: number; pages: number } }>(`/conversations/${selectedChatId}/messages?page=${nextPage}&perPage=100`)
+      const newMessages = res.items || []
+      const totalPages = res.meta?.pages || 1
+      
+      if (newMessages.length > 0) {
+        const currentMessages = conversations.find(c => c.id === selectedChatId)?.messages || []
+        const allMessages = deduplicateMessages([...newMessages, ...currentMessages])
+        
+        setConversations((prev) => 
+          prev.map((c) => 
+            c.id === selectedChatId 
+              ? { ...c, messages: allMessages } 
+              : c
+          )
+        )
+        
+        // Update cache with all messages
+        cacheMessages(selectedChatId, allMessages)
+        
+        setCurrentPage(nextPage)
+        setHasMoreMessages(nextPage < totalPages)
+      } else {
+        setHasMoreMessages(false)
+      }
+    } catch (e: any) {
+      const errorMessage = e?.message || "Failed to load more messages"
+      toast.error(errorMessage)
+    } finally {
+      setLoadingMoreMessages(false)
+    }
+  }, [selectedChatId, currentPage, loadingMoreMessages, hasMoreMessages, conversations, deduplicateMessages, cacheMessages])
+
+  // Retry loading messages
+  const retryLoadMessages = useCallback(async () => {
+    if (!selectedChatId) return
+    setThreadError("")
+    setRetryCount(0)
+    
+    setMessagesLoading(true)
+    try {
+      const res = await Api.get<{ items: any[]; meta?: { total: number; pages: number } }>(`/conversations/${selectedChatId}/messages?page=1&perPage=100`)
+      const messages = deduplicateMessages(res.items || [])
+      const totalPages = res.meta?.pages || 1
+      
+      // Cache the messages
+      cacheMessages(selectedChatId, messages)
+      
+      setConversations((prev) => 
+        prev.map((c) => 
+          c.id === selectedChatId 
+            ? { ...c, messages, unreadCount: 0 } 
+            : c
+        )
+      )
+      
+      setHasMoreMessages(totalPages > 1)
+      setCurrentPage(1)
+      await Api.patch(`/conversations/${selectedChatId}/read`)
+      
+      // Scroll to bottom after messages load
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+      }, 100)
+      
+      toast.success("Messages loaded successfully")
+    } catch (e: any) {
+      const errorMessage = e?.message || "Failed to load messages"
+      setThreadError(errorMessage)
+      toast.error(errorMessage)
+    } finally {
+      setMessagesLoading(false)
+    }
+  }, [selectedChatId, deduplicateMessages, cacheMessages])
 
   const totalUnreadCount = conversations.reduce((sum, conv) => sum + conv.unreadCount, 0)
 
@@ -498,12 +657,27 @@ export default function PhotographerMessagesPage() {
                     <div className="flex items-center justify-center h-full">
                       <div className="text-center">
                         <div className="text-sm text-red-600 mb-4">{threadError}</div>
-                        <Button 
-                          onClick={() => window.location.reload()} 
-                          variant="outline"
-                        >
-                          Reload Messages
-                        </Button>
+                        <div className="space-y-2">
+                          <Button 
+                            onClick={retryLoadMessages} 
+                            variant="outline"
+                            disabled={messagesLoading}
+                          >
+                            {messagesLoading ? (
+                              <>
+                                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                                Retrying...
+                              </>
+                            ) : (
+                              "Retry Loading Messages"
+                            )}
+                          </Button>
+                          {retryCount > 0 && (
+                            <p className="text-xs text-muted-foreground">
+                              Retry attempt: {retryCount}
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ) : (
@@ -511,6 +685,9 @@ export default function PhotographerMessagesPage() {
                       conversation={selectedConversation}
                       currentUserId={currentUser.id}
                       currentUserRole={currentUserRole}
+                      onLoadMoreMessages={loadMoreMessages}
+                      hasMoreMessages={hasMoreMessages}
+                      loadingMoreMessages={loadingMoreMessages}
                     />
                   )}
                   <div ref={messagesEndRef} />

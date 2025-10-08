@@ -26,10 +26,10 @@ const navigation = [
   { name: "Dashboard", href: "/dashboard/photographer", icon: LayoutDashboard },
   { name: "Packages", href: "/dashboard/photographer/packages", icon: Package },
   { name: "Portfolio", href: "/dashboard/photographer/portfolio", icon: Camera },
-  { name: "Bookings", href: "/dashboard/photographer/bookings", icon: Calendar, badge: 2 },
+  { name: "Bookings", href: "/dashboard/photographer/bookings", icon: Calendar, },
   { name: "Calendar", href: "/dashboard/photographer/calendar", icon: Calendar },
   { name: "Contracts", href: "/dashboard/photographer/contracts", icon: X},
-  { name: "Messages", href: "/dashboard/photographer/messages", icon: MessageCircle, badge: 5 },
+  { name: "Messages", href: "/dashboard/photographer/messages", icon: MessageCircle, },
   { name: "Reviews", href: "/dashboard/photographer/reviews", icon: Star },
   { name: "Profile", href: "/dashboard/photographer/profile", icon: User },
 ]

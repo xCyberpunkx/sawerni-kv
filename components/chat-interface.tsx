@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Send, Check, X, DollarSign, ImageIcon, Paperclip } from "lucide-react"
+import { Send, Check, X, DollarSign, ImageIcon, Paperclip, RefreshCw } from "lucide-react"
 interface ConversationMessage {
   id: string
   senderId: string
@@ -25,9 +25,19 @@ interface ChatInterfaceProps {
   conversation: ConversationModel
   currentUserId: string
   currentUserRole: "client" | "photographer"
+  onLoadMoreMessages?: () => void
+  hasMoreMessages?: boolean
+  loadingMoreMessages?: boolean
 }
 
-export function ChatInterface({ conversation, currentUserId, currentUserRole }: ChatInterfaceProps) {
+export function ChatInterface({ 
+  conversation, 
+  currentUserId, 
+  currentUserRole, 
+  onLoadMoreMessages, 
+  hasMoreMessages, 
+  loadingMoreMessages 
+}: ChatInterfaceProps) {
   const [newMessage, setNewMessage] = useState("")
   const [showPriceProposal, setShowPriceProposal] = useState(false)
   const [proposalAmount, setProposalAmount] = useState("")
@@ -111,6 +121,28 @@ export function ChatInterface({ conversation, currentUserId, currentUserRole }: 
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {/* Load More Messages Button */}
+        {hasMoreMessages && onLoadMoreMessages && (
+          <div className="flex justify-center py-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onLoadMoreMessages}
+              disabled={loadingMoreMessages}
+              className="text-sm"
+            >
+              {loadingMoreMessages ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Loading...
+                </>
+              ) : (
+                "Load older messages"
+              )}
+            </Button>
+          </div>
+        )}
+        
         {(conversation.messages || []).map((message) => {
           const isCurrentUser = message.senderId === currentUserId
 
