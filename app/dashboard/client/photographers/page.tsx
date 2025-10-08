@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react"
 import { PhotographerCard } from "@/components/photographer-card"
 import { Api } from "@/lib/api"
 import { useToggleFavorite } from "@/lib/hooks"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 export default function PhotographersPage() {
   const [favorites, setFavorites] = useState<string[]>([])
@@ -11,12 +13,16 @@ export default function PhotographersPage() {
   const [items, setItems] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string>("")
+  const [states, setStates] = useState<Array<{ id: string; name: string }>>([])
+  const [selectedStateId, setSelectedStateId] = useState<string>("")
 
-  const fetchPhotographers = async () => {
+  const fetchPhotographers = async (stateId?: string) => {
     setLoading(true)
     setError("")
     try {
-      const data = await Api.get<{ items: any[]; meta: any }>(`/photographers`)
+      const endpoint = stateId ? `/photographers/state/${stateId}` : `/photographers`
+      console.log(endpoint)
+      const data = await Api.get<{ items: any[]; meta: any }>(endpoint)
       setItems(data.items || [])
     } catch (e: any) {
       setError(e?.message || "Failed to load photographers")
@@ -29,6 +35,29 @@ export default function PhotographersPage() {
     fetchPhotographers()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  useEffect(() => {
+    const fetchStates = async () => {
+      try {
+        const data = await Api.get<{ items: Array<{ id: string; name: string; code?: string }>; meta?: any }>(
+          `/states?page=1&perPage=100`,
+        )
+        setStates((data.items || []).map((s) => ({ id: s.id, name: s.name })))
+      } catch (e) {
+        // Non-fatal: keep empty list
+      }
+    }
+    fetchStates()
+  }, [])
+
+  useEffect(() => {
+    if (selectedStateId) {
+      fetchPhotographers(selectedStateId)
+    } else {
+      fetchPhotographers()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedStateId])
 
   const mappedPhotographers = useMemo(() => {
     return items.map((p: any) => ({
@@ -66,7 +95,26 @@ export default function PhotographersPage() {
         <p className="text-muted-foreground">Discover the best photographers in Algeria</p>
       </div>
 
-      {/* Filters removed */}
+      {/* State Filter */}
+      <div className="grid gap-2 max-w-sm">
+        <Label htmlFor="state-select">Filter by state</Label>
+        <Select
+          value={selectedStateId}
+          onValueChange={(value) => setSelectedStateId(value === "all" ? "" : value)}
+        >
+          <SelectTrigger id="state-select">
+            <SelectValue placeholder="All states" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All states</SelectItem>
+            {states.map((s) => (
+              <SelectItem key={s.id} value={s.id}>
+                {s.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
       {error && (
         <div className="text-sm text-red-600">{error}</div>

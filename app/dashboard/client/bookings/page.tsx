@@ -5,7 +5,7 @@ import { useBookings } from "@/lib/hooks"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, ArrowRight } from "lucide-react"
+import { Calendar, ArrowRight, MapPin, Clock, DollarSign, StickyNote } from "lucide-react"
 
 const stateColor: Record<string, string> = {
   requested: "bg-yellow-100 text-yellow-800",
@@ -32,8 +32,20 @@ export default function BookingsPage() {
       {error && <div className="text-red-600 text-sm">{(error as any)?.message || "Failed to load"}</div>}
 
       <div className="space-y-4">
+        {(data?.items || []).length === 0 && !isLoading && !error && (
+          <Card>
+            <CardContent className="py-8 text-center text-muted-foreground">
+              No bookings found.
+            </CardContent>
+          </Card>
+        )}
+
         {(data?.items || []).map((bk) => {
-          const dateStr = new Date(bk.startAt).toLocaleString()
+          const start = new Date(bk.startAt)
+          const end = bk.endAt ? new Date(bk.endAt) : null
+          const dateStr = start.toLocaleString()
+          const durationHours = end ? Math.max(0, (end.getTime() - start.getTime()) / (1000 * 60 * 60)) : null
+          const priceDa = typeof bk.priceCents === "number" ? Math.round(bk.priceCents / 100) : null
           const color = stateColor[bk.state] || "bg-muted text-foreground"
           return (
             <Card key={bk.id} className="overflow-hidden">
@@ -43,14 +55,36 @@ export default function BookingsPage() {
                   {bk.photographer?.user?.name || "Photographer"}
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className="text-sm text-muted-foreground">
-                    {dateStr}
-                  </div>
+                  <div className="text-sm text-muted-foreground">{dateStr}</div>
                   <Badge className={color}>{bk.state.replaceAll("_", " ")}</Badge>
                 </div>
-                <div className="mt-4">
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Clock className="h-4 w-4" />
+                    <span>
+                      {durationHours != null ? `${durationHours.toFixed(1)}h` : "Time TBD"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <MapPin className="h-4 w-4" />
+                    <span>{bk.location?.address || "Location TBD"}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <DollarSign className="h-4 w-4" />
+                    <span>{priceDa != null ? `${priceDa.toLocaleString()} DA` : "Price TBD"}</span>
+                  </div>
+                  {bk.notes && (
+                    <div className="flex items-center gap-2 text-muted-foreground md:col-span-1 md:justify-self-start">
+                      <StickyNote className="h-4 w-4" />
+                      <span className="truncate" title={bk.notes}>{bk.notes}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="pt-2">
                   <Link href={`/dashboard/client/bookings/${bk.id}`}>
                     <Button variant="outline" className="gap-2">
                       View details
