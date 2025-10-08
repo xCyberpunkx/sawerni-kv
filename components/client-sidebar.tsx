@@ -17,7 +17,7 @@ const navigation = [
   { name: "Bookings", href: "/dashboard/client/bookings", icon: Calendar },
   { name: "Favorites", href: "/dashboard/client/favorites", icon: Heart },
   { name: "Contracts", href: "/dashboard/client/contracts", icon: FileText },
-  { name: "Reviews", href: "/dashboard/client/ratings", icon: Star },
+  { name: "Reviews", href: "/dashboard/client/reviews", icon: Star },
 ]
 
 interface ClientSidebarProps {
@@ -50,15 +50,15 @@ export function ClientSidebar({ className }: ClientSidebarProps) {
           <div className="relative">
             <Avatar className="h-14 w-14 ring-2 ring-primary/20">
               <AvatarImage src={user?.avatar || "/placeholder.svg"} />
-              {/* <AvatarFallback className="bg-primary text-primary-foreground text-lg font-semibold">
+              <AvatarFallback className="bg-primary text-primary-foreground text-lg font-semibold">
                 {user?.name?.charAt(0) || "U"}
-              </AvatarFallback> */}
+              </AvatarFallback>
             </Avatar>
             <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-primary rounded-full border-2 border-background"></div>
           </div>
           <div className="flex-1 min-w-0">
-            {/* <p className="text-lg font-semibold truncate">{user?.name}</p> */}
-            {/* <p className="text-sm text-muted-foreground truncate">{user?.state}</p> */}
+            <p className="text-lg font-semibold truncate">{user?.name}</p>
+            <p className="text-sm text-muted-foreground truncate">{user?.role}</p>
             <Badge variant="secondary" className="mt-1 text-xs bg-accent/10 text-accent">
               Premium Client
             </Badge>
