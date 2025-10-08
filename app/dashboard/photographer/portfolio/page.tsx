@@ -36,6 +36,7 @@ export default function PortfolioPage() {
     if (!photographerId) return
     setLoading(true)
     const items = await Api.get<any[]>(`/gallery/photographer/${photographerId}`)
+    console.log(items)
     setPortfolio((prev) => [...prev, ...(items || []).map((it) => ({ id: it.id, url: it.url }))])
     setPage((p) => p + 1)
     setLoading(false)
