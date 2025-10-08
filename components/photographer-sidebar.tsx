@@ -28,6 +28,7 @@ const navigation = [
   { name: "Portfolio", href: "/dashboard/photographer/portfolio", icon: Camera },
   { name: "Bookings", href: "/dashboard/photographer/bookings", icon: Calendar, badge: 2 },
   { name: "Calendar", href: "/dashboard/photographer/calendar", icon: Calendar },
+  { name: "Contracts", href: "/dashboard/photographer/contracts", icon: X},
   { name: "Messages", href: "/dashboard/photographer/messages", icon: MessageCircle, badge: 5 },
   { name: "Reviews", href: "/dashboard/photographer/reviews", icon: Star },
   { name: "Profile", href: "/dashboard/photographer/profile", icon: User },
@@ -80,9 +81,10 @@ export function PhotographerSidebar({ className }: PhotographerSidebarProps) {
               </Badge>
             </div>
           </div>
+          <Link href={"/dashboard/photographer/notifications"}>
           <Button variant="ghost" size="sm" className="hover:bg-primary/10">
             <Bell className="h-4 w-4" />
-          </Button>
+          </Button></Link>
         </div>
       </div>
 
