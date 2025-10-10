@@ -255,11 +255,11 @@ export default function SignupPage() {
                 <div className="absolute -left-16 top-1/2 w-16 h-0.5 bg-gradient-to-r from-transparent via-blue-400 to-blue-400 hidden md:block transition-all duration-300 group-hover:via-blue-300 group-hover:to-blue-300"></div>
                 <div className="absolute -left-20 top-1/2 w-3 h-3 bg-blue-400 rounded-full hidden md:block transform -translate-y-1/2 shadow-lg shadow-blue-400/50 group-hover:scale-125 transition-transform duration-300"></div>
                 <Label htmlFor="state" className="text-blue-300 font-semibold text-sm">
-                  Activity
+                  State
                 </Label>
                 <Select value={formData.state} onValueChange={(value) => handleInputChange("state", value)}>
                   <SelectTrigger className="bg-white border-0 text-[#2F3D7F] rounded-full pl-4 pr-4 h-14 shadow-lg transition-all duration-300 hover:shadow-xl focus:shadow-2xl focus:scale-[1.02]">
-                    <SelectValue placeholder="Wedding" />
+                    <SelectValue placeholder="Alger" />
                   </SelectTrigger>
                   <SelectContent className="bg-white border-slate-200">
                     {algerianStates.map((state) => (
