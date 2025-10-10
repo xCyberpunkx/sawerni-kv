@@ -4,79 +4,77 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Updated to premium black, white, and blue color palette */
-  --background: #ffffff;
-  --foreground: #000000;
-  --card: #f0f0f0;
-  --card-foreground: #000000;
-  --popover: #ffffff;
-  --popover-foreground: #000000;
-  --primary: #000000;
+  /* Updated to blue/purple color palette, removed yellow */
+  --background: #0f172a; /* Dark slate background */
+  --foreground: #ffffff; /* White text */
+  --card: #1e293b; /* Slate card background */
+  --card-foreground: #ffffff;
+  --popover: #1e293b;
+  --popover-foreground: #ffffff;
+  --primary: #3b82f6; /* Blue primary */
   --primary-foreground: #ffffff;
-  --secondary: #007bff;
+  --secondary: #6366f1; /* Indigo secondary */
   --secondary-foreground: #ffffff;
-  --muted: #f0f0f0;
-  --muted-foreground: #000000;
-  --accent: #007bff;
+  --muted: #334155;
+  --muted-foreground: #cbd5e1;
+  --accent: #8b5cf6; /* Purple accent */
   --accent-foreground: #ffffff;
-  --destructive: #ff0000;
+  --destructive: #ef4444;
   --destructive-foreground: #ffffff;
-  --border: #e0e0e0;
-  --input: #ffffff;
-  --ring: #007bff;
-  --chart-1: #007bff;
-  --chart-2: #000000;
-  --chart-3: #f0f0f0;
-  --chart-4: #ffffff;
-  --chart-5: #000000;
-  --radius: 0.5rem;
-  --sidebar: #ffffff;
-  --sidebar-foreground: #000000;
-  --sidebar-primary: #f0f0f0;
-  --sidebar-primary-foreground: #000000;
-  --sidebar-accent: #007bff;
+  --border: #334155;
+  --input: #1e293b;
+  --ring: #3b82f6;
+  --chart-1: #3b82f6;
+  --chart-2: #6366f1;
+  --chart-3: #8b5cf6;
+  --chart-4: #a855f7;
+  --chart-5: #c084fc;
+  --radius: 0.75rem;
+  --sidebar: #0f172a;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #1e293b;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #3b82f6;
   --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #e0e0e0;
-  --sidebar-ring: #007bff;
+  --sidebar-border: #334155;
+  --sidebar-ring: #3b82f6;
 }
 
 .dark {
-  /* Updated dark mode with black, white, and blue theme */
-  --background: #000000;
+  --background: #020617;
   --foreground: #ffffff;
-  --card: #1a1a1a;
+  --card: #0f172a;
   --card-foreground: #ffffff;
-  --popover: #000000;
+  --popover: #0f172a;
   --popover-foreground: #ffffff;
-  --primary: #ffffff;
-  --primary-foreground: #000000;
-  --secondary: #007bff;
+  --primary: #3b82f6;
+  --primary-foreground: #ffffff;
+  --secondary: #6366f1;
   --secondary-foreground: #ffffff;
-  --muted: #1a1a1a;
-  --muted-foreground: #ffffff;
-  --accent: #007bff;
+  --muted: #1e293b;
+  --muted-foreground: #cbd5e1;
+  --accent: #8b5cf6;
   --accent-foreground: #ffffff;
-  --destructive: #ff0000;
+  --destructive: #ef4444;
   --destructive-foreground: #ffffff;
-  --border: #333333;
-  --input: #1a1a1a;
-  --ring: #007bff;
-  --chart-1: #007bff;
-  --chart-2: #ffffff;
-  --chart-3: #333333;
-  --chart-4: #1a1a1a;
-  --chart-5: #666666;
-  --sidebar: #000000;
+  --border: #1e293b;
+  --input: #0f172a;
+  --ring: #3b82f6;
+  --chart-1: #3b82f6;
+  --chart-2: #6366f1;
+  --chart-3: #8b5cf6;
+  --chart-4: #a855f7;
+  --chart-5: #c084fc;
+  --sidebar: #020617;
   --sidebar-foreground: #ffffff;
-  --sidebar-primary: #1a1a1a;
+  --sidebar-primary: #0f172a;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #007bff;
+  --sidebar-accent: #3b82f6;
   --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #333333;
-  --sidebar-ring: #007bff;
+  --sidebar-border: #1e293b;
+  --sidebar-ring: #3b82f6;
 }
 
-/* Updated theme tokens to match new black, white, blue palette */
 @theme inline {
   --font-sans: var(--font-dm-sans);
   --font-mono: var(--font-geist-mono);
@@ -127,7 +125,7 @@
   }
 }
 
-/* Added premium animations for sophisticated interactions */
+/* Updated theme tokens to match new navy/yellow palette */
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -313,7 +311,58 @@ html {
 }
 
 .skeleton {
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e4 50%, #f0f0f0 75%);
   background-size: 200px 100%;
   animation: skeleton 1.5s infinite;
+}
+
+/* Added yellow underline decoration for section headings */
+.heading-underline {
+  position: relative;
+  display: inline-block;
+}
+
+.heading-underline::after {
+  content: "";
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+  border-radius: 2px;
+}
+
+/* Added pulse animation for map pins */
+@keyframes pulse-pin {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+}
+
+.animate-pulse-pin {
+  animation: pulse-pin 2s ease-in-out infinite;
+}
+
+/* Added heart pop animation for favorites */
+@keyframes heart-pop {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.3);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-heart-pop {
+  animation: heart-pop 0.3s ease-out;
 }
