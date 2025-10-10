@@ -8,11 +8,10 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Camera, Mail, Lock, User, MapPin, Briefcase, Eye, EyeOff, CheckCircle } from "lucide-react"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { CheckCircle } from "lucide-react"
 import { mockAuth } from "@/lib/auth"
 
 const algerianStates = [
@@ -29,19 +28,19 @@ const algerianStates = [
   "Tizi Ouzou",
   "Ouargla",
   "Bechar",
-  "M'sila",
+  "M'Sila",
   "Chlef",
 ]
 
 const serviceTypes = [
-  "Wedding photography",
-  "Event photography",
-  "Portrait photography",
-  "Kids photography",
-  "Commercial photography",
-  "Nature photography",
+  "Wedding Photography",
+  "Event Photography",
+  "Portrait Photography",
+  "Children Photography",
+  "Commercial Photography",
+  "Nature Photography",
   "Photojournalism",
-  "Product photography",
+  "Product Photography",
 ]
 
 export default function SignupPage() {
@@ -49,6 +48,7 @@ export default function SignupPage() {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
+    phone: "",
     password: "",
     confirmPassword: "",
     state: "",
@@ -70,7 +70,6 @@ export default function SignupPage() {
     setLoading(true)
     setError("")
 
-    // Validation
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match")
       setLoading(false)
@@ -78,7 +77,7 @@ export default function SignupPage() {
     }
 
     if (formData.password.length < 6) {
-      setError("Password must be at least 6 characters")
+      setError("Password must be at least 6 characters long")
       setLoading(false)
       return
     }
@@ -110,40 +109,74 @@ export default function SignupPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md shadow-lg border-0">
-          <CardContent className="p-8 text-center">
-            <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold mb-2">Account created successfully!</h2>
-            <p className="text-muted-foreground mb-4">A confirmation email has been sent to you</p>
-            <p className="text-sm text-muted-foreground">You will be redirected to the login page...</p>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+        <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl p-12 shadow-2xl border border-slate-700 text-center max-w-md animate-scale-in">
+          <CheckCircle className="h-20 w-20 text-green-500 mx-auto mb-6 animate-bounce" />
+          <h2 className="text-3xl font-bold mb-4 text-white">Account Created Successfully!</h2>
+          <p className="text-white/70 mb-4">A confirmation email has been sent to your inbox</p>
+          <p className="text-sm text-white/50">Redirecting to login page...</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 mb-4">
-            <Camera className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold text-primary">Sawerni</span>
-          </Link>
-          <h1 className="text-2xl font-bold mb-2">Join Sawerni</h1>
-          <p className="text-muted-foreground">Create your account and enjoy our services</p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 flex items-center justify-center p-4 relative overflow-hidden">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 left-0 w-96 h-96 bg-blue-400/20 rounded-full blur-3xl animate-pulse" />
+        <div
+          className="absolute bottom-0 right-0 w-96 h-96 bg-purple-400/20 rounded-full blur-3xl animate-pulse"
+          style={{ animationDelay: "1s" }}
+        />
+      </div>
+
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none" viewBox="0 0 1440 900">
+          <defs>
+            <linearGradient id="curveGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#ffffff" stopOpacity="1" />
+              <stop offset="100%" stopColor="#f8fafc" stopOpacity="1" />
+            </linearGradient>
+          </defs>
+          <path d="M0 0 L600 0 Q650 450 600 900 L0 900 Z" fill="url(#curveGradient)" className="drop-shadow-2xl" />
+          <path d="M580 0 L620 0 Q670 450 620 900 L580 900 Q630 450 580 0 Z" fill="#3b82f6" opacity="0.15" />
+        </svg>
+      </div>
+
+      <div className="w-full max-w-7xl grid md:grid-cols-2 gap-8 items-center relative z-10">
+        <div className="hidden md:flex flex-col items-center justify-center space-y-8 px-12 animate-fade-in-up">
+          <div className="w-32 h-32 bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 rounded-3xl flex items-center justify-center shadow-2xl transform hover:scale-105 transition-transform duration-300 hover:rotate-3">
+            <svg className="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2.5}
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
+            </svg>
+          </div>
+          <div className="text-center">
+            <h1 className="text-7xl font-bold mb-4 font-space-grotesk text-[#2F3D7F] drop-shadow-sm">Sign in</h1>
+            <p className="text-lg text-[#2F3D7F]/70">
+              Already have an account?{" "}
+              <Link
+                href="/login"
+                className="text-blue-600 hover:text-blue-700 hover:underline font-semibold transition-colors"
+              >
+                Log in
+              </Link>
+            </p>
+          </div>
         </div>
 
-        <Card className="shadow-lg border-0">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-xl text-center">Create a new account</CardTitle>
-            <CardDescription className="text-center">Choose account type and enter your details</CardDescription>
-          </CardHeader>
-          <CardContent>
+        <div className="relative animate-fade-in-up animate-delay-200">
+          <div className="bg-gradient-to-br from-[#2F3D7F] via-[#3A467C] to-[#1E2749] rounded-3xl p-8 md:p-12 shadow-2xl max-h-[85vh] overflow-y-auto backdrop-blur-xl border border-white/10">
+            <div className="mb-8 text-center">
+              <h2 className="text-4xl font-bold text-white mb-2 drop-shadow-lg">Join us !</h2>
+            </div>
+
             {error && (
-              <Alert variant="destructive" className="mb-4">
+              <Alert variant="destructive" className="mb-6">
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
@@ -153,167 +186,169 @@ export default function SignupPage() {
               onValueChange={(value) => setUserType(value as "client" | "photographer")}
               className="mb-6"
             >
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="client">Client</TabsTrigger>
-                <TabsTrigger value="photographer">Photographer</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 bg-white/10">
+                <TabsTrigger value="client" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+                  Client
+                </TabsTrigger>
+                <TabsTrigger
+                  value="photographer"
+                  className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+                >
+                  Photographer
+                </TabsTrigger>
               </TabsList>
-
-              <TabsContent value="client" className="mt-4">
-                <p className="text-sm text-muted-foreground text-center">Find top photographers and book sessions</p>
-              </TabsContent>
-
-              <TabsContent value="photographer" className="mt-4">
-                <p className="text-sm text-muted-foreground text-center">Join professional photographers and grow your clients</p>
-              </TabsContent>
             </Tabs>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Full name</Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="name"
-                    type="text"
-                    placeholder="Enter your full name"
-                    value={formData.name}
-                    onChange={(e) => handleInputChange("name", e.target.value)}
-                    className="pl-10"
-                    required
-                  />
-                </div>
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="space-y-2 relative group">
+                <div className="absolute -left-16 top-1/2 w-16 h-0.5 bg-gradient-to-r from-transparent via-blue-400 to-blue-400 hidden md:block transition-all duration-300 group-hover:via-blue-300 group-hover:to-blue-300"></div>
+                <div className="absolute -left-20 top-1/2 w-3 h-3 bg-blue-400 rounded-full hidden md:block transform -translate-y-1/2 shadow-lg shadow-blue-400/50 group-hover:scale-125 transition-transform duration-300"></div>
+                <Label htmlFor="name" className="text-blue-300 font-semibold text-sm">
+                  User name
+                </Label>
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="Anfel"
+                  value={formData.name}
+                  onChange={(e) => handleInputChange("name", e.target.value)}
+                  className="bg-white border-0 text-[#2F3D7F] placeholder:text-slate-400 rounded-full pl-4 pr-4 h-14 shadow-lg transition-all duration-300 hover:shadow-xl focus:shadow-2xl focus:scale-[1.02]"
+                  required
+                />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="your@email.com"
-                    value={formData.email}
-                    onChange={(e) => handleInputChange("email", e.target.value)}
-                    className="pl-10"
-                    required
-                  />
-                </div>
+              <div className="space-y-2 relative group">
+                <div className="absolute -left-16 top-1/2 w-16 h-0.5 bg-gradient-to-r from-transparent via-blue-400 to-blue-400 hidden md:block transition-all duration-300 group-hover:via-blue-300 group-hover:to-blue-300"></div>
+                <div className="absolute -left-20 top-1/2 w-3 h-3 bg-blue-400 rounded-full hidden md:block transform -translate-y-1/2 shadow-lg shadow-blue-400/50 group-hover:scale-125 transition-transform duration-300"></div>
+                <Label htmlFor="phone" className="text-blue-300 font-semibold text-sm">
+                  Phone Number
+                </Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="0789675568"
+                  value={formData.phone}
+                  onChange={(e) => handleInputChange("phone", e.target.value)}
+                  className="bg-white border-0 text-[#2F3D7F] placeholder:text-slate-400 rounded-full pl-4 pr-4 h-14 shadow-lg transition-all duration-300 hover:shadow-xl focus:shadow-2xl focus:scale-[1.02]"
+                  required
+                />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="state">State</Label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground z-10" />
-                  <Select value={formData.state} onValueChange={(value) => handleInputChange("state", value)}>
-                    <SelectTrigger className="pl-10">
-                      <SelectValue placeholder="Choose your state" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {algerianStates.map((state) => (
-                        <SelectItem key={state} value={state}>
-                          {state}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div className="space-y-2 relative group">
+                <div className="absolute -left-16 top-1/2 w-16 h-0.5 bg-gradient-to-r from-transparent via-blue-400 to-blue-400 hidden md:block transition-all duration-300 group-hover:via-blue-300 group-hover:to-blue-300"></div>
+                <div className="absolute -left-20 top-1/2 w-3 h-3 bg-blue-400 rounded-full hidden md:block transform -translate-y-1/2 shadow-lg shadow-blue-400/50 group-hover:scale-125 transition-transform duration-300"></div>
+                <Label htmlFor="email" className="text-blue-300 font-semibold text-sm">
+                  E-mail
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="xxx@gmail.com"
+                  value={formData.email}
+                  onChange={(e) => handleInputChange("email", e.target.value)}
+                  className="bg-white border-0 text-[#2F3D7F] placeholder:text-slate-400 rounded-full pl-4 pr-4 h-14 shadow-lg transition-all duration-300 hover:shadow-xl focus:shadow-2xl focus:scale-[1.02]"
+                  required
+                />
               </div>
 
-              {userType === "photographer" && (
-                <div className="space-y-2">
-                  <Label htmlFor="serviceType">Service type</Label>
-                  <div className="relative">
-                    <Briefcase className="absolute left-3 top-3 h-4 w-4 text-muted-foreground z-10" />
-                    <Select
-                      value={formData.serviceType}
-                      onValueChange={(value) => handleInputChange("serviceType", value)}
-                    >
-                      <SelectTrigger className="pl-10">
-                        <SelectValue placeholder="Choose your specialty" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {serviceTypes.map((service) => (
-                          <SelectItem key={service} value={service}>
-                            {service}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    value={formData.password}
-                    onChange={(e) => handleInputChange("password", e.target.value)}
-                    className="pl-10 pr-10"
-                    required
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4 text-muted-foreground" />
-                    ) : (
-                      <Eye className="h-4 w-4 text-muted-foreground" />
-                    )}
-                  </Button>
-                </div>
+              <div className="space-y-2 relative group">
+                <div className="absolute -left-16 top-1/2 w-16 h-0.5 bg-gradient-to-r from-transparent via-blue-400 to-blue-400 hidden md:block transition-all duration-300 group-hover:via-blue-300 group-hover:to-blue-300"></div>
+                <div className="absolute -left-20 top-1/2 w-3 h-3 bg-blue-400 rounded-full hidden md:block transform -translate-y-1/2 shadow-lg shadow-blue-400/50 group-hover:scale-125 transition-transform duration-300"></div>
+                <Label htmlFor="state" className="text-blue-300 font-semibold text-sm">
+                  Activity
+                </Label>
+                <Select value={formData.state} onValueChange={(value) => handleInputChange("state", value)}>
+                  <SelectTrigger className="bg-white border-0 text-[#2F3D7F] rounded-full pl-4 pr-4 h-14 shadow-lg transition-all duration-300 hover:shadow-xl focus:shadow-2xl focus:scale-[1.02]">
+                    <SelectValue placeholder="Wedding" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white border-slate-200">
+                    {algerianStates.map((state) => (
+                      <SelectItem key={state} value={state} className="text-[#2F3D7F]">
+                        {state}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm password</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="confirmPassword"
-                    type={showConfirmPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    value={formData.confirmPassword}
-                    onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
-                    className="pl-10 pr-10"
-                    required
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  >
-                    {showConfirmPassword ? (
-                      <EyeOff className="h-4 w-4 text-muted-foreground" />
-                    ) : (
-                      <Eye className="h-4 w-4 text-muted-foreground" />
-                    )}
-                  </Button>
-                </div>
+              <div className="space-y-2 relative group">
+                <div className="absolute -left-16 top-1/2 w-16 h-0.5 bg-gradient-to-r from-transparent via-blue-400 to-blue-400 hidden md:block transition-all duration-300 group-hover:via-blue-300 group-hover:to-blue-300"></div>
+                <div className="absolute -left-20 top-1/2 w-3 h-3 bg-blue-400 rounded-full hidden md:block transform -translate-y-1/2 shadow-lg shadow-blue-400/50 group-hover:scale-125 transition-transform duration-300"></div>
+                <Label htmlFor="password" className="text-blue-300 font-semibold text-sm">
+                  Password
+                </Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••••"
+                  value={formData.password}
+                  onChange={(e) => handleInputChange("password", e.target.value)}
+                  className="bg-white border-0 text-[#2F3D7F] placeholder:text-slate-400 rounded-full pl-4 pr-4 h-14 shadow-lg transition-all duration-300 hover:shadow-xl focus:shadow-2xl focus:scale-[1.02]"
+                  required
+                />
               </div>
 
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Creating account..." : "Create account"}
+              <Button
+                type="submit"
+                className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-full h-14 text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] border-2 border-blue-400/30"
+                disabled={loading}
+              >
+                {loading ? "Creating account..." : "Sign Up"}
               </Button>
             </form>
 
-            <div className="text-center text-sm mt-4">
-              <span className="text-muted-foreground">Already have an account? </span>
-              <Link href="/login" className="text-primary hover:underline">
-                Sign in
-              </Link>
+            <div className="mt-8 space-y-4">
+              <p className="text-center text-sm text-white/60">Or sign up with your</p>
+              <div className="grid grid-cols-3 gap-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled
+                  className="bg-white hover:bg-white/90 border-0 rounded-full shadow-lg h-12"
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
+                  </svg>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled
+                  className="bg-white hover:bg-white/90 border-0 rounded-full shadow-lg h-12"
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                  </svg>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled
+                  className="bg-white hover:bg-white/90 border-0 rounded-full shadow-lg h-12"
+                >
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                    <path
+                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                      fill="#4285F4"
+                    />
+                    <path
+                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                      fill="#34A853"
+                    />
+                    <path
+                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                      fill="#FBBC05"
+                    />
+                    <path
+                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                      fill="#EA4335"
+                    />
+                  </svg>
+                </Button>
+              </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   )
