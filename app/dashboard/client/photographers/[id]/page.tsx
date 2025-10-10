@@ -12,37 +12,130 @@ import { Api } from "@/lib/api"
 import { usePhotographerPackages, usePhotographerGallery, usePhotographerCalendar, useToggleFavorite } from "@/lib/hooks"
 import Link from "next/link"
 
+interface Photographer {
+  id: string
+  verified: boolean
+  ratingAvg?: number
+  ratingCount?: number
+  completedBookings?: number
+  bio?: string
+  phone?: string
+  email?: string
+  state?: {
+    name: string
+  }
+  services?: Array<{
+    name: string
+  }>
+  tags?: string[]
+  user?: {
+    name: string
+  }
+}
+
+interface Review {
+  id: string
+  rating: number
+  text: string
+  createdAt: string
+}
+
+interface Package {
+  id: string
+  title: string
+  description: string
+  priceCents: number
+}
+
+interface GalleryImage {
+  url: string
+}
+
+interface CalendarEvent {
+  id: string
+  title?: string
+  type?: string
+  startAt: string
+  endAt: string
+}
+
 export default function PhotographerProfilePage() {
   const params = useParams()
   const router = useRouter()
   const [selectedPackage, setSelectedPackage] = useState<string | null>(null)
   const [isFavorite, setIsFavorite] = useState(false)
-  const [photographer, setPhotographer] = useState<any | null>(null)
-  const [reviews, setReviews] = useState<any[]>([])
+  const [photographer, setPhotographer] = useState<Photographer | null>(null)
+  const [reviews, setReviews] = useState<Review[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
+  const [bookingLoading, setBookingLoading] = useState(false)
   const id = params.id as string
   const toggleFav = useToggleFavorite()
-  const { data: packages } = usePhotographerPackages(id)
-  const { data: gallery } = usePhotographerGallery(id)
+  const { data: packages = [] } = usePhotographerPackages(id)
+  const { data: gallery = [] } = usePhotographerGallery(id)
   const { data: calendar } = usePhotographerCalendar(id)
 
   useEffect(() => {
-    const run = async () => {
-      const id = params.id as string
+    const fetchData = async () => {
+      if (!id) return
+      
       try {
-        const p = await Api.get<any>(`/photographers/${id}`)
-        setPhotographer(p)
-        const r = await Api.get<any>(`/reviews/photographer/${id}?page=1&perPage=12`)
-        setReviews(r.items || [])
+        const [photographerData, reviewsData] = await Promise.all([
+          Api.get<Photographer>(`/photographers/${id}`),
+          Api.get<{ items: Review[] }>(`/reviews/photographer/${id}?page=1&perPage=12`)
+        ])
+        setPhotographer(photographerData)
+        setReviews(reviewsData.items || [])
       } catch (e: any) {
         setError(e?.message || "Failed to load photographer")
       } finally {
         setLoading(false)
       }
     }
-    run()
-  }, [params.id])
+    
+    fetchData()
+  }, [id])
+
+  const handleToggleFavorite = async () => {
+    const nextState = !isFavorite
+    setIsFavorite(nextState)
+    try {
+      await toggleFav.mutateAsync({ photographerId: id, isFav: nextState })
+    } catch {
+      // Revert on error
+      setIsFavorite(!nextState)
+    }
+  }
+
+  const handleBookNow = async (packageId: string) => {
+    if (!photographer) return
+    
+    setBookingLoading(true)
+    try {
+      const start = new Date().toISOString()
+      const end = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString()
+      
+      await Api.post("/bookings", {
+        photographerId: id,
+        packageId: packageId,
+        startAt: start,
+        endAt: end,
+        location: { 
+          address: photographer.state?.name ? `${photographer.state.name}, Algeria` : "Algeria", 
+          lat: 36.75, 
+          lon: 3.06 
+        },
+      })
+      
+      // Success - you might want to redirect or show a success message
+      setSelectedPackage(null)
+    } catch (error) {
+      console.error("Booking failed:", error)
+      // Handle booking error (show toast, etc.)
+    } finally {
+      setBookingLoading(false)
+    }
+  }
 
   if (loading) {
     return <div className="p-6">Loading...</div>
@@ -64,7 +157,7 @@ export default function PhotographerProfilePage() {
 
   return (
     <div className="p-6 space-y-8 max-w-7xl mx-auto">
-      <div className="flex items-center gap-4 animate-fade-in-up">
+      <div className="flex items-center gap-4">
         <Button
           variant="ghost"
           size="sm"
@@ -78,32 +171,24 @@ export default function PhotographerProfilePage() {
         <Button
           variant="ghost"
           size="sm"
-          onClick={async () => {
-            const next = !isFavorite
-            setIsFavorite(next)
-            try {
-              await toggleFav.mutateAsync({ photographerId: id, isFav: !next })
-            } catch {
-              setIsFavorite(!next)
-            }
-          }}
+          onClick={handleToggleFavorite}
           className="gap-2 hover:bg-secondary transition-all duration-300"
         >
           <Heart
-            className={`h-4 w-4 transition-all duration-300 ${isFavorite ? "fill-red-500 text-red-500 animate-pulse" : ""}`}
+            className={`h-4 w-4 transition-all duration-300 ${isFavorite ? "fill-red-500 text-red-500" : ""}`}
           />
           {isFavorite ? "Remove from Favorites" : "Add to Favorites"}
         </Button>
       </div>
 
-      <Card className="shadow-xl border-0 bg-gradient-to-r from-card to-secondary/10 animate-fade-in-up animate-delay-100">
+      <Card className="shadow-xl border-0 bg-gradient-to-r from-card to-secondary/10">
         <CardContent className="p-8">
           <div className="flex flex-col md:flex-row gap-8">
             <div className="flex-shrink-0">
-              <Avatar className="h-40 w-40 ring-4 ring-primary/20 shadow-2xl animate-glow">
-                <AvatarImage src={"/professional-algerian-businessman-headshot.png"} />
+              <Avatar className="h-40 w-40 ring-4 ring-primary/20 shadow-2xl">
+                <AvatarImage src={"/professional-algerian-businessman-headshot.png"} alt={photographer.user?.name || "Photographer"} />
                 <AvatarFallback className="text-3xl bg-primary text-primary-foreground font-bold">
-                  {photographer.name.charAt(0)}
+                  {photographer.user?.name?.charAt(0) || "P"}
                 </AvatarFallback>
               </Avatar>
             </div>
@@ -111,7 +196,7 @@ export default function PhotographerProfilePage() {
             <div className="flex-1 space-y-6">
               <div>
                 <div className="flex items-center gap-3 mb-3">
-                  <h1 className="text-4xl font-bold">{photographer.user?.name}</h1>
+                  <h1 className="text-4xl font-bold">{photographer.user?.name || "Unknown Photographer"}</h1>
                   <Badge
                     variant={photographer.verified ? "default" : "secondary"}
                     className={`${photographer.verified ? "bg-primary text-primary-foreground" : ""} text-sm px-3 py-1`}
@@ -123,11 +208,11 @@ export default function PhotographerProfilePage() {
                 <div className="flex items-center gap-6 text-muted-foreground mb-3">
                   <div className="flex items-center gap-2">
                     <MapPin className="h-5 w-5" />
-                    <span className="font-medium">{photographer.state?.name}</span>
+                    <span className="font-medium">{photographer.state?.name || "Location not specified"}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Camera className="h-5 w-5" />
-                    <span className="font-medium">{photographer.services?.[0]?.name}</span>
+                    <span className="font-medium">{photographer.services?.[0]?.name || "Photography"}</span>
                   </div>
                 </div>
 
@@ -140,12 +225,12 @@ export default function PhotographerProfilePage() {
                   <div className="flex items-center gap-2">
                     <Award className="h-5 w-5 text-primary" />
                     <span className="text-sm text-muted-foreground font-medium">
-                      {photographer.completedBookings} completed sessions
+                      {photographer.completedBookings ?? 0} completed sessions
                     </span>
                   </div>
                 </div>
 
-                <p className="text-muted-foreground text-lg leading-relaxed">{photographer.bio}</p>
+                <p className="text-muted-foreground text-lg leading-relaxed">{photographer.bio || "No biography available."}</p>
               </div>
 
               <div className="flex flex-wrap gap-2">
@@ -170,7 +255,7 @@ export default function PhotographerProfilePage() {
                   className="gap-2 border-2 hover:bg-secondary transition-all duration-300 bg-transparent"
                 >
                   <Phone className="h-5 w-5" />
-                  {photographer.phone}
+                  {photographer.phone || "No phone"}
                 </Button>
               </div>
             </div>
@@ -180,7 +265,7 @@ export default function PhotographerProfilePage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
-          <Card className="shadow-lg border-0 animate-fade-in-up animate-delay-200">
+          <Card className="shadow-lg border-0">
             <CardHeader className="pb-6">
               <CardTitle className="text-2xl flex items-center gap-2">
                 <Camera className="h-6 w-6 text-primary" />
@@ -189,7 +274,7 @@ export default function PhotographerProfilePage() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {((gallery as any) || []).map((img: any, index: number) => (
+                {(gallery as GalleryImage[]).map((img: GalleryImage, index: number) => (
                   <div
                     key={index}
                     className="aspect-square bg-muted rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
@@ -201,11 +286,18 @@ export default function PhotographerProfilePage() {
                     />
                   </div>
                 ))}
+                {gallery.length === 0 && (
+                  <div className="col-span-3 text-center py-12 text-muted-foreground">
+                    <Camera className="h-16 w-16 mx-auto mb-4 opacity-30" />
+                    <p className="text-lg font-semibold mb-2">No portfolio images</p>
+                    <p>This photographer hasn't uploaded any portfolio images yet.</p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
 
-          <Card className="shadow-lg border-0 animate-fade-in-up animate-delay-300">
+          <Card className="shadow-lg border-0">
             <CardHeader className="pb-6">
               <CardTitle className="text-2xl flex items-center gap-2">
                 <Star className="h-6 w-6 text-accent" />
@@ -250,12 +342,12 @@ export default function PhotographerProfilePage() {
         </div>
 
         <div className="space-y-8">
-          <Card className="shadow-lg border-0 animate-fade-in-up animate-delay-400">
+          <Card className="shadow-lg border-0">
             <CardHeader className="pb-6">
               <CardTitle className="text-2xl">Available Packages</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              {((packages as any) || []).map((pkg: any) => (
+              {(packages as Package[]).map((pkg: Package) => (
                 <Card
                   key={pkg.id}
                   className="border-2 hover:border-primary/50 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
@@ -270,8 +362,6 @@ export default function PhotographerProfilePage() {
                       <div className="flex items-center justify-between">
                         <span className="text-3xl font-bold text-primary">{(pkg.priceCents/100).toLocaleString()} DA</span>
                       </div>
-
-                      <div className="space-y-2"></div>
 
                       <Dialog>
                         <DialogTrigger asChild>
@@ -294,22 +384,17 @@ export default function PhotographerProfilePage() {
                             </div>
                             <p className="text-sm text-muted-foreground">Select date/time and continue.</p>
                             <div className="flex gap-3">
-                              <Button className="flex-1 shadow-lg hover:shadow-xl transition-all duration-300"
-                                onClick={async () => {
-                                  const start = new Date().toISOString()
-                                  const end = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString()
-                                  await Api.post("/bookings", {
-                                    photographerId: id,
-                                    packageId: selectedPackage,
-                                    startAt: start,
-                                    endAt: end,
-                                    location: { address: "Algeria", lat: 36.75, lon: 3.06 },
-                                  })
-                            }}
-                              >Continue Booking</Button>
+                              <Button 
+                                className="flex-1 shadow-lg hover:shadow-xl transition-all duration-300"
+                                onClick={() => handleBookNow(pkg.id)}
+                                disabled={bookingLoading}
+                              >
+                                {bookingLoading ? "Booking..." : "Continue Booking"}
+                              </Button>
                               <Button
                                 variant="outline"
                                 className="flex-1 border-2 hover:bg-secondary transition-all duration-300 bg-transparent"
+                                onClick={() => setSelectedPackage(null)}
                               >
                                 Cancel
                               </Button>
@@ -321,46 +406,51 @@ export default function PhotographerProfilePage() {
                   </CardContent>
                 </Card>
               ))}
+              {packages.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p>No packages available.</p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
-          <Card className="shadow-lg border-0 animate-fade-in-up animate-delay-500">
+          <Card className="shadow-lg border-0">
             <CardHeader className="pb-6">
               <CardTitle className="text-xl">Calendar</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-2 text-sm">
-                {(calendar?.items || []).map((ev: any) => (
+                {((calendar as { items: CalendarEvent[] })?.items || []).map((ev: CalendarEvent) => (
                   <div key={`${ev.id}-${ev.startAt}`} className="flex items-center justify-between p-2 border rounded-md">
-                    <span className="font-medium">{ev.title || ev.type}</span>
+                    <span className="font-medium">{ev.title || ev.type || "Event"}</span>
                     <span className="text-muted-foreground">
                       {new Date(ev.startAt).toLocaleString()} → {new Date(ev.endAt).toLocaleString()}
                     </span>
                   </div>
                 ))}
-                {!(calendar?.items || []).length && (
+                {!((calendar as { items: CalendarEvent[] })?.items || []).length && (
                   <div className="text-muted-foreground">No events in the selected range.</div>
                 )}
               </div>
             </CardContent>
           </Card>
 
-          <Card className="shadow-lg border-0 animate-fade-in-up animate-delay-500">
+          <Card className="shadow-lg border-0">
             <CardHeader className="pb-6">
               <CardTitle className="text-xl">Contact Information</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-secondary/30 transition-colors">
                 <Phone className="h-5 w-5 text-primary" />
-                <span className="font-medium">{photographer.phone}</span>
+                <span className="font-medium">{photographer.phone || "Not provided"}</span>
               </div>
               <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-secondary/30 transition-colors">
                 <Mail className="h-5 w-5 text-primary" />
-                <span className="font-medium">{photographer.email}</span>
+                <span className="font-medium">{photographer.email || "Not provided"}</span>
               </div>
               <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-secondary/30 transition-colors">
                 <MapPin className="h-5 w-5 text-primary" />
-                <span className="font-medium">{photographer.state}, Algeria</span>
+                <span className="font-medium">{photographer.state?.name || "Location not specified"}, Algeria</span>
               </div>
             </CardContent>
           </Card>

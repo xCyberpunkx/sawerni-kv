@@ -64,7 +64,7 @@ export default function ClientDashboard() {
       {error && <div className="text-red-600 text-sm">{error}</div>}
       <div className="flex items-center justify-between animate-fade-in-up">
         <div>
-          <h1 className="text-4xl font-bold text-balance mb-2">Welcome back, {user.name}</h1>
+          <h1 className="text-4xl font-bold text-balance mb-2">Welcome back, {user?.name}</h1>
           <p className="text-xl text-muted-foreground">Here's what's happening with your photography projects</p>
         </div>
         <Link href="/dashboard/client/photographers">

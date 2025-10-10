@@ -2,6 +2,8 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Space_Grotesk, DM_Sans } from "next/font/google"
 import "./globals.css"
+import { Providers } from "./providers"
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools"
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -17,8 +19,9 @@ const dmSans = DM_Sans({
 
 export const metadata: Metadata = {
   title: "Sawerni - Premium Photography Platform",
-  description: "Algeria's premier photography platform connecting professional photographers with clients",
-    generator: 'v0.app'
+  description:
+    "Algeria's premier photography platform connecting professional photographers with clients",
+  generator: "v0.app",
 }
 
 export default function RootLayout({
@@ -27,8 +30,16 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={`${spaceGrotesk.variable} ${dmSans.variable} antialiased`}>
-      <body className="font-sans">{children}</body>
+    <html
+      lang="en"
+      className={`${spaceGrotesk.variable} ${dmSans.variable} antialiased`}
+    >
+      <body className="font-sans">
+        <Providers>
+          {children}
+          <ReactQueryDevtools initialIsOpen={false} />
+        </Providers>
+      </body>
     </html>
   )
 }
