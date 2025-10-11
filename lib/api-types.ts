@@ -53,6 +53,14 @@ export interface PhotographerModel {
   isFavorited?: boolean
 }
 
+export interface BookingStateHistory {
+  fromState: string
+  toState: string
+  reason?: string
+  byUserId: string
+  createdAt: string
+}
+
 export interface BookingModel {
   id: string
   clientId?: string
@@ -63,11 +71,15 @@ export interface BookingModel {
   location?: { address: string; lat: number; lon: number }
   priceCents?: number
   state: string
+  stateHistory?: BookingStateHistory[]
   notes?: string
   createdAt?: string
   updatedAt?: string
   client?: { id: string; name: string; email?: string }
-  photographer?: { id: string; user: { id: string; name: string } }
+  photographer?: { id: string; user: { id: string; name: string; email?: string } }
+  contract?: ContractModel
+  payment?: any
+  review?: ReviewModel
 }
 
 export interface ConversationModel {
@@ -123,6 +135,17 @@ export interface ReviewModel {
   rating: number
   text?: string
   status: "PENDING" | "APPROVED" | "REJECTED"
+  createdAt: string
+  reviewer?: { id: string; name: string }
+  photographer?: { id: string; userId: string }
+}
+
+export interface PackageModel {
+  id: string
+  photographerId: string
+  title: string
+  description?: string
+  priceCents: number
   createdAt: string
 }
 

@@ -9,6 +9,7 @@ import type {
   ConversationModel,
   NotificationModel,
   ReviewModel,
+  ContractModel,
 } from "./api-types"
 
 // Query Keys
@@ -167,6 +168,39 @@ export function usePhotographerCalendar(id: string, from?: string, to?: string) 
   return useQuery({
     queryKey: qk.photographerCalendar(id, from, to),
     queryFn: async () => Api.get(`/calendar/photographer/${id}?${qs.toString()}`),
+    enabled: !!id,
+  })
+}
+
+// Additional hooks for booking details
+export function usePhotographerDetails(id: string) {
+  return useQuery({
+    queryKey: ["photographer", id, "details"],
+    queryFn: async () => Api.get<PhotographerModel>(`/photographers/${id}`),
+    enabled: !!id,
+  })
+}
+
+export function usePhotographerReviews(id: string, page = 1, perPage = 12) {
+  return useQuery({
+    queryKey: ["photographer", id, "reviews", page, perPage],
+    queryFn: async () => Api.get<PaginatedResponse<ReviewModel>>(`/reviews/photographer/${id}?page=${page}&perPage=${perPage}`),
+    enabled: !!id,
+  })
+}
+
+export function useContractStatus(id: string) {
+  return useQuery({
+    queryKey: ["contract", id, "status"],
+    queryFn: async () => Api.get<ContractModel>(`/contracts/${id}/status`),
+    enabled: !!id,
+  })
+}
+
+export function usePackageDetails(id: string) {
+  return useQuery({
+    queryKey: ["package", id],
+    queryFn: async () => Api.get(`/packages/${id}`),
     enabled: !!id,
   })
 }
