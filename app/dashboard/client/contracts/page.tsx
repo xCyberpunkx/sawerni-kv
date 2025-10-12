@@ -243,7 +243,7 @@ export default function ClientContractsPage() {
               onMouseMove={draw}
               onMouseUp={stopDrawing}
               onMouseLeave={stopDrawing}
-              className="w-full h-44 bg-background rounded-md border"
+              className="w-full h-44 bg-white rounded-md border"
             />
           </div>
           <div className="flex gap-2">
