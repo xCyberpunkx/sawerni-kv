@@ -6,13 +6,14 @@ import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { Home, Camera, Heart, MessageCircle, Calendar, FileText, Star, LogOut, Bell, Menu, X } from "lucide-react"
+import { Home, Camera, Heart, MessageCircle, Calendar, FileText, Star, LogOut, Bell, Menu, X, Package } from "lucide-react"
 import { mockAuth } from "@/lib/auth"
 import { cn } from "@/lib/utils"
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard/client", icon: Home },
   { name: "Photographers", href: "/dashboard/client/photographers", icon: Camera },
+  { name: "Packages", href: "/dashboard/client/packages", icon: Package },
   { name: "Messages", href: "/dashboard/client/messages", icon: MessageCircle, badge: 3 },
   { name: "Bookings", href: "/dashboard/client/bookings", icon: Calendar },
   { name: "Favorites", href: "/dashboard/client/favorites", icon: Heart },
