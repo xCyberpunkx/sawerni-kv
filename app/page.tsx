@@ -15,26 +15,23 @@ export default function HomePage() {
       <PremiumNavbar />
 
       {/* Hero Section */}
-      <section className="relative pt-32 pb-20 md:pt-40 md:pb-32 overflow-hidden min-h-screen flex items-center bg-gradient-to-br from-slate-900 via-[#2F3D7F] to-slate-900">
+      <section className="relative pt-32 pb-20 md:pt-40 md:pb-32 overflow-hidden min-h-screen flex items-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
         {/* Background Image with overlay */}
         <div className="absolute inset-0">
           <img
-            src="/professional-photography-studio-with-lighting-equi.jpg"
+            src="/hero-studio.jpg"
             alt="Photography studio background"
             className="w-full h-full object-cover opacity-30"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-slate-900/90 via-[#2F3D7F]/70 to-slate-900/90" />
+          <div className="absolute inset-0 bg-gradient-to-b from-slate-900/70 via-slate-900/40 to-slate-900/70" />
         </div>
 
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-5xl mx-auto text-center">
-            <h1 className="text-7xl md:text-9xl font-bold font-space-grotesk text-balance mb-6 leading-tight text-white animate-fade-in-up tracking-tight drop-shadow-2xl">
+            <h1 className="text-7xl md:text-9xl text-balance mb-6 leading-tight text-white animate-fade-in-up tracking-tight drop-shadow-2xl font-normal font-adlam-display">
               SAWERNI
             </h1>
-            <p
-              className="text-2xl md:text-3xl text-white/90 mb-8 font-medium drop-shadow-lg"
-              style={{ fontFamily: "Arial, sans-serif" }}
-            >
+            <p className="text-2xl md:text-3xl text-white/90 mb-8 font-medium drop-shadow-lg font-adlam-display">
               كل لحظة تساهل تبقى ذكرى
             </p>
             <p className="text-xl md:text-2xl text-white/80 mb-4 max-w-4xl mx-auto text-balance leading-relaxed animate-fade-in-up animate-delay-100">
@@ -50,7 +47,11 @@ export default function HomePage() {
             <Link href="#how-it-works">
               <Button
                 size="lg"
-                className="text-lg px-12 py-7 button-premium bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-2xl rounded-full font-semibold animate-fade-in-up animate-delay-400 border-2 border-blue-400/30"
+                className="text-lg px-12 py-7 button-premium text-white shadow-2xl rounded-full font-semibold animate-fade-in-up animate-delay-400 border-2"
+                style={{
+                  backgroundColor: "#283886",
+                  borderColor: "#474EB8",
+                }}
               >
                 Explore Now
               </Button>

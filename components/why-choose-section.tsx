@@ -3,13 +3,33 @@ import { Card, CardContent } from "@/components/ui/card"
 export function WhyChooseSection() {
   return (
     <section className="py-32 relative overflow-hidden">
-      {/* Background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-muted/20 via-background to-background" />
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage: "url('/why-choose-bg.jpg')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      />
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-lg" />
 
       <div className="container mx-auto px-4 relative z-10">
         <div className="text-center mb-20 animate-fade-in-up">
-          <h2 className="text-5xl md:text-6xl font-bold font-space-grotesk mb-4 text-white">
-            Why choose <span className="heading-underline">SAWERNI</span> ?
+          <h2
+            className="text-5xl md:text-6xl font-bold mb-4 text-white"
+            style={{ fontFamily: "var(--font-adlam-display)" }}
+          >
+            Why choose{" "}
+            <span className="relative inline-block">
+              SAWERNI
+              <img
+                src="/marker-underline.png"
+                alt="marker"
+                className="absolute left-0 w-full h-10"
+                style={{ top: "calc(100% + 8px)" }}
+              />
+            </span>{" "}
+            ?
           </h2>
         </div>
 

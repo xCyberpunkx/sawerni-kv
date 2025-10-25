@@ -1,5 +1,6 @@
 import Link from "next/link"
-import { Camera, Facebook, Instagram, Linkedin, Mail, MapPin, Phone } from "lucide-react"
+import { Facebook, Instagram, Linkedin, Mail, MapPin, Phone } from "lucide-react"
+import Image from "next/image"
 
 export function PremiumFooter() {
   return (
@@ -9,8 +10,7 @@ export function PremiumFooter() {
           {/* Brand Section */}
           <div className="space-y-6">
             <Link href="/" className="flex items-center gap-3 group">
-              <Camera className="h-10 w-10 text-primary transition-transform group-hover:scale-110" />
-              <span className="text-3xl font-bold font-space-grotesk">Sawerni</span>
+              <Image src="/sawerni-logo.png" alt="Sawerni Logo" width={120} height={45} className="h-12 w-auto" />
             </Link>
             <p className="text-muted-foreground text-lg leading-relaxed">
               Algeria's premier photography platform connecting exceptional artists with discerning clients who demand
