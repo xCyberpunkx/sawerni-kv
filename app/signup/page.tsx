@@ -28,7 +28,7 @@ const algerianStates = [
   "Tizi Ouzou",
   "Ouargla",
   "Bechar",
-  "M'Sila",
+  "M'sila",
   "Chlef",
 ]
 
@@ -60,6 +60,23 @@ export default function SignupPage() {
   const [error, setError] = useState("")
   const [success, setSuccess] = useState(false)
   const router = useRouter()
+
+  const handleGoogleSignup = async () => {
+    setLoading(true)
+    setError("")
+    
+    try {
+      // Simulate Google OAuth - in a real app, you'd integrate with Google OAuth
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      // For demo purposes, redirect to client dashboard
+      router.push("/dashboard/client")
+    } catch (err) {
+      setError("Google signup failed. Please try again.")
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -98,10 +115,10 @@ export default function SignupPage() {
           router.push("/login")
         }, 2000)
       } else {
-        setError(result.error || "An error occurred while creating the account")
+        setError(result.error || "Account creation failed. Please try again.")
       }
     } catch (err) {
-      setError("An unexpected error occurred")
+      setError("An unexpected error occurred. Please try again.")
     } finally {
       setLoading(false)
     }
@@ -156,7 +173,7 @@ export default function SignupPage() {
             </svg>
           </div>
           <div className="text-center">
-            <h1 className="text-7xl font-bold mb-4 font-space-grotesk text-[#2F3D7F] drop-shadow-sm">Sign in</h1>
+            <h1 className="text-7xl font-bold mb-4 font-space-grotesk text-[#2F3D7F] drop-shadow-sm">Sign Up</h1>
             <p className="text-lg text-[#2F3D7F]/70">
               Already have an account?{" "}
               <Link
@@ -204,12 +221,12 @@ export default function SignupPage() {
                 <div className="absolute -left-16 top-1/2 w-16 h-0.5 bg-gradient-to-r from-transparent via-blue-400 to-blue-400 hidden md:block transition-all duration-300 group-hover:via-blue-300 group-hover:to-blue-300"></div>
                 <div className="absolute -left-20 top-1/2 w-3 h-3 bg-blue-400 rounded-full hidden md:block transform -translate-y-1/2 shadow-lg shadow-blue-400/50 group-hover:scale-125 transition-transform duration-300"></div>
                 <Label htmlFor="name" className="text-blue-300 font-semibold text-sm">
-                  User name
+                  Full Name
                 </Label>
                 <Input
                   id="name"
                   type="text"
-                  placeholder="Anfel"
+                  placeholder="Enter your full name"
                   value={formData.name}
                   onChange={(e) => handleInputChange("name", e.target.value)}
                   className="bg-white border-0 text-[#2F3D7F] placeholder:text-slate-400 rounded-full pl-4 pr-4 h-14 shadow-lg transition-all duration-300 hover:shadow-xl focus:shadow-2xl focus:scale-[1.02]"
@@ -226,7 +243,7 @@ export default function SignupPage() {
                 <Input
                   id="phone"
                   type="tel"
-                  placeholder="0789675568"
+                  placeholder="Enter your phone number"
                   value={formData.phone}
                   onChange={(e) => handleInputChange("phone", e.target.value)}
                   className="bg-white border-0 text-[#2F3D7F] placeholder:text-slate-400 rounded-full pl-4 pr-4 h-14 shadow-lg transition-all duration-300 hover:shadow-xl focus:shadow-2xl focus:scale-[1.02]"
@@ -243,7 +260,7 @@ export default function SignupPage() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="xxx@gmail.com"
+                  placeholder="Enter your email address"
                   value={formData.email}
                   onChange={(e) => handleInputChange("email", e.target.value)}
                   className="bg-white border-0 text-[#2F3D7F] placeholder:text-slate-400 rounded-full pl-4 pr-4 h-14 shadow-lg transition-all duration-300 hover:shadow-xl focus:shadow-2xl focus:scale-[1.02]"
@@ -255,11 +272,11 @@ export default function SignupPage() {
                 <div className="absolute -left-16 top-1/2 w-16 h-0.5 bg-gradient-to-r from-transparent via-blue-400 to-blue-400 hidden md:block transition-all duration-300 group-hover:via-blue-300 group-hover:to-blue-300"></div>
                 <div className="absolute -left-20 top-1/2 w-3 h-3 bg-blue-400 rounded-full hidden md:block transform -translate-y-1/2 shadow-lg shadow-blue-400/50 group-hover:scale-125 transition-transform duration-300"></div>
                 <Label htmlFor="state" className="text-blue-300 font-semibold text-sm">
-                  State
+                  Location
                 </Label>
                 <Select value={formData.state} onValueChange={(value) => handleInputChange("state", value)}>
                   <SelectTrigger className="bg-white border-0 text-[#2F3D7F] rounded-full pl-4 pr-4 h-14 shadow-lg transition-all duration-300 hover:shadow-xl focus:shadow-2xl focus:scale-[1.02]">
-                    <SelectValue placeholder="Alger" />
+                    <SelectValue placeholder="Select your location" />
                   </SelectTrigger>
                   <SelectContent className="bg-white border-slate-200">
                     {algerianStates.map((state) => (
@@ -271,6 +288,28 @@ export default function SignupPage() {
                 </Select>
               </div>
 
+              {userType === "photographer" && (
+                <div className="space-y-2 relative group">
+                  <div className="absolute -left-16 top-1/2 w-16 h-0.5 bg-gradient-to-r from-transparent via-blue-400 to-blue-400 hidden md:block transition-all duration-300 group-hover:via-blue-300 group-hover:to-blue-300"></div>
+                  <div className="absolute -left-20 top-1/2 w-3 h-3 bg-blue-400 rounded-full hidden md:block transform -translate-y-1/2 shadow-lg shadow-blue-400/50 group-hover:scale-125 transition-transform duration-300"></div>
+                  <Label htmlFor="serviceType" className="text-blue-300 font-semibold text-sm">
+                    Photography Service
+                  </Label>
+                  <Select value={formData.serviceType} onValueChange={(value) => handleInputChange("serviceType", value)}>
+                    <SelectTrigger className="bg-white border-0 text-[#2F3D7F] rounded-full pl-4 pr-4 h-14 shadow-lg transition-all duration-300 hover:shadow-xl focus:shadow-2xl focus:scale-[1.02]">
+                      <SelectValue placeholder="Select your photography service" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white border-slate-200">
+                      {serviceTypes.map((service) => (
+                        <SelectItem key={service} value={service} className="text-[#2F3D7F]">
+                          {service}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
               <div className="space-y-2 relative group">
                 <div className="absolute -left-16 top-1/2 w-16 h-0.5 bg-gradient-to-r from-transparent via-blue-400 to-blue-400 hidden md:block transition-all duration-300 group-hover:via-blue-300 group-hover:to-blue-300"></div>
                 <div className="absolute -left-20 top-1/2 w-3 h-3 bg-blue-400 rounded-full hidden md:block transform -translate-y-1/2 shadow-lg shadow-blue-400/50 group-hover:scale-125 transition-transform duration-300"></div>
@@ -279,10 +318,27 @@ export default function SignupPage() {
                 </Label>
                 <Input
                   id="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   placeholder="••••••••••"
                   value={formData.password}
                   onChange={(e) => handleInputChange("password", e.target.value)}
+                  className="bg-white border-0 text-[#2F3D7F] placeholder:text-slate-400 rounded-full pl-4 pr-4 h-14 shadow-lg transition-all duration-300 hover:shadow-xl focus:shadow-2xl focus:scale-[1.02]"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2 relative group">
+                <div className="absolute -left-16 top-1/2 w-16 h-0.5 bg-gradient-to-r from-transparent via-blue-400 to-blue-400 hidden md:block transition-all duration-300 group-hover:via-blue-300 group-hover:to-blue-300"></div>
+                <div className="absolute -left-20 top-1/2 w-3 h-3 bg-blue-400 rounded-full hidden md:block transform -translate-y-1/2 shadow-lg shadow-blue-400/50 group-hover:scale-125 transition-transform duration-300"></div>
+                <Label htmlFor="confirmPassword" className="text-blue-300 font-semibold text-sm">
+                  Confirm Password
+                </Label>
+                <Input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  placeholder="••••••••••"
+                  value={formData.confirmPassword}
+                  onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
                   className="bg-white border-0 text-[#2F3D7F] placeholder:text-slate-400 rounded-full pl-4 pr-4 h-14 shadow-lg transition-all duration-300 hover:shadow-xl focus:shadow-2xl focus:scale-[1.02]"
                   required
                 />
@@ -298,33 +354,13 @@ export default function SignupPage() {
             </form>
 
             <div className="mt-8 space-y-4">
-              <p className="text-center text-sm text-white/60">Or sign up with your</p>
-              <div className="grid grid-cols-3 gap-3">
+              <p className="text-center text-sm text-white/60">Or sign up with</p>
+              <div className="flex justify-center">
                 <Button
                   variant="outline"
-                  size="sm"
-                  disabled
-                  className="bg-white hover:bg-white/90 border-0 rounded-full shadow-lg h-12"
-                >
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
-                  </svg>
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled
-                  className="bg-white hover:bg-white/90 border-0 rounded-full shadow-lg h-12"
-                >
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                  </svg>
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled
-                  className="bg-white hover:bg-white/90 border-0 rounded-full shadow-lg h-12"
+                  onClick={handleGoogleSignup}
+                  disabled={loading}
+                  className="bg-white hover:bg-white/90 border-0 rounded-lg shadow-lg h-12 transition-all duration-300 hover:scale-105 px-6 flex items-center gap-2"
                 >
                   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                     <path
@@ -344,6 +380,9 @@ export default function SignupPage() {
                       fill="#EA4335"
                     />
                   </svg>
+                  <span className="text-gray-700 font-medium">
+                    {loading ? "Signing up..." : "Google"}
+                  </span>
                 </Button>
               </div>
             </div>

@@ -10,7 +10,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { mockAuth } from "@/lib/auth"
-import { demoCredentials } from "@/lib/demo-data"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -18,6 +17,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [showForgotPassword, setShowForgotPassword] = useState(false)
   const router = useRouter()
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -42,38 +42,50 @@ export default function LoginPage() {
             router.push("/")
         }
       } else {
-        setError(result.error || "An error occurred during login")
+        setError(result.error || "Login failed. Please check your credentials.")
       }
     } catch (err) {
-      setError("An unexpected error occurred")
+      setError("An unexpected error occurred. Please try again.")
     } finally {
       setLoading(false)
     }
   }
 
-  const handleDemoLogin = async (role: "client" | "photographer" | "admin") => {
-    const credentials = demoCredentials[role]
-    setEmail(credentials.email)
-    setPassword(credentials.password)
-
-    setTimeout(async () => {
-      setLoading(true)
-      const result = await mockAuth.login(credentials.email, credentials.password)
-      if (result.success && result.user) {
-        switch (result.user.role) {
-          case "client":
-            router.push("/dashboard/client")
-            break
-          case "photographer":
-            router.push("/dashboard/photographer")
-            break
-          case "admin":
-            router.push("/dashboard/admin")
-            break
-        }
-      }
+  const handleGoogleLogin = async () => {
+    setLoading(true)
+    setError("")
+    
+    try {
+      // Simulate Google OAuth - in a real app, you'd integrate with Google OAuth
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      // For demo purposes, redirect to client dashboard
+      router.push("/dashboard/client")
+    } catch (err) {
+      setError("Google login failed. Please try again.")
+    } finally {
       setLoading(false)
-    }, 100)
+    }
+  }
+
+  const handleForgotPassword = async () => {
+    if (!email) {
+      setError("Please enter your email address first.")
+      return
+    }
+    
+    setLoading(true)
+    setError("")
+    
+    try {
+      // Simulate password reset - in a real app, you'd send a reset email
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      setError("Password reset email sent! Check your inbox.")
+    } catch (err) {
+      setError("Failed to send reset email. Please try again.")
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -114,12 +126,12 @@ export default function LoginPage() {
           <div className="text-center">
             <h1 className="text-7xl font-bold mb-4 font-space-grotesk text-[#2F3D7F] drop-shadow-sm">Log In</h1>
             <p className="text-lg text-[#2F3D7F]/70">
-              you dont have an account?{" "}
+              Don't have an account?{" "}
               <Link
                 href="/signup"
                 className="text-blue-600 hover:text-blue-700 hover:underline font-semibold transition-colors"
               >
-                sign in
+                Sign up
               </Link>
             </p>
           </div>
@@ -137,50 +149,17 @@ export default function LoginPage() {
               </Alert>
             )}
 
-            <div className="space-y-3 mb-6">
-              <p className="text-sm text-white/70 text-center">Quick demo login:</p>
-              <div className="grid grid-cols-3 gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleDemoLogin("client")}
-                  disabled={loading}
-                  className="bg-white/10 border-white/20 hover:bg-white/20 text-white text-xs"
-                >
-                  Client
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleDemoLogin("photographer")}
-                  disabled={loading}
-                  className="bg-white/10 border-white/20 hover:bg-white/20 text-white text-xs"
-                >
-                  Photographer
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleDemoLogin("admin")}
-                  disabled={loading}
-                  className="bg-white/10 border-white/20 hover:bg-white/20 text-white text-xs"
-                >
-                  Admin
-                </Button>
-              </div>
-            </div>
-
             <form onSubmit={handleLogin} className="space-y-6">
               <div className="space-y-2 relative group">
                 <div className="absolute -left-16 top-1/2 w-16 h-0.5 bg-gradient-to-r from-transparent via-blue-400 to-blue-400 hidden md:block transition-all duration-300 group-hover:via-blue-300 group-hover:to-blue-300"></div>
                 <div className="absolute -left-20 top-1/2 w-3 h-3 bg-blue-400 rounded-full hidden md:block transform -translate-y-1/2 shadow-lg shadow-blue-400/50 group-hover:scale-125 transition-transform duration-300"></div>
                 <Label htmlFor="email" className="text-blue-300 font-semibold text-sm">
-                  User name
+                  Email Address
                 </Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="Anfel"
+                  placeholder="Enter your email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="bg-white border-0 text-[#2F3D7F] placeholder:text-slate-400 rounded-full pl-4 pr-4 h-14 shadow-lg text-base transition-all duration-300 hover:shadow-xl focus:shadow-2xl focus:scale-[1.02]"
@@ -206,9 +185,13 @@ export default function LoginPage() {
               </div>
 
               <div className="flex items-center justify-end">
-                <Link href="#" className="text-sm text-blue-300 hover:text-blue-200 hover:underline transition-colors">
+                <button 
+                  type="button"
+                  onClick={handleForgotPassword}
+                  className="text-sm text-blue-300 hover:text-blue-200 hover:underline transition-colors"
+                >
                   Forgot your password?
-                </Link>
+                </button>
               </div>
 
               <Button
@@ -221,35 +204,15 @@ export default function LoginPage() {
             </form>
 
             <div className="mt-8 space-y-4">
-              <p className="text-center text-sm text-white/60">Or Log in with your</p>
-              <div className="grid grid-cols-3 gap-3">
+              <p className="text-center text-sm text-white/60">Or Log in with</p>
+              <div className="flex justify-center">
                 <Button
                   variant="outline"
-                  size="sm"
-                  disabled
-                  className="bg-white hover:bg-white/90 border-0 rounded-full shadow-lg h-12 transition-all duration-300 hover:scale-105"
+                  onClick={handleGoogleLogin}
+                  disabled={loading}
+                  className="bg-white hover:bg-white/90 border-0 rounded-lg shadow-lg h-12 transition-all duration-300 hover:scale-105 px-6 flex items-center gap-2"
                 >
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
-                  </svg>
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled
-                  className="bg-white hover:bg-white/90 border-0 rounded-full shadow-lg h-12 transition-all duration-300 hover:scale-105"
-                >
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                  </svg>
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled
-                  className="bg-white hover:bg-white/90 border-0 rounded-full shadow-lg h-12 transition-all duration-300 hover:scale-105"
-                >
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                     <path
                       d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
                       fill="#4285F4"
@@ -267,6 +230,9 @@ export default function LoginPage() {
                       fill="#EA4335"
                     />
                   </svg>
+                  <span className="text-gray-700 font-medium">
+                    {loading ? "Signing in..." : "Google"}
+                  </span>
                 </Button>
               </div>
             </div>
