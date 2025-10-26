@@ -6,7 +6,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { PremiumNavbar } from "@/components/premium-navbar"
 import { PremiumFooter } from "@/components/premium-footer"
-import { Mail, Phone, MapPin, Send } from "lucide-react"
+import { Mail, Phone, MapPin, Send, Loader2, CheckCircle2 } from "lucide-react"
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -15,7 +15,16 @@ export default function ContactPage() {
     subject: "",
     message: "",
   })
-  const [submitted, setSubmitted] = useState(false)
+  const [status, setStatus] = useState<{ type: 'success' | 'error' | '', message: string }>({ 
+    type: '', 
+    message: '' 
+  })
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // EmailJS Configuration
+  const EMAILJS_SERVICE_ID = 'service_5ir6b4i'
+  const EMAILJS_TEMPLATE_ID = 'template_oqqisst'
+  const EMAILJS_PUBLIC_KEY = 'aCPJDYuPzc8DAo-C4'
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -25,24 +34,62 @@ export default function ContactPage() {
     }))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
-    // Create mailto link with subject and body
-    const subject = encodeURIComponent(formData.subject)
-    const body = encodeURIComponent(
-      `Name: ${formData.name}\nEmail: ${formData.email}\n\nMessage:\n${formData.message}`
-    )
-    const mailtoLink = `mailto:support@sawerni.com?subject=${subject}&body=${body}`
-    
-    // Open email client
-    window.location.href = mailtoLink
-    
-    setSubmitted(true)
-    setTimeout(() => {
-      setFormData({ name: "", email: "", subject: "", message: "" })
-      setSubmitted(false)
-    }, 3000)
+    setIsSubmitting(true)
+    setStatus({ type: '', message: '' })
+
+    try {
+      // Dynamically load EmailJS script if not already loaded
+      if (!(window as any).emailjs) {
+        const script = document.createElement('script')
+        script.src = 'https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js'
+        script.async = true
+        document.head.appendChild(script)
+        
+        await new Promise((resolve) => {
+          script.onload = resolve
+        })
+        
+        ;(window as any).emailjs.init(EMAILJS_PUBLIC_KEY)
+      }
+
+      // Send email using EmailJS
+      const result = await (window as any).emailjs.send(
+        EMAILJS_SERVICE_ID,
+        EMAILJS_TEMPLATE_ID,
+        {
+          from_name: formData.name,
+          from_email: formData.email,
+          subject: formData.subject,
+          message: formData.message,
+          to_email: 'anfelchapro09@gmail.com',
+        }
+      )
+
+      if (result.text === 'OK') {
+        setStatus({
+          type: 'success',
+          message: 'Thank you for your message! We\'ll get back to you soon.'
+        })
+        
+        // Clear form
+        setFormData({ name: "", email: "", subject: "", message: "" })
+        
+        // Clear success message after 5 seconds
+        setTimeout(() => {
+          setStatus({ type: '', message: '' })
+        }, 5000)
+      }
+    } catch (error) {
+      console.error('EmailJS Error:', error)
+      setStatus({
+        type: 'error',
+        message: 'Oops! Something went wrong. Please try again or email us directly at support@sawerni.com'
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -115,80 +162,108 @@ export default function ContactPage() {
             <div className="max-w-2xl mx-auto bg-gradient-to-br from-blue-600/10 to-purple-600/10 rounded-2xl p-8 md:p-12 border border-white/10">
               <h2 className="text-3xl font-bold font-space-grotesk mb-8 text-white">Send us a Message</h2>
 
-              {submitted ? (
-                <div className="bg-green-500/20 border border-green-500/50 rounded-lg p-6 text-center">
-                  <p className="text-green-300 font-semibold text-lg">Thank you for your message!</p>
-                  <p className="text-green-300/80 mt-2">We'll get back to you soon.</p>
+              {status.message && (
+                <div
+                  className={`mb-6 rounded-lg p-4 flex items-start gap-3 ${
+                    status.type === 'success'
+                      ? 'bg-green-500/20 border border-green-500/50'
+                      : 'bg-red-500/20 border border-red-500/50'
+                  }`}
+                >
+                  {status.type === 'success' && (
+                    <CheckCircle2 className="h-5 w-5 text-green-400 flex-shrink-0 mt-0.5" />
+                  )}
+                  <p
+                    className={`${
+                      status.type === 'success' ? 'text-green-300' : 'text-red-300'
+                    } text-sm`}
+                  >
+                    {status.message}
+                  </p>
                 </div>
-              ) : (
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-white font-semibold mb-2">Name</label>
-                      <input
-                        type="text"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleChange}
-                        required
-                        className="w-full bg-slate-900/50 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:border-blue-400 transition-colors"
-                        placeholder="Your name"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-white font-semibold mb-2">Email</label>
-                      <input
-                        type="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleChange}
-                        required
-                        className="w-full bg-slate-900/50 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:border-blue-400 transition-colors"
-                        placeholder="your@email.com"
-                      />
-                    </div>
-                  </div>
+              )}
 
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-white font-semibold mb-2">Subject</label>
+                    <label className="block text-white font-semibold mb-2">Name</label>
                     <input
                       type="text"
-                      name="subject"
-                      value={formData.subject}
+                      name="name"
+                      value={formData.name}
                       onChange={handleChange}
                       required
-                      className="w-full bg-slate-900/50 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:border-blue-400 transition-colors"
-                      placeholder="How can we help?"
+                      disabled={isSubmitting}
+                      className="w-full bg-slate-900/50 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:border-blue-400 transition-colors disabled:opacity-50"
+                      placeholder="Your name"
                     />
                   </div>
-
                   <div>
-                    <label className="block text-white font-semibold mb-2">Message</label>
-                    <textarea
-                      name="message"
-                      value={formData.message}
+                    <label className="block text-white font-semibold mb-2">Email</label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email}
                       onChange={handleChange}
                       required
-                      rows={6}
-                      className="w-full bg-slate-900/50 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:border-blue-400 transition-colors resize-none"
-                      placeholder="Tell us more about your inquiry..."
+                      disabled={isSubmitting}
+                      className="w-full bg-slate-900/50 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:border-blue-400 transition-colors disabled:opacity-50"
+                      placeholder="your@email.com"
                     />
                   </div>
+                </div>
 
-                  <Button
-                    type="submit"
-                    size="lg"
-                    className="w-full text-lg py-6 button-premium text-white shadow-2xl rounded-lg font-semibold border-2"
-                    style={{
-                      backgroundColor: "#283886",
-                      borderColor: "#474EB8",
-                    }}
-                  >
-                    <Send className="mr-2 h-5 w-5" />
-                    Send Message
-                  </Button>
-                </form>
-              )}
+                <div>
+                  <label className="block text-white font-semibold mb-2">Subject</label>
+                  <input
+                    type="text"
+                    name="subject"
+                    value={formData.subject}
+                    onChange={handleChange}
+                    required
+                    disabled={isSubmitting}
+                    className="w-full bg-slate-900/50 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:border-blue-400 transition-colors disabled:opacity-50"
+                    placeholder="How can we help?"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-white font-semibold mb-2">Message</label>
+                  <textarea
+                    name="message"
+                    value={formData.message}
+                    onChange={handleChange}
+                    required
+                    rows={6}
+                    disabled={isSubmitting}
+                    className="w-full bg-slate-900/50 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:border-blue-400 transition-colors resize-none disabled:opacity-50"
+                    placeholder="Tell us more about your inquiry..."
+                  />
+                </div>
+
+                <Button
+                  type="submit"
+                  size="lg"
+                  disabled={isSubmitting}
+                  className="w-full text-lg py-6 button-premium text-white shadow-2xl rounded-lg font-semibold border-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{
+                    backgroundColor: isSubmitting ? "#1e293b" : "#283886",
+                    borderColor: isSubmitting ? "#334155" : "#474EB8",
+                  }}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="mr-2 h-5 w-5" />
+                      Send Message
+                    </>
+                  )}
+                </Button>
+              </form>
             </div>
           </div>
         </div>
