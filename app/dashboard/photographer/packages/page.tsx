@@ -45,7 +45,7 @@ interface UpsertPackageDto {
   category?: string
   includes?: string[]
   isActive?: boolean
-  images?: { url: string; order: number }[]
+  imageUrls?: string[]
 }
 
 export default function PhotographerPackagesPage() {
@@ -65,7 +65,7 @@ export default function PhotographerPackagesPage() {
     category: "portrait",
     includes: [],
     isActive: true,
-    images: []
+    imageUrls: []
   })
   const [newImageUrl, setNewImageUrl] = useState("")
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
@@ -75,7 +75,6 @@ export default function PhotographerPackagesPage() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [packageToDelete, setPackageToDelete] = useState<PackageDto | null>(null)
   const [currentImageIndex, setCurrentImageIndex] = useState<Record<string, number>>({})
-  const [showArchived, setShowArchived] = useState(false)
 
   useEffect(() => {
     const run = async () => {
@@ -128,7 +127,7 @@ export default function PhotographerPackagesPage() {
       category: "portrait",
       includes: [],
       isActive: true,
-      images: []
+      imageUrls: []
     })
     setNewInclude("")
     setNewImageUrl("")
@@ -150,10 +149,7 @@ export default function PhotographerPackagesPage() {
       category: pkg.category || "portrait",
       includes: pkg.includes || [],
       isActive: pkg.isActive ?? true,
-      images: (pkg.images || []).map((img, idx) => ({
-        url: img.url,
-        order: img.order ?? idx
-      }))
+      imageUrls: (pkg.images || []).map(img => img.url)
     })
     setIsDialogOpen(true)
   }
@@ -176,11 +172,11 @@ export default function PhotographerPackagesPage() {
   const addImageUrl = () => {
     const url = newImageUrl.trim()
     if (!url) return
-    const currentImages = form.images || []
-    if (!currentImages.some(img => img.url === url)) {
+    const currentImageUrls = form.imageUrls || []
+    if (!currentImageUrls.includes(url)) {
       setForm(f => ({
         ...f,
-        images: [...currentImages, { url, order: currentImages.length }]
+        imageUrls: [...currentImageUrls, url]
       }))
     }
     setNewImageUrl("")
@@ -189,10 +185,7 @@ export default function PhotographerPackagesPage() {
   const removeImage = (index: number) => {
     setForm(prev => ({
       ...prev,
-      images: (prev.images || []).filter((_, i) => i !== index).map((img, idx) => ({
-        ...img,
-        order: idx
-      }))
+      imageUrls: (prev.imageUrls || []).filter((_, i) => i !== index)
     }))
   }
 
@@ -202,37 +195,57 @@ export default function PhotographerPackagesPage() {
     }
   }
 
+  // NEW: Upload images to Next.js API route instead of backend
   const uploadFiles = async () => {
     if (selectedFiles.length === 0) return
     setUploading(true)
     setError("")
     try {
-      const fd = new FormData()
-      selectedFiles.forEach((f) => fd.append("files", f))
+      const uploadedUrls: string[] = []
+      
+      // Upload each file to Next.js API route
+      for (const file of selectedFiles) {
+        const fd = new FormData()
+        fd.append("file", file)
 
-      const res = await apiFetch<any>("/uploads", { method: "POST", body: fd, multipart: true })
+        // Call Next.js API route at /api/upload
+        const response = await fetch('.//upload', {
+          method: 'POST',
+          body: fd,
+        })
 
-      let urls: string[] = []
-      if (Array.isArray(res)) urls = res
-      else if (res.urls && Array.isArray(res.urls)) urls = res.urls
-      else if (res.url && typeof res.url === "string") urls = [res.url]
+        if (!response.ok) {
+          throw new Error(`Upload failed: ${response.statusText}`)
+        }
 
-      if (urls.length > 0) {
-        const currentImages = form.images || []
-        const newImages = urls.map((url, idx) => ({
-          url,
-          order: currentImages.length + idx
-        }))
-        setForm((prev) => ({ ...prev, images: [...currentImages, ...newImages] }))
-      } else {
-        throw new Error("Upload succeeded but no URLs were returned")
+        const result = await response.json()
+        
+        // Next.js API will return the public URL
+        if (result && result.url) {
+          uploadedUrls.push(result.url)
+        } else {
+          throw new Error("Upload failed: No URL in response")
+        }
       }
 
+      if (uploadedUrls.length === 0) {
+        throw new Error("No files were successfully uploaded")
+      }
+
+      // Update form state with new URLs
+      setForm(prev => ({
+        ...prev,
+        imageUrls: [...(prev.imageUrls || []), ...uploadedUrls]
+      }))
+
+      // Clear file input
       setSelectedFiles([])
-      if (document.getElementById('file-input')) {
-        (document.getElementById('file-input') as HTMLInputElement).value = ''
-      }
+      const fileInput = document.getElementById('file-input') as HTMLInputElement
+      if (fileInput) fileInput.value = ''
+
+      console.log('Successfully uploaded images:', uploadedUrls)
     } catch (e: any) {
+      console.error('Upload error:', e)
       setError(e?.message || "Failed to upload images")
     } finally {
       setUploading(false)
@@ -260,11 +273,23 @@ export default function PhotographerPackagesPage() {
     setSaving(true)
     setError("")
     try {
+      const payload: UpsertPackageDto = {
+        title: form.title.trim(),
+        description: form.description?.trim(),
+        priceCents: form.priceCents,
+        imageUrls: form.imageUrls || []
+      }
+
+      if (form.durationMinutes) payload.durationMinutes = form.durationMinutes
+      if (form.category) payload.category = form.category
+      if (form.includes?.length) payload.includes = form.includes
+      if (typeof form.isActive === 'boolean') payload.isActive = form.isActive
+
       if (editingId) {
         const prev = items
         setItems((old) => old.map((it) => (it.id === editingId ? { ...it, ...form, updatedAt: new Date().toISOString() } as PackageDto : it)))
         try {
-          const updated = await Api.put<PackageDto>(`/packages/${editingId}`, form)
+          const updated = await Api.put<PackageDto>(`/packages/${editingId}`, payload)
           setItems((old) => old.map((it) => (it.id === editingId ? updated : it)))
         } catch (e: any) {
           setItems(prev)
@@ -282,14 +307,17 @@ export default function PhotographerPackagesPage() {
           category: form.category,
           includes: form.includes,
           isActive: form.isActive,
-          images: form.images?.map(img => ({ ...img, id: `temp_img_${Math.random()}` })),
+          images: (form.imageUrls || []).map((url, index) => ({ 
+            url, 
+            order: index,
+            id: `temp_img_${Math.random()}`
+          })),
           createdAt: new Date().toISOString(),
         }
         setItems((old) => [optimistic, ...old])
         try {
-          console.log("Creating package with data:", form)
-          // const created = await Api.post<PackageDto>("/packages", form)
-          // setItems((old) => old.map((it) => (it.id === tempId ? created : it)))
+          const created = await Api.post<PackageDto>("/packages", payload)
+          setItems((old) => old.map((it) => (it.id === tempId ? created : it)))
         } catch (e: any) {
           setItems((old) => old.filter((it) => it.id !== tempId))
           throw e
@@ -334,11 +362,9 @@ export default function PhotographerPackagesPage() {
       })
     } catch (e: any) {
       setItems(prev)
-      setError(e?.message || "Failed to archive package")
+      setError(e?.message || "Failed to update package status")
     }
   }
-
-  const filteredItems = showArchived ? items : items.filter(pkg => pkg.isActive !== false)
 
   const nextImage = (pkgId: string, imageCount: number) => {
     setCurrentImageIndex(prev => ({
@@ -545,11 +571,11 @@ export default function PhotographerPackagesPage() {
                   </div>
 
                   {/* Uploaded Images */}
-                  {form.images && form.images.length > 0 && (
+                  {form.imageUrls && form.imageUrls.length > 0 && (
                     <div className="flex flex-wrap gap-2">
-                      {form.images.map((img, index) => (
+                      {form.imageUrls.map((url, index) => (
                         <div key={index} className="relative w-24 h-24 rounded border overflow-hidden group">
-                          <img src={img.url} alt={`Image ${index + 1}`} className="w-full h-full object-cover" />
+                          <img src={url} alt={`Image ${index + 1}`} className="w-full h-full object-cover" />
                           <button
                             type="button"
                             onClick={() => removeImage(index)}
@@ -694,7 +720,9 @@ export default function PhotographerPackagesPage() {
 
       {/* Packages Grid */}
       <Card>
-        
+        <CardHeader>
+          <CardTitle>Your Service Packages</CardTitle>
+        </CardHeader>
         <CardContent>
           {loading ? (
             <div className="flex items-center justify-center py-12">
@@ -711,9 +739,9 @@ export default function PhotographerPackagesPage() {
                 <p className="text-red-600 text-sm">{error}</p>
               </div>
             </div>
-          ) : filteredItems.length > 0 ? (
+          ) : items.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredItems.map((pkg) => {
+              {items.map((pkg) => {
                 const images = pkg.images || []
                 const currentIdx = currentImageIndex[pkg.id] || 0
                 
@@ -829,7 +857,7 @@ export default function PhotographerPackagesPage() {
                               className="px-2 py-1 text-xs"
                               onClick={() => togglePackageStatus(pkg)}
                             >
-                              {pkg.isActive === false ? 'Unarchive' : 'Archive'}
+                              {pkg.isActive === false ? 'Activate' : 'Deactivate'}
                             </Button>
 
                             <Button variant="outline" size="sm" onClick={() => openEdit(pkg)}>
