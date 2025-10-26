@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Star, MapPin, Phone, Mail, Camera, Heart, ArrowLeft, MessageCircle, Award, Calendar, Clock } from "lucide-react"
+import { Star, MapPin, Phone, Mail, Camera, Heart, ArrowLeft, MessageCircle, Award, Calendar, Clock, ChevronLeft, ChevronRight, ImageIcon } from "lucide-react"
 import { Api } from "@/lib/api"
 import { usePhotographerPackages, usePhotographerGallery, usePhotographerCalendar, useToggleFavorite } from "@/lib/hooks"
 import Link from "next/link"
@@ -42,11 +42,21 @@ interface Review {
   createdAt: string
 }
 
+interface PackageImage {
+  id?: string
+  packageId?: string
+  url: string
+  meta?: any
+  createdAt?: string
+  order: number
+}
+
 interface Package {
   id: string
   title: string
   description: string
   priceCents: number
+  images?: PackageImage[]
 }
 
 interface GalleryImage {
@@ -64,7 +74,7 @@ interface CalendarEvent {
 export default function PhotographerProfilePage() {
   const params = useParams()
   const router = useRouter()
-  const [selectedPackage, setSelectedPackage] = useState<string | null>(null)
+  const [selectedPackage, setSelectedPackage] = useState<Package | null>(null)
   const [isFavorite, setIsFavorite] = useState(false)
   const [photographer, setPhotographer] = useState<Photographer | null>(null)
   const [reviews, setReviews] = useState<Review[]>([])
@@ -75,6 +85,9 @@ export default function PhotographerProfilePage() {
   const [startTime, setStartTime] = useState("")
   const [endDate, setEndDate] = useState("")
   const [endTime, setEndTime] = useState("")
+  const [packageImageIndices, setPackageImageIndices] = useState<Record<string, number>>({})
+  const [showBookingDialog, setShowBookingDialog] = useState(false)
+  
   const id = params.id as string
   const toggleFav = useToggleFavorite()
   const { data: packages = [] } = usePhotographerPackages(id)
@@ -102,34 +115,53 @@ export default function PhotographerProfilePage() {
     fetchData()
   }, [id])
 
+  useEffect(() => {
+    // Initialize image indices for packages
+    const indices: Record<string, number> = {}
+    packages.forEach((pkg: Package) => {
+      indices[pkg.id] = 0
+    })
+    setPackageImageIndices(indices)
+  }, [packages])
+
   const handleToggleFavorite = async () => {
     const nextState = !isFavorite
     setIsFavorite(nextState)
     try {
       await toggleFav.mutateAsync({ photographerId: id, isFav: nextState })
     } catch {
-      // Revert on error
       setIsFavorite(!nextState)
     }
   }
 
-  const handleBookNow = async (packageId: string) => {
-    if (!photographer || !startDate || !startTime || !endDate || !endTime) return
+  const nextPackageImage = (pkgId: string, imageCount: number) => {
+    setPackageImageIndices(prev => ({
+      ...prev,
+      [pkgId]: ((prev[pkgId] || 0) + 1) % imageCount
+    }))
+  }
+
+  const prevPackageImage = (pkgId: string, imageCount: number) => {
+    setPackageImageIndices(prev => ({
+      ...prev,
+      [pkgId]: ((prev[pkgId] || 0) - 1 + imageCount) % imageCount
+    }))
+  }
+
+  const handleBookNow = async () => {
+    if (!photographer || !selectedPackage || !startDate || !startTime || !endDate || !endTime) return
     
     setBookingLoading(true)
     try {
-      // Combine selected dates and times for startAt and endAt
       const startDateTime = new Date(`${startDate}T${startTime}`)
       const endDateTime = new Date(`${endDate}T${endTime}`)
       
-      // Validate that end time is after start time
       if (endDateTime <= startDateTime) {
         alert("End date/time must be after start date/time")
         setBookingLoading(false)
         return
       }
       
-      // Validate that the start time is in the future
       if (startDateTime <= new Date()) {
         alert("Please select a future start date and time")
         setBookingLoading(false)
@@ -141,7 +173,7 @@ export default function PhotographerProfilePage() {
       
       await Api.post("/bookings", {
         photographerId: id,
-        packageId: packageId,
+        packageId: selectedPackage.id,
         startAt: start,
         endAt: end,
         location: { 
@@ -151,7 +183,7 @@ export default function PhotographerProfilePage() {
         },
       })
       
-      // Success - reset form and close dialog
+      setShowBookingDialog(false)
       setSelectedPackage(null)
       setStartDate("")
       setStartTime("")
@@ -377,138 +409,205 @@ export default function PhotographerProfilePage() {
               <CardTitle className="text-2xl">Available Packages</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              {(packages as Package[] || []).map((pkg: Package) => (
-                <Card
-                  key={pkg.id}
-                  className="border-2 hover:border-primary/50 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
-                >
-                  <CardContent className="p-6">
-                    <div className="space-y-4">
-                      <div>
-                        <h3 className="font-bold text-xl mb-2">{pkg.title}</h3>
-                        <p className="text-sm text-muted-foreground leading-relaxed">{pkg.description}</p>
-                      </div>
+              {(packages as Package[] || []).map((pkg: Package) => {
+                const images = pkg.images || []
+                const currentIdx = packageImageIndices[pkg.id] || 0
 
-                      <div className="flex items-center justify-between">
-                        <span className="text-3xl font-bold text-primary">{(pkg.priceCents/100).toLocaleString()} DA</span>
-                      </div>
-
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button
-                            className="w-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-                            onClick={() => setSelectedPackage(pkg.id)}
-                          >
-                            Book Now
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-md">
-                          <DialogHeader>
-                            <DialogTitle className="text-xl">Confirm Booking</DialogTitle>
-                          </DialogHeader>
-                          <div className="space-y-6">
-                            <div className="p-4 bg-gradient-to-r from-primary/5 to-accent/5 rounded-xl">
-                              <h4 className="font-bold text-lg">{pkg.title}</h4>
-                              <p className="text-sm text-muted-foreground">{pkg.description}</p>
-                              <p className="text-2xl font-bold text-primary mt-2">{(pkg.priceCents/100).toLocaleString()} DA</p>
+                return (
+                  <Card
+                    key={pkg.id}
+                    className="border-2 hover:border-primary/50 transition-all duration-300 shadow-lg hover:shadow-xl overflow-hidden"
+                  >
+                    {/* Image Gallery */}
+                    {images.length > 0 && (
+                      <div className="relative h-48 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden group">
+                        <img 
+                          src={images[currentIdx].url} 
+                          alt={pkg.title}
+                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        />
+                        
+                        {images.length > 1 && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                prevPackageImage(pkg.id, images.length)
+                              }}
+                            >
+                              <ChevronLeft className="h-5 w-5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                nextPackageImage(pkg.id, images.length)
+                              }}
+                            >
+                              <ChevronRight className="h-5 w-5" />
+                            </Button>
+                            
+                            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
+                              {images.map((_, idx) => (
+                                <div
+                                  key={idx}
+                                  className={`h-1.5 rounded-full transition-all duration-300 ${
+                                    idx === currentIdx
+                                      ? "w-6 bg-white"
+                                      : "w-1.5 bg-white/50"
+                                  }`}
+                                />
+                              ))}
                             </div>
-                            <div className="space-y-4">
-                              <div className="space-y-3">
-                                <h4 className="font-semibold text-sm text-primary">Start Date & Time</h4>
-                                <div className="grid grid-cols-2 gap-3">
-                                  <div className="space-y-2">
-                                    <Label htmlFor="start-date" className="flex items-center gap-2 text-xs font-medium">
-                                      <Calendar className="h-3 w-3" />
-                                      Date
-                                    </Label>
-                                    <Input
-                                      id="start-date"
-                                      type="date"
-                                      value={startDate}
-                                      onChange={(e) => setStartDate(e.target.value)}
-                                      min={new Date().toISOString().split('T')[0]}
-                                      className="text-sm"
-                                    />
+                          </>
+                        )}
+                      </div>
+                    )}
+                    
+                    {images.length === 0 && (
+                      <div className="h-48 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                        <ImageIcon className="h-16 w-16 text-gray-400" />
+                      </div>
+                    )}
+
+                    <CardContent className="p-6">
+                      <div className="space-y-4">
+                        <div>
+                          <h3 className="font-bold text-xl mb-2">{pkg.title}</h3>
+                          <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">{pkg.description}</p>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <span className="text-3xl font-bold text-primary">{(pkg.priceCents/100).toLocaleString()} DA</span>
+                        </div>
+
+                        <Dialog open={showBookingDialog && selectedPackage?.id === pkg.id} onOpenChange={setShowBookingDialog}>
+                          <DialogTrigger asChild>
+                            <Button
+                              className="w-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                              onClick={() => setSelectedPackage(pkg)}
+                            >
+                              Book Now
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-md">
+                            <DialogHeader>
+                              <DialogTitle className="text-xl">Confirm Booking</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-6">
+                              <div className="p-4 bg-gradient-to-r from-primary/5 to-accent/5 rounded-xl">
+                                <h4 className="font-bold text-lg">{selectedPackage?.title}</h4>
+                                <p className="text-sm text-muted-foreground">{selectedPackage?.description}</p>
+                                <p className="text-2xl font-bold text-primary mt-2">
+                                  {selectedPackage && (selectedPackage.priceCents/100).toLocaleString()} DA
+                                </p>
+                              </div>
+                              <div className="space-y-4">
+                                <div className="space-y-3">
+                                  <h4 className="font-semibold text-sm text-primary flex items-center gap-2">
+                                    <Calendar className="h-4 w-4" />
+                                    Start Date & Time
+                                  </h4>
+                                  <div className="grid grid-cols-2 gap-3">
+                                    <div className="space-y-2">
+                                      <Label htmlFor="start-date" className="text-xs font-medium">
+                                        Date
+                                      </Label>
+                                      <Input
+                                        id="start-date"
+                                        type="date"
+                                        value={startDate}
+                                        onChange={(e) => setStartDate(e.target.value)}
+                                        min={new Date().toISOString().split('T')[0]}
+                                        className="text-sm"
+                                      />
+                                    </div>
+                                    <div className="space-y-2">
+                                      <Label htmlFor="start-time" className="text-xs font-medium">
+                                        Time
+                                      </Label>
+                                      <Input
+                                        id="start-time"
+                                        type="time"
+                                        value={startTime}
+                                        onChange={(e) => setStartTime(e.target.value)}
+                                        className="text-sm"
+                                      />
+                                    </div>
                                   </div>
-                                  <div className="space-y-2">
-                                    <Label htmlFor="start-time" className="flex items-center gap-2 text-xs font-medium">
-                                      <Clock className="h-3 w-3" />
-                                      Time
-                                    </Label>
-                                    <Input
-                                      id="start-time"
-                                      type="time"
-                                      value={startTime}
-                                      onChange={(e) => setStartTime(e.target.value)}
-                                      className="text-sm"
-                                    />
+                                </div>
+                                
+                                <div className="space-y-3">
+                                  <h4 className="font-semibold text-sm text-primary flex items-center gap-2">
+                                    <Clock className="h-4 w-4" />
+                                    End Date & Time
+                                  </h4>
+                                  <div className="grid grid-cols-2 gap-3">
+                                    <div className="space-y-2">
+                                      <Label htmlFor="end-date" className="text-xs font-medium">
+                                        Date
+                                      </Label>
+                                      <Input
+                                        id="end-date"
+                                        type="date"
+                                        value={endDate}
+                                        onChange={(e) => setEndDate(e.target.value)}
+                                        min={new Date().toISOString().split('T')[0]}
+                                        className="text-sm"
+                                      />
+                                    </div>
+                                    <div className="space-y-2">
+                                      <Label htmlFor="end-time" className="text-xs font-medium">
+                                        Time
+                                      </Label>
+                                      <Input
+                                        id="end-time"
+                                        type="time"
+                                        value={endTime}
+                                        onChange={(e) => setEndTime(e.target.value)}
+                                        className="text-sm"
+                                      />
+                                    </div>
                                   </div>
                                 </div>
                               </div>
                               
-                              <div className="space-y-3">
-                                <h4 className="font-semibold text-sm text-primary">End Date & Time</h4>
-                                <div className="grid grid-cols-2 gap-3">
-                                  <div className="space-y-2">
-                                    <Label htmlFor="end-date" className="flex items-center gap-2 text-xs font-medium">
-                                      <Calendar className="h-3 w-3" />
-                                      Date
-                                    </Label>
-                                    <Input
-                                      id="end-date"
-                                      type="date"
-                                      value={endDate}
-                                      onChange={(e) => setEndDate(e.target.value)}
-                                      min={new Date().toISOString().split('T')[0]}
-                                      className="text-sm"
-                                    />
-                                  </div>
-                                  <div className="space-y-2">
-                                    <Label htmlFor="end-time" className="flex items-center gap-2 text-xs font-medium">
-                                      <Clock className="h-3 w-3" />
-                                      Time
-                                    </Label>
-                                    <Input
-                                      id="end-time"
-                                      type="time"
-                                      value={endTime}
-                                      onChange={(e) => setEndTime(e.target.value)}
-                                      className="text-sm"
-                                    />
-                                  </div>
-                                </div>
+                              <div className="flex gap-3">
+                                <Button 
+                                  className="flex-1 shadow-lg hover:shadow-xl transition-all duration-300"
+                                  onClick={handleBookNow}
+                                  disabled={bookingLoading || !startDate || !startTime || !endDate || !endTime}
+                                >
+                                  {bookingLoading ? "Booking..." : "Continue Booking"}
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  className="flex-1 border-2 hover:bg-secondary transition-all duration-300 bg-transparent"
+                                  onClick={() => {
+                                    setShowBookingDialog(false)
+                                    setSelectedPackage(null)
+                                    setStartDate("")
+                                    setStartTime("")
+                                    setEndDate("")
+                                    setEndTime("")
+                                  }}
+                                >
+                                  Cancel
+                                </Button>
                               </div>
                             </div>
-                            
-                            <div className="flex gap-3">
-                              <Button 
-                                className="flex-1 shadow-lg hover:shadow-xl transition-all duration-300"
-                                onClick={() => handleBookNow(pkg.id)}
-                                disabled={bookingLoading || !startDate || !startTime || !endDate || !endTime}
-                              >
-                                {bookingLoading ? "Booking..." : "Continue Booking"}
-                              </Button>
-                              <Button
-                                variant="outline"
-                                className="flex-1 border-2 hover:bg-secondary transition-all duration-300 bg-transparent"
-                                onClick={() => {
-                                  setSelectedPackage(null)
-                                  setStartDate("")
-                                  setStartTime("")
-                                  setEndDate("")
-                                  setEndTime("")
-                                }}
-                              >
-                                Cancel
-                              </Button>
-                            </div>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                          </DialogContent>
+                        </Dialog>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
+              })}
               {(!packages || (packages as Package[] || []).length === 0) && (
                 <div className="text-center py-8 text-muted-foreground">
                   <p>No packages available.</p>
@@ -526,8 +625,8 @@ export default function PhotographerProfilePage() {
                 {((calendar as { items: CalendarEvent[] })?.items || []).map((ev: CalendarEvent) => (
                   <div key={`${ev.id}-${ev.startAt}`} className="flex items-center justify-between p-2 border rounded-md">
                     <span className="font-medium">{ev.title || ev.type || "Event"}</span>
-                    <span className="text-muted-foreground">
-                      {new Date(ev.startAt).toLocaleString()} → {new Date(ev.endAt).toLocaleString()}
+                    <span className="text-muted-foreground text-xs">
+                      {new Date(ev.startAt).toLocaleDateString()}
                     </span>
                   </div>
                 ))}

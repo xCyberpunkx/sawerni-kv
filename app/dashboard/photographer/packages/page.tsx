@@ -286,8 +286,9 @@ export default function PhotographerPackagesPage() {
         }
         setItems((old) => [optimistic, ...old])
         try {
-          const created = await Api.post<PackageDto>("/packages", form)
-          setItems((old) => old.map((it) => (it.id === tempId ? created : it)))
+          console.log("Creating package with data:", form)
+          // const created = await Api.post<PackageDto>("/packages", form)
+          // setItems((old) => old.map((it) => (it.id === tempId ? created : it)))
         } catch (e: any) {
           setItems((old) => old.filter((it) => it.id !== tempId))
           throw e
