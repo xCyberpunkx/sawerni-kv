@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Calendar, MapPin, Clock, Phone, Mail, Check, X, Eye, User, Camera, DollarSign, AlertCircle } from "lucide-react"
+import { Calendar, MapPin, Clock, Phone, Mail, Check, X, Eye, User, Camera, DollarSign, AlertCircle, Play } from "lucide-react"
 import { Api } from "@/lib/api"
 import { mockAuth } from "@/lib/auth"
 import { connectSocket } from "@/lib/socket"
@@ -47,6 +47,7 @@ export default function BookingsPage() {
 
   const pendingBookings = photographerBookings.filter((booking) => booking.state === "requested")
   const confirmedBookings = photographerBookings.filter((booking) => booking.state === "confirmed")
+  const inProgressBookings = photographerBookings.filter((booking) => booking.state === "in_progress")
   const completedBookings = photographerBookings.filter((booking) => booking.state === "completed")
   const cancelledBookings = photographerBookings.filter((booking) => 
     booking.state === "cancelled_by_photographer" || booking.state === "cancelled_by_client"
@@ -74,10 +75,29 @@ export default function BookingsPage() {
     }
   }
 
+  const handleStartBooking = async (bookingId: string) => {
+    try {
+      await Api.patch(`/bookings/${bookingId}/state`, { 
+        toState: "in_progress", 
+        reason: "Session started" 
+      })
+      setPhotographerBookings((prev) => 
+        prev.map((b) => b.id === bookingId ? { ...b, state: "in_progress" } : b)
+      )
+    } catch (e: any) {
+      setError(e?.message || "Failed to start booking")
+    }
+  }
+
   const handleCompleteBooking = async (bookingId: string) => {
     try {
-      await Api.patch(`/bookings/${bookingId}/state`, { toState: "completed", reason: "Session completed" })
-      setPhotographerBookings((prev) => prev.map((b) => (b.id === bookingId ? { ...b, state: "completed" } : b)))
+      await Api.patch(`/bookings/${bookingId}/state`, { 
+        toState: "completed", 
+        reason: "Session completed" 
+      })
+      setPhotographerBookings((prev) => 
+        prev.map((b) => b.id === bookingId ? { ...b, state: "completed" } : b)
+      )
     } catch (e: any) {
       setError(e?.message || "Failed to complete booking")
     }
@@ -176,7 +196,7 @@ export default function BookingsPage() {
                 <>
                   <Button size="sm" onClick={() => handleAcceptBooking(booking.id)} className="gap-2">
                     <Check className="h-4 w-4" />
-                    Accept
+                    Mark as Confirmed
                   </Button>
                   <Button
                     size="sm"
@@ -189,6 +209,11 @@ export default function BookingsPage() {
                   </Button>
                 </>
               ) : booking.state === "confirmed" ? (
+                <Button size="sm" onClick={() => handleStartBooking(booking.id)} className="gap-2 bg-blue-600 hover:bg-blue-700">
+                  <Play className="h-4 w-4" />
+                  Start Session
+                </Button>
+              ) : booking.state === "in_progress" ? (
                 <Button size="sm" onClick={() => handleCompleteBooking(booking.id)} className="gap-2 bg-green-600 hover:bg-green-700">
                   <Check className="h-4 w-4" />
                   Mark Complete
@@ -305,7 +330,7 @@ export default function BookingsPage() {
       )}
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
@@ -329,6 +354,20 @@ export default function BookingsPage() {
               <div>
                 <p className="text-2xl font-bold">{confirmedBookings.length}</p>
                 <p className="text-sm text-muted-foreground">Confirmed</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <Play className="h-6 w-6 text-purple-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{inProgressBookings.length}</p>
+                <p className="text-sm text-muted-foreground">In Progress</p>
               </div>
             </div>
           </CardContent>
@@ -365,9 +404,10 @@ export default function BookingsPage() {
 
       {/* Bookings Tabs */}
       <Tabs defaultValue="pending" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="pending">Pending ({pendingBookings.length})</TabsTrigger>
           <TabsTrigger value="confirmed">Confirmed ({confirmedBookings.length})</TabsTrigger>
+          <TabsTrigger value="in_progress">In Progress ({inProgressBookings.length})</TabsTrigger>
           <TabsTrigger value="completed">Completed ({completedBookings.length})</TabsTrigger>
           <TabsTrigger value="cancelled">Cancelled ({cancelledBookings.length})</TabsTrigger>
         </TabsList>
@@ -395,6 +435,20 @@ export default function BookingsPage() {
                 <Check className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                 <h3 className="text-lg font-semibold mb-2">No confirmed bookings</h3>
                 <p className="text-muted-foreground">Accepted bookings will appear here</p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="in_progress" className="space-y-4">
+          {inProgressBookings.length > 0 ? (
+            inProgressBookings.map((booking) => <BookingCard key={booking.id} booking={booking} />)
+          ) : (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <Play className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                <h3 className="text-lg font-semibold mb-2">No in-progress bookings</h3>
+                <p className="text-muted-foreground">Active sessions will appear here</p>
               </CardContent>
             </Card>
           )}

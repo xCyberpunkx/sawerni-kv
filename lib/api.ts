@@ -55,11 +55,17 @@ export async function apiFetch<T = unknown>(
   const url = path.startsWith("http") ? path : `${API_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`
 
   const token = getAccessToken()
-  const isMultipart = options.multipart === true
+  const isMultipart = options.multipart === true || options.body instanceof FormData
+  
   const headers: Record<string, string> = {
     ...(isMultipart ? {} : { "Content-Type": "application/json" }),
     ...(options.headers || {}),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  }
+
+  // Remove Content-Type from headers if it's multipart (let browser set it with boundary)
+  if (isMultipart && headers['Content-Type']?.includes('multipart/form-data')) {
+    delete headers['Content-Type']
   }
 
   const doRequest = async (): Promise<Response> =>
@@ -98,8 +104,8 @@ export async function apiFetch<T = unknown>(
 
 export const Api = {
   get: <T>(path: string, headers?: Record<string, string>) => apiFetch<T>(path, { method: "GET", headers }),
-  post: <T>(path: string, body?: any, headers?: Record<string, string>) =>
-    apiFetch<T>(path, { method: "POST", body, headers }),
+  post: <T>(path: string, body?: any, options?: { headers?: Record<string, string>, multipart?: boolean }) =>
+    apiFetch<T>(path, { method: "POST", body, headers: options?.headers, multipart: options?.multipart }),
   put: <T>(path: string, body?: any, headers?: Record<string, string>) =>
     apiFetch<T>(path, { method: "PUT", body, headers }),
   patch: <T>(path: string, body?: any, headers?: Record<string, string>) =>
