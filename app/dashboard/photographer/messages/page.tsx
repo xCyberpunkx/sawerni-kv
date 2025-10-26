@@ -19,10 +19,10 @@ import {
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
 
+// ✅ Aligned with backend response structure
 interface Conversation {
   id: string
   otherUser: {
@@ -30,26 +30,56 @@ interface Conversation {
     name: string
     avatar?: string
     online?: boolean
-    lastSeen?: string
   }
+  lastActiveAt: string // ✅ Backend returns lastActiveAt, not updatedAt
   lastMessage?: {
-    content: string
+    id: string
+    content: string | null
     createdAt: string
-    type: string
     senderId: string
+    sender: {
+      id: string
+      name: string
+    }
+    attachments?: any[]
   }
   unreadCount: number
-  project?: {
-    id: string
-    title: string
-    status: string
-  }
-  createdAt: string
-  updatedAt: string
   messages?: any[]
 }
 
-type FilterType = "all" | "unread" | "archived"
+// ✅ Backend response structure for conversations list
+interface ConversationsResponse {
+  items: Conversation[]
+  meta: {
+    total: number
+    page: number
+    perPage: number
+    pages: number
+  }
+}
+
+// ✅ Backend response structure for messages
+interface MessagesResponse {
+  conversation: {
+    id: string
+    participantAId: string
+    participantBId: string
+    lastActiveAt: string
+    participantA: { id: string; name: string }
+    participantB: { id: string; name: string }
+  }
+  messages: {
+    items: any[]
+    meta: {
+      total: number
+      page: number
+      perPage: number
+      pages: number
+    }
+  }
+}
+
+type FilterType = "all" | "unread"
 type SortType = "recent" | "unread" | "name"
 
 export default function PhotographerMessagesPage() {
@@ -72,7 +102,6 @@ export default function PhotographerMessagesPage() {
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set())
   const [messageCache, setMessageCache] = useState<Map<string, { messages: any[], lastFetched: number }>>(new Map())
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const messagesStartRef = useRef<HTMLDivElement>(null)
 
   // Initialize current user
   useEffect(() => {
@@ -108,6 +137,7 @@ export default function PhotographerMessagesPage() {
     }))
   }, [])
 
+  // ✅ Load conversations - aligned with backend GET /conversations
   const loadConversations = useCallback(async (showRefresh = false) => {
     if (showRefresh) {
       setIsRefreshing(true)
@@ -116,7 +146,8 @@ export default function PhotographerMessagesPage() {
     }
     setListError("")
     try {
-      const data = await Api.get<{ items: Conversation[]; meta?: any }>("/conversations?page=1&perPage=100")
+      // ✅ Backend returns { items, meta }
+      const data = await Api.get<ConversationsResponse>("/conversations?page=1&perPage=100")
       const conversationsWithUsers = data.items?.map(conv => ({
         ...conv,
         otherUser: {
@@ -154,7 +185,7 @@ export default function PhotographerMessagesPage() {
                   messages: [...(c.messages || []), message], 
                   lastMessage: message,
                   unreadCount: c.id === selectedChatId ? 0 : (c.unreadCount || 0) + 1,
-                  updatedAt: new Date().toISOString()
+                  lastActiveAt: new Date().toISOString() // ✅ Updated to lastActiveAt
                 }
               : c,
           ),
@@ -206,25 +237,24 @@ export default function PhotographerMessagesPage() {
     .filter((chat) => {
       const matchesSearch = 
         (chat.otherUser?.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (chat.lastMessage?.content || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (chat.project?.title || "").toLowerCase().includes(searchQuery.toLowerCase())
+        (chat.lastMessage?.content || "").toLowerCase().includes(searchQuery.toLowerCase())
       
       const matchesFilter = 
         filter === "all" || 
-        (filter === "unread" && chat.unreadCount > 0) ||
-        (filter === "archived" && false) // Add archived logic if needed
+        (filter === "unread" && chat.unreadCount > 0)
 
       return matchesSearch && matchesFilter
     })
     .sort((a, b) => {
       switch (sort) {
         case "recent":
-          return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+          // ✅ Use lastActiveAt instead of updatedAt
+          return new Date(b.lastActiveAt).getTime() - new Date(a.lastActiveAt).getTime()
         case "unread":
           if (a.unreadCount !== b.unreadCount) {
             return b.unreadCount - a.unreadCount
           }
-          return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+          return new Date(b.lastActiveAt).getTime() - new Date(a.lastActiveAt).getTime()
         case "name":
           return a.otherUser.name.localeCompare(b.otherUser.name)
         default:
@@ -234,7 +264,7 @@ export default function PhotographerMessagesPage() {
 
   const selectedConversation = conversations.find((c) => c.id === selectedChatId) || null
 
-  // Load messages for selected conversation
+  // ✅ Load messages - aligned with backend GET /conversations/:id/messages
   useEffect(() => {
     const loadMessages = async () => {
       if (!selectedChatId) return
@@ -249,10 +279,9 @@ export default function PhotographerMessagesPage() {
               : c
           )
         )
-        setHasMoreMessages(true) // Assume there might be more
+        setHasMoreMessages(true)
         setCurrentPage(1)
         
-        // Scroll to bottom after messages load
         setTimeout(() => {
           messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
         }, 100)
@@ -264,9 +293,10 @@ export default function PhotographerMessagesPage() {
       setCurrentPage(1)
       setHasMoreMessages(true)
       try {
-        const res = await Api.get<{ items: any[]; meta?: { total: number; pages: number } }>(`/conversations/${selectedChatId}/messages?page=1&perPage=100`)
-        const messages = deduplicateMessages(res.items || [])
-        const totalPages = res.meta?.pages || 1
+        // ✅ Backend returns { conversation, messages: { items, meta } }
+        const res = await Api.get<MessagesResponse>(`/conversations/${selectedChatId}/messages?page=1&perPage=50`)
+        const messages = deduplicateMessages(res.messages.items || [])
+        const totalPages = res.messages.meta?.pages || 1
         
         // Cache the messages
         cacheMessages(selectedChatId, messages)
@@ -280,9 +310,10 @@ export default function PhotographerMessagesPage() {
         )
         
         setHasMoreMessages(totalPages > 1)
+        
+        // ✅ Mark conversation as read using PATCH /conversations/:id/read
         await Api.patch(`/conversations/${selectedChatId}/read`)
         
-        // Scroll to bottom after messages load
         setTimeout(() => {
           messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
         }, 100)
@@ -291,7 +322,6 @@ export default function PhotographerMessagesPage() {
         setThreadError(errorMessage)
         setRetryCount(prev => prev + 1)
         
-        // Show different error messages based on error type
         if (e?.status === 401) {
           toast.error("Session expired. Please refresh the page.")
         } else if (e?.status === 403) {
@@ -311,16 +341,16 @@ export default function PhotographerMessagesPage() {
     loadMessages()
   }, [selectedChatId, getCachedMessages, deduplicateMessages, cacheMessages])
 
-  // Load more messages function
+  // ✅ Load more messages with pagination
   const loadMoreMessages = useCallback(async () => {
     if (!selectedChatId || loadingMoreMessages || !hasMoreMessages) return
     
     setLoadingMoreMessages(true)
     try {
       const nextPage = currentPage + 1
-      const res = await Api.get<{ items: any[]; meta?: { total: number; pages: number } }>(`/conversations/${selectedChatId}/messages?page=${nextPage}&perPage=100`)
-      const newMessages = res.items || []
-      const totalPages = res.meta?.pages || 1
+      const res = await Api.get<MessagesResponse>(`/conversations/${selectedChatId}/messages?page=${nextPage}&perPage=50`)
+      const newMessages = res.messages.items || []
+      const totalPages = res.messages.meta?.pages || 1
       
       if (newMessages.length > 0) {
         const currentMessages = conversations.find(c => c.id === selectedChatId)?.messages || []
@@ -334,7 +364,6 @@ export default function PhotographerMessagesPage() {
           )
         )
         
-        // Update cache with all messages
         cacheMessages(selectedChatId, allMessages)
         
         setCurrentPage(nextPage)
@@ -358,11 +387,10 @@ export default function PhotographerMessagesPage() {
     
     setMessagesLoading(true)
     try {
-      const res = await Api.get<{ items: any[]; meta?: { total: number; pages: number } }>(`/conversations/${selectedChatId}/messages?page=1&perPage=100`)
-      const messages = deduplicateMessages(res.items || [])
-      const totalPages = res.meta?.pages || 1
+      const res = await Api.get<MessagesResponse>(`/conversations/${selectedChatId}/messages?page=1&perPage=50`)
+      const messages = deduplicateMessages(res.messages.items || [])
+      const totalPages = res.messages.meta?.pages || 1
       
-      // Cache the messages
       cacheMessages(selectedChatId, messages)
       
       setConversations((prev) => 
@@ -377,7 +405,6 @@ export default function PhotographerMessagesPage() {
       setCurrentPage(1)
       await Api.patch(`/conversations/${selectedChatId}/read`)
       
-      // Scroll to bottom after messages load
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
       }, 100)
@@ -394,23 +421,8 @@ export default function PhotographerMessagesPage() {
 
   const totalUnreadCount = conversations.reduce((sum, conv) => sum + conv.unreadCount, 0)
 
-  const handleStartNewChat = async () => {
-    // Implementation for starting new chat
-    toast.info("New chat feature coming soon")
-  }
-
-  const handleArchiveConversation = async (conversationId: string) => {
-    try {
-      await Api.patch(`/conversations/${conversationId}/archive`)
-      setConversations(prev => prev.filter(c => c.id !== conversationId))
-      if (selectedChatId === conversationId) {
-        setSelectedChatId(undefined)
-      }
-      toast.success("Conversation archived")
-    } catch (e: any) {
-      toast.error(e?.message || "Failed to archive conversation")
-    }
-  }
+  // ✅ Removed - backend doesn't have archive endpoint
+  // ✅ handleArchiveConversation removed
 
   if (!currentUser) {
     return (
@@ -441,7 +453,7 @@ export default function PhotographerMessagesPage() {
                 </Badge>
               )}
             </h1>
-            <p className="text-muted-foreground">Chat with clients and send price proposals for their projects</p>
+            <p className="text-muted-foreground">Chat with clients and collaborators</p>
           </div>
           
           <div className="flex items-center gap-2">
@@ -453,10 +465,6 @@ export default function PhotographerMessagesPage() {
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`} />
               Refresh
-            </Button>
-            <Button onClick={handleStartNewChat} className="gap-2">
-              <Plus className="h-4 w-4" />
-              New Chat
             </Button>
           </div>
         </div>
@@ -510,7 +518,7 @@ export default function PhotographerMessagesPage() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search conversations, messages, or projects..."
+                  placeholder="Search conversations or messages..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10"
@@ -554,7 +562,6 @@ export default function PhotographerMessagesPage() {
                     selectedChatId={selectedChatId}
                     onSelectChat={setSelectedChatId}
                     currentUserRole={currentUserRole}
-                    onArchiveConversation={handleArchiveConversation}
                   />
                 </div>
               ) : (
@@ -564,7 +571,7 @@ export default function PhotographerMessagesPage() {
                   <p className="text-muted-foreground mb-4">
                     {searchQuery || filter !== "all" 
                       ? "Try adjusting your search or filters" 
-                      : "Start a conversation with your clients to get started"}
+                      : "You don't have any conversations yet"}
                   </p>
                   {(searchQuery || filter !== "all") && (
                     <Button 
@@ -607,40 +614,20 @@ export default function PhotographerMessagesPage() {
                             </Badge>
                           )}
                         </div>
-                        {selectedConversation.project && (
-                          <p className="text-sm text-muted-foreground">
-                            Project: {selectedConversation.project.title}
-                          </p>
-                        )}
                       </div>
                     </div>
                     
-                    <div className="flex items-center gap-2">
-                      <Button variant="ghost" size="sm">
-                        <Phone className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <Video className="h-4 w-4" />
-                      </Button>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>View Profile</DropdownMenuItem>
-                          <DropdownMenuItem>View Project</DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem 
-                            onClick={() => handleArchiveConversation(selectedConversation.id)}
-                            className="text-red-600"
-                          >
-                            Archive Conversation
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
+                    {/* ✅ Removed Phone/Video/Archive options - not in backend */}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem>View Profile</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
 
@@ -699,12 +686,8 @@ export default function PhotographerMessagesPage() {
                   <MessageCircle className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-semibold mb-2">Select a conversation</h3>
                   <p className="text-muted-foreground mb-6">
-                    Choose a conversation from the list to start chatting with clients about their projects
+                    Choose a conversation from the list to start chatting
                   </p>
-                  <Button onClick={handleStartNewChat} className="gap-2">
-                    <Plus className="h-4 w-4" />
-                    Start New Conversation
-                  </Button>
                   {threadError && (
                     <p className="text-sm text-red-600 mt-4">{threadError}</p>
                   )}

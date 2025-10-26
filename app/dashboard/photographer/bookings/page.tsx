@@ -106,19 +106,18 @@ export default function BookingsPage() {
           <Avatar className="h-14 w-14 border-2 border-muted">
             <AvatarImage src={booking.client?.avatar || "/placeholder.svg"} />
             <AvatarFallback>
-              {booking.client?.firstName?.charAt(0) || 'C'}
-              {booking.client?.lastName?.charAt(0) || 'L'}
+              {booking.client?.name?.charAt(0) || 'CL'}
             </AvatarFallback>
           </Avatar>
 
           <div className="flex-1 space-y-3">
             <div className="flex items-start justify-between">
               <div>
-                <h3 className="font-semibold text-lg">Booking #{booking.id.slice(-6)}</h3>
+                <h3 className="font-semibold text-lg">Booking</h3>
                 <div className="flex items-center gap-2 mt-1">
                   <User className="h-4 w-4 text-muted-foreground" />
                   <p className="text-sm text-muted-foreground">
-                    {booking.client?.firstName} {booking.client?.lastName}
+                    {booking.client?.name}
                   </p>
                   {booking.client?.rating && (
                     <div className="flex items-center gap-1">
@@ -205,14 +204,14 @@ export default function BookingsPage() {
                 </DialogTrigger>
                 <DialogContent className="max-w-2xl">
                   <DialogHeader>
-                    <DialogTitle>Booking details #{booking.id}</DialogTitle>
+                    <DialogTitle>Booking details</DialogTitle>
                   </DialogHeader>
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <p className="text-sm font-medium">Client Name</p>
                         <p className="text-sm text-muted-foreground">
-                          {booking.client?.firstName} {booking.client?.lastName}
+                          {booking.client?.name}
                         </p>
                       </div>
                       <div>
