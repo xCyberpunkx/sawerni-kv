@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { CheckCircle, Eye, EyeOff } from "lucide-react"
+import { CheckCircle, Eye, EyeOff, AlertCircle } from "lucide-react"
 import { mockAuth } from "@/lib/auth"
 
 const algerianStates = [
@@ -43,6 +43,16 @@ const serviceTypes = [
   "Product Photography",
 ]
 
+interface ValidationErrors {
+  name?: string
+  email?: string
+  phone?: string
+  password?: string
+  confirmPassword?: string
+  state?: string
+  serviceType?: string
+}
+
 export default function SignupPage() {
   const searchParams = useSearchParams()
   const [userType, setUserType] = useState<"client" | "photographer">("client")
@@ -60,9 +70,10 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState(false)
+  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({})
+  const [touched, setTouched] = useState<Record<string, boolean>>({})
   const router = useRouter()
 
-  // Check URL params on mount
   useEffect(() => {
     const role = searchParams?.get("role")
     if (role === "photographer") {
@@ -70,15 +81,121 @@ export default function SignupPage() {
     }
   }, [searchParams])
 
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return emailRegex.test(email)
+  }
+
+  const validatePhone = (phone: string): boolean => {
+    const phoneRegex = /^[0-9]{10}$/
+    return phoneRegex.test(phone)
+  }
+
+  const validateName = (name: string): boolean => {
+    return name.trim().length >= 2 && /^[a-zA-Z\s]+$/.test(name)
+  }
+
+  const validatePassword = (password: string): boolean => {
+    return password.length >= 8 && /[A-Z]/.test(password) && /[a-z]/.test(password) && /[0-9]/.test(password)
+  }
+
+  const validateField = (field: string, value: string): string | undefined => {
+    switch (field) {
+      case "name":
+        if (!value.trim()) return "Name is required"
+        if (value.trim().length < 2) return "Name must be at least 2 characters"
+        if (!/^[a-zA-Z\s]+$/.test(value)) return "Name can only contain letters and spaces"
+        break
+      case "email":
+        if (!value.trim()) return "Email is required"
+        if (!validateEmail(value)) return "Please enter a valid email address"
+        break
+      case "phone":
+        if (!value.trim()) return "Phone number is required"
+        if (!/^[0-9]+$/.test(value)) return "Phone number can only contain digits"
+        if (value.length !== 10) return "Phone number must be exactly 10 digits"
+        break
+      case "password":
+        if (!value) return "Password is required"
+        if (value.length < 8) return "Password must be at least 8 characters"
+        if (!/[A-Z]/.test(value)) return "Password must contain at least one uppercase letter"
+        if (!/[a-z]/.test(value)) return "Password must contain at least one lowercase letter"
+        if (!/[0-9]/.test(value)) return "Password must contain at least one number"
+        break
+      case "confirmPassword":
+        if (!value) return "Please confirm your password"
+        if (value !== formData.password) return "Passwords do not match"
+        break
+      case "state":
+        if (!value) return "Please select your location"
+        break
+      case "serviceType":
+        if (userType === "photographer" && !value) return "Please select a service type"
+        break
+    }
+    return undefined
+  }
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }))
+    
+    if (touched[field]) {
+      const error = validateField(field, value)
+      setValidationErrors((prev) => ({
+        ...prev,
+        [field]: error,
+      }))
+    }
+
+    if (field === "password" && touched["confirmPassword"] && formData.confirmPassword) {
+      const confirmError = validateField("confirmPassword", formData.confirmPassword)
+      setValidationErrors((prev) => ({
+        ...prev,
+        confirmPassword: confirmError,
+      }))
+    }
+  }
+
+  const handleBlur = (field: string) => {
+    setTouched((prev) => ({ ...prev, [field]: true }))
+    const error = validateField(field, formData[field as keyof typeof formData])
+    setValidationErrors((prev) => ({
+      ...prev,
+      [field]: error,
+    }))
+  }
+
+  const validateAllFields = (): boolean => {
+    const errors: ValidationErrors = {}
+    let isValid = true
+
+    const fieldsToValidate = ["name", "email", "phone", "password", "confirmPassword", "state"]
+    if (userType === "photographer") {
+      fieldsToValidate.push("serviceType")
+    }
+
+    fieldsToValidate.forEach((field) => {
+      const error = validateField(field, formData[field as keyof typeof formData])
+      if (error) {
+        errors[field as keyof ValidationErrors] = error
+        isValid = false
+      }
+    })
+
+    setValidationErrors(errors)
+    setTouched(
+      fieldsToValidate.reduce((acc, field) => ({ ...acc, [field]: true }), {})
+    )
+
+    return isValid
+  }
+
   const handleGoogleSignup = async () => {
     setLoading(true)
     setError("")
     
     try {
-      // Simulate Google OAuth - in a real app, you'd integrate with Google OAuth
       await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      // For demo purposes, redirect to client dashboard
       router.push("/dashboard/client")
     } catch (err) {
       setError("Google signup failed. Please try again.")
@@ -87,24 +204,14 @@ export default function SignupPage() {
     }
   }
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
     setLoading(true)
     setError("")
 
-    if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match")
+    if (!validateAllFields()) {
       setLoading(false)
-      return
-    }
-
-    if (formData.password.length < 6) {
-      setError("Password must be at least 6 characters long")
-      setLoading(false)
+      setError("Please fix all validation errors before submitting")
       return
     }
 
@@ -202,6 +309,7 @@ export default function SignupPage() {
 
             {error && (
               <Alert variant="destructive" className="mb-6">
+                <AlertCircle className="h-4 w-4" />
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
@@ -224,22 +332,31 @@ export default function SignupPage() {
               </TabsList>
             </Tabs>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-4">
               <div className="space-y-2 relative group">
                 <div className="absolute -left-16 top-1/2 w-16 h-0.5 bg-gradient-to-r from-transparent via-blue-400 to-blue-400 hidden md:block transition-all duration-300 group-hover:via-blue-300 group-hover:to-blue-300"></div>
                 <div className="absolute -left-20 top-1/2 w-3 h-3 bg-blue-400 rounded-full hidden md:block transform -translate-y-1/2 shadow-lg shadow-blue-400/50 group-hover:scale-125 transition-transform duration-300"></div>
                 <Label htmlFor="name" className="text-blue-300 font-semibold text-sm">
                   Full Name
                 </Label>
-                  <Input
+                <Input
                   id="name"
                   type="text"
                   placeholder="Enter your full name"
                   value={formData.name}
                   onChange={(e) => handleInputChange("name", e.target.value)}
-                  className="bg-white border-0 text-black placeholder:text-slate-400 rounded-full pl-4 pr-4 h-14 shadow-lg transition-all duration-300 hover:shadow-xl focus:shadow-2xl focus:scale-[1.02]"
+                  onBlur={() => handleBlur("name")}
+                  className={`bg-white border-0 text-black placeholder:text-slate-400 rounded-full pl-4 pr-4 h-14 shadow-lg transition-all duration-300 hover:shadow-xl focus:shadow-2xl focus:scale-[1.02] ${
+                    validationErrors.name && touched.name ? "ring-2 ring-red-500" : ""
+                  }`}
                   required
                 />
+                {validationErrors.name && touched.name && (
+                  <p className="text-red-400 text-xs mt-1 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    {validationErrors.name}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2 relative group">
@@ -251,12 +368,22 @@ export default function SignupPage() {
                 <Input
                   id="phone"
                   type="tel"
-                  placeholder="Enter your phone number"
+                  placeholder="10 digits (e.g., 0555123456)"
                   value={formData.phone}
                   onChange={(e) => handleInputChange("phone", e.target.value)}
-                  className="bg-white border-0 text-black placeholder:text-slate-400 rounded-full pl-4 pr-4 h-14 shadow-lg transition-all duration-300 hover:shadow-xl focus:shadow-2xl focus:scale-[1.02]"
+                  onBlur={() => handleBlur("phone")}
+                  maxLength={10}
+                  className={`bg-white border-0 text-black placeholder:text-slate-400 rounded-full pl-4 pr-4 h-14 shadow-lg transition-all duration-300 hover:shadow-xl focus:shadow-2xl focus:scale-[1.02] ${
+                    validationErrors.phone && touched.phone ? "ring-2 ring-red-500" : ""
+                  }`}
                   required
                 />
+                {validationErrors.phone && touched.phone && (
+                  <p className="text-red-400 text-xs mt-1 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    {validationErrors.phone}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2 relative group">
@@ -271,9 +398,18 @@ export default function SignupPage() {
                   placeholder="Enter your email address"
                   value={formData.email}
                   onChange={(e) => handleInputChange("email", e.target.value)}
-                  className="bg-white border-0 text-black placeholder:text-slate-400 rounded-full pl-4 pr-4 h-14 shadow-lg transition-all duration-300 hover:shadow-xl focus:shadow-2xl focus:scale-[1.02]"
+                  onBlur={() => handleBlur("email")}
+                  className={`bg-white border-0 text-black placeholder:text-slate-400 rounded-full pl-4 pr-4 h-14 shadow-lg transition-all duration-300 hover:shadow-xl focus:shadow-2xl focus:scale-[1.02] ${
+                    validationErrors.email && touched.email ? "ring-2 ring-red-500" : ""
+                  }`}
                   required
                 />
+                {validationErrors.email && touched.email && (
+                  <p className="text-red-400 text-xs mt-1 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    {validationErrors.email}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2 relative group">
@@ -282,8 +418,16 @@ export default function SignupPage() {
                 <Label htmlFor="state" className="text-blue-300 font-semibold text-sm">
                   Location
                 </Label>
-                <Select value={formData.state} onValueChange={(value) => handleInputChange("state", value)}>
-                  <SelectTrigger className="bg-white border-0 text-black rounded-full pl-4 pr-4 h-14 shadow-lg transition-all duration-300 hover:shadow-xl focus:shadow-2xl focus:scale-[1.02]">
+                <Select 
+                  value={formData.state} 
+                  onValueChange={(value) => {
+                    handleInputChange("state", value)
+                    handleBlur("state")
+                  }}
+                >
+                  <SelectTrigger className={`bg-white border-0 text-black rounded-full pl-4 pr-4 h-14 shadow-lg transition-all duration-300 hover:shadow-xl focus:shadow-2xl focus:scale-[1.02] ${
+                    validationErrors.state && touched.state ? "ring-2 ring-red-500" : ""
+                  }`}>
                     <SelectValue placeholder="Select your location" />
                   </SelectTrigger>
                   <SelectContent className="bg-white border-slate-200">
@@ -294,8 +438,13 @@ export default function SignupPage() {
                     ))}
                   </SelectContent>
                 </Select>
+                {validationErrors.state && touched.state && (
+                  <p className="text-red-400 text-xs mt-1 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    {validationErrors.state}
+                  </p>
+                )}
               </div>
-
 
               <div className="space-y-2 relative group">
                 <div className="absolute -left-16 top-1/2 w-16 h-0.5 bg-gradient-to-r from-transparent via-blue-400 to-blue-400 hidden md:block transition-all duration-300 group-hover:via-blue-300 group-hover:to-blue-300"></div>
@@ -310,7 +459,10 @@ export default function SignupPage() {
                     placeholder="••••••••••"
                     value={formData.password}
                     onChange={(e) => handleInputChange("password", e.target.value)}
-                    className="bg-white border-0 text-black placeholder:text-slate-400 rounded-full pl-4 pr-12 h-14 shadow-lg transition-all duration-300 hover:shadow-xl focus:shadow-2xl focus:scale-[1.02]"
+                    onBlur={() => handleBlur("password")}
+                    className={`bg-white border-0 text-black placeholder:text-slate-400 rounded-full pl-4 pr-12 h-14 shadow-lg transition-all duration-300 hover:shadow-xl focus:shadow-2xl focus:scale-[1.02] ${
+                      validationErrors.password && touched.password ? "ring-2 ring-red-500" : ""
+                    }`}
                     required
                   />
                   <button
@@ -321,6 +473,17 @@ export default function SignupPage() {
                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
+                {validationErrors.password && touched.password && (
+                  <p className="text-red-400 text-xs mt-1 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    {validationErrors.password}
+                  </p>
+                )}
+                {!validationErrors.password && touched.password && (
+                  <p className="text-blue-300 text-xs mt-1">
+                    Password strength: {formData.password.length >= 8 ? "Good" : "Weak"}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2 relative group">
@@ -336,27 +499,37 @@ export default function SignupPage() {
                     placeholder="••••••••••"
                     value={formData.confirmPassword}
                     onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
-                    className="bg-white border-0 text-white placeholder:text-slate-400 rounded-full pl-4 pr-12 h-14 shadow-lg transition-all duration-300 hover:shadow-xl focus:shadow-2xl focus:scale-[1.02]"
+                    onBlur={() => handleBlur("confirmPassword")}
+                    className={`bg-white border-0 text-black placeholder:text-slate-400 rounded-full pl-4 pr-12 h-14 shadow-lg transition-all duration-300 hover:shadow-xl focus:shadow-2xl focus:scale-[1.02] ${
+                      validationErrors.confirmPassword && touched.confirmPassword ? "ring-2 ring-red-500" : ""
+                    }`}
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-blue-600 transition-colors"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-black hover:text-blue-600 transition-colors"
                   >
                     {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
+                {validationErrors.confirmPassword && touched.confirmPassword && (
+                  <p className="text-red-400 text-xs mt-1 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    {validationErrors.confirmPassword}
+                  </p>
+                )}
               </div>
 
               <Button
-                type="submit"
+                type="button"
+                onClick={handleSubmit}
                 className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-full h-14 text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] border-2 border-blue-400/30"
                 disabled={loading}
               >
                 {loading ? "Creating account..." : "Sign Up"}
               </Button>
-            </form>
+            </div>
 
             <div className="mt-8 space-y-4">
               <p className="text-center text-sm text-white/60">Or sign up with</p>
