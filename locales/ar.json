@@ -1,0 +1,165 @@
+{
+  "common": {
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "delete": "حذف",
+    "edit": "تعديل",
+    "create": "إنشاء",
+    "search": "بحث",
+    "loading": "جاري التحميل...",
+    "error": "خطأ",
+    "success": "نجح",
+    "confirm": "تأكيد",
+    "close": "إغلاق",
+    "back": "رجوع",
+    "next": "التالي",
+    "previous": "السابق",
+    "submit": "إرسال",
+    "reset": "إعادة تعيين",
+    "filter": "فلترة",
+    "sort": "ترتيب",
+    "view": "عرض",
+    "more": "المزيد",
+    "less": "أقل"
+  },
+  "navigation": {
+    "dashboard": "لوحة التحكم",
+    "packages": "الباقات",
+    "portfolio": "الأعمال",
+    "bookings": "الحجوزات",
+    "calendar": "التقويم",
+    "messages": "الرسائل",
+    "reviews": "التقييمات",
+    "profile": "الملف الشخصي",
+    "notifications": "الإشعارات",
+    "settings": "الإعدادات",
+    "photographers": "المصورون",
+    "favorites": "المفضلة",
+    "contracts": "العقود",
+    "users": "المستخدمون",
+    "services": "الخدمات",
+    "categories": "الفئات",
+    "stats": "الإحصائيات",
+    "issues": "المشاكل"
+  },
+  "auth": {
+    "login": "تسجيل الدخول",
+    "signup": "إنشاء حساب",
+    "logout": "تسجيل الخروج",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "name": "الاسم",
+    "confirmPassword": "تأكيد كلمة المرور",
+    "forgotPassword": "هل نسيت كلمة المرور؟",
+    "rememberMe": "تذكرني",
+    "createAccount": "إنشاء حساب",
+    "alreadyHaveAccount": "هل لديك حساب بالفعل؟",
+    "dontHaveAccount": "ليس لديك حساب؟",
+    "welcome": "مرحباً"
+  },
+  "dashboard": {
+    "client": {
+      "title": "لوحة تحكم العميل",
+      "description": "إدارة حجوزاتك واكتشف المصورين",
+      "statistics": {
+        "totalBookings": "إجمالي الحجوزات",
+        "activeBookings": "الحجوزات النشطة",
+        "completedBookings": "الحجوزات المكتملة",
+        "totalSpent": "إجمالي المصروف"
+      }
+    },
+    "photographer": {
+      "title": "لوحة تحكم المصور",
+      "description": "إدارة باقاتك وحجوزاتك وأعمالك",
+      "statistics": {
+        "totalBookings": "إجمالي الحجوزات",
+        "activeBookings": "الحجوزات النشطة",
+        "totalEarnings": "إجمالي الأرباح",
+        "averageRating": "متوسط التقييم"
+      }
+    },
+    "admin": {
+      "title": "لوحة تحكم المسؤول",
+      "description": "إدارة المستخدمين والخدمات وإحصائيات المنصة",
+      "statistics": {
+        "totalUsers": "إجمالي المستخدمين",
+        "totalPhotographers": "إجمالي المصورين",
+        "totalBookings": "إجمالي الحجوزات",
+        "revenue": "الإيرادات"
+      }
+    }
+  },
+  "settings": {
+    "title": "الإعدادات",
+    "appearance": {
+      "title": "المظهر",
+      "darkMode": "الوضع الداكن",
+      "darkModeDescription": "التبديل بين الوضع الفاتح والداكن",
+      "language": "لغة الموقع",
+      "languageDescription": "تغيير لغة الواجهة"
+    },
+    "notifications": {
+      "title": "الإشعارات",
+      "emailNotifications": "إشعارات البريد الإلكتروني",
+      "emailNotificationsDescription": "تلقي التحديثات عبر البريد الإلكتروني",
+      "pushNotifications": "الإشعارات المنبثقة",
+      "pushNotificationsDescription": "تلقي إشعارات متصفح منبثقة",
+      "marketingEmails": "رسائل التسويق",
+      "marketingEmailsDescription": "تلقي الرسائل الترويجية والعروض"
+    },
+    "privacy": {
+      "title": "الخصوصية",
+      "profileVisibility": "رؤية الملف الشخصي",
+      "profileVisibilityDescription": "التحكم في من يمكنه رؤية ملفك الشخصي",
+      "dataPrivacy": "خصوصية البيانات",
+      "dataPrivacyDescription": "بياناتك آمنة ومشفرة"
+    },
+    "account": {
+      "title": "الحساب",
+      "deleteAccount": "حذف الحساب",
+      "changePassword": "تغيير كلمة المرور"
+    }
+  },
+  "profile": {
+    "title": "الملف الشخصي",
+    "personalInformation": "المعلومات الشخصية",
+    "fullName": "الاسم الكامل",
+    "phone": "رقم الهاتف",
+    "email": "عنوان البريد الإلكتروني",
+    "emailCannotBeChanged": "لا يمكن تغيير البريد الإلكتروني",
+    "stateRegion": "المحافظة/المنطقة",
+    "language": "اللغة",
+    "quickInfo": "معلومات سريعة",
+    "location": "الموقع",
+    "saveChanges": "حفظ التغييرات",
+    "saving": "جاري الحفظ...",
+    "profileUpdated": "تم تحديث الملف الشخصي بنجاح"
+  },
+  "bookings": {
+    "title": "الحجوزات",
+    "create": "إنشاء حجز",
+    "noBookings": "لا توجد حجوزات بعد",
+    "status": {
+      "pending": "قيد الانتظار",
+      "confirmed": "مؤكد",
+      "completed": "مكتمل",
+      "cancelled": "ملغي"
+    }
+  },
+  "messages": {
+    "title": "الرسائل",
+    "noMessages": "لا توجد رسائل بعد",
+    "startConversation": "ابدأ محادثة",
+    "typeMessage": "اكتب رسالة...",
+    "send": "إرسال"
+  },
+  "packages": {
+    "title": "الباقات",
+    "noPackages": "لا توجد باقات متاحة",
+    "price": "السعر",
+    "duration": "المدة",
+    "includes": "يشمل",
+    "category": "الفئة"
+  }
+}
+

@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { Home, Camera, Heart, MessageCircle, Calendar, FileText, Star, LogOut, Bell, Menu, X, Package } from "lucide-react"
+import { Home, Camera, Heart, MessageCircle, Calendar, FileText, Star, LogOut, Bell, Menu, X, Package, User, Settings } from "lucide-react"
 import { mockAuth } from "@/lib/auth"
 import { cn } from "@/lib/utils"
 
@@ -19,6 +19,8 @@ const navigation = [
   { name: "Favorites", href: "/dashboard/client/favorites", icon: Heart },
   { name: "Contracts", href: "/dashboard/client/contracts", icon: FileText },
   { name: "Reviews", href: "/dashboard/client/reviews", icon: Star },
+  { name: "Profile", href: "/dashboard/client/profile", icon: User },
+  { name: "Settings", href: "/dashboard/client/settings", icon: Settings },
 ]
 
 interface ClientSidebarProps {
@@ -46,29 +48,31 @@ export function ClientSidebar({ className }: ClientSidebarProps) {
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full bg-card">
-      <div className="p-6 border-b border-border bg-gradient-to-r from-primary/5 to-accent/5">
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <Avatar className="h-14 w-14 ring-2 ring-primary/20">
-              <AvatarImage src={user?.avatar || "/placeholder.svg"} />
-              <AvatarFallback className="bg-primary text-primary-foreground text-lg font-semibold">
-                {user?.name?.charAt(0) || "U"}
-              </AvatarFallback>
-            </Avatar>
-            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-primary rounded-full border-2 border-background"></div>
+      <Link href="/dashboard/client/profile">
+        <div className="p-6 border-b border-border bg-gradient-to-r from-primary/5 to-accent/5 cursor-pointer hover:from-primary/10 hover:to-accent/10 transition-colors">
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <Avatar className="h-14 w-14 ring-2 ring-primary/20">
+                <AvatarImage src={user?.avatar || "/placeholder.svg"} />
+                <AvatarFallback className="bg-primary text-primary-foreground text-lg font-semibold">
+                  {user?.name?.charAt(0) || "U"}
+                </AvatarFallback>
+              </Avatar>
+              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-primary rounded-full border-2 border-background"></div>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-lg font-semibold truncate">{user?.name}</p>
+              <p className="text-sm text-muted-foreground truncate">{user?.role}</p>
+              <Badge variant="secondary" className="mt-1 text-xs bg-accent/10 text-accent">
+                Premium Client
+              </Badge>
+            </div>
+            <Button variant="ghost" size="sm" className="hover:bg-primary/10" onClick={(e) => e.preventDefault()}>
+              <Bell className="h-4 w-4" />
+            </Button>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-lg font-semibold truncate">{user?.name}</p>
-            <p className="text-sm text-muted-foreground truncate">{user?.role}</p>
-            <Badge variant="secondary" className="mt-1 text-xs bg-accent/10 text-accent">
-              Premium Client
-            </Badge>
-          </div>
-          <Button variant="ghost" size="sm" className="hover:bg-primary/10">
-            <Bell className="h-4 w-4" />
-          </Button>
         </div>
-      </div>
+      </Link>
 
       <nav className="flex-1 p-4 space-y-1">
         {navigation.map((item) => {
@@ -86,7 +90,7 @@ export function ClientSidebar({ className }: ClientSidebarProps) {
               >
                 <item.icon className="h-5 w-5" />
                 <span className="flex-1 text-left font-medium">{item.name}</span>
-                {item.badge && <Badge className="bg-accent text-accent-foreground animate-pulse">{item.badge}</Badge>}
+                {item.badge && <Badge className="bg-accent text-accent-foreground">{item.badge}</Badge>}
               </Button>
             </Link>
           )

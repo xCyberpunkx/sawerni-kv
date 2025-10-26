@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import {
   LayoutDashboard,
   Users,
-  Settings,
+  Settings as SettingsIcon,
   Tags,
   BarChart3,
   AlertTriangle,
@@ -18,6 +18,8 @@ import {
   Menu,
   X,
   Shield,
+  Cog,
+  Sliders,
 } from "lucide-react"
 import { mockAuth } from "@/lib/auth"
 import { cn } from "@/lib/utils"
@@ -25,10 +27,11 @@ import { cn } from "@/lib/utils"
 const navigation = [
   { name: "Dashboard", href: "/dashboard/admin", icon: LayoutDashboard },
   { name: "Users", href: "/dashboard/admin/users", icon: Users },
-  { name: "Services", href: "/dashboard/admin/services", icon: Settings },
+  { name: "Services", href: "/dashboard/admin/services", icon: Sliders },
   { name: "Categories", href: "/dashboard/admin/categories", icon: Tags },
   { name: "Stats", href: "/dashboard/admin/stats", icon: BarChart3 },
   { name: "Issues", href: "/dashboard/admin/issues", icon: AlertTriangle, badge: 3 },
+  { name: "Settings", href: "/dashboard/admin/settings", icon: Cog },
 ]
 
 interface AdminSidebarProps {
@@ -48,26 +51,28 @@ export function AdminSidebar({ className }: AdminSidebarProps) {
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
       {/* User Profile */}
-      <div className="p-6 border-b">
-        <div className="flex items-center gap-3">
-          <Avatar className="h-12 w-12">
-            <AvatarImage src={user?.avatar || "/placeholder.svg"} />
-            <AvatarFallback className="bg-primary text-primary-foreground">
-              {user?.name?.charAt(0) || "A"}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{user?.name}</p>
-            <div className="flex items-center gap-1 mt-1">
-              <Shield className="h-3 w-3 text-primary" />
-              <span className="text-xs text-muted-foreground">Administrator</span>
+      <Link href="/dashboard/admin/settings">
+        <div className="p-6 border-b cursor-pointer hover:bg-secondary/30 transition-colors">
+          <div className="flex items-center gap-3">
+            <Avatar className="h-12 w-12">
+              <AvatarImage src={user?.avatar || "/placeholder.svg"} />
+              <AvatarFallback className="bg-primary text-primary-foreground">
+                {user?.name?.charAt(0) || "A"}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate">{user?.name}</p>
+              <div className="flex items-center gap-1 mt-1">
+                <Shield className="h-3 w-3 text-primary" />
+                <span className="text-xs text-muted-foreground">Administrator</span>
+              </div>
             </div>
+            <Button variant="ghost" size="sm" onClick={(e) => e.preventDefault()}>
+              <Bell className="h-4 w-4" />
+            </Button>
           </div>
-          <Button variant="ghost" size="sm">
-            <Bell className="h-4 w-4" />
-          </Button>
         </div>
-      </div>
+      </Link>
 
       {/* Quick Stats */}
       <div className="p-4 border-b">

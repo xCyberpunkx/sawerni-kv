@@ -33,20 +33,20 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Updated to blue/purple color palette, removed yellow */
-  --background: #0f172a; /* Dark slate background */
-  --foreground: #ffffff; /* White text */
-  --card: #1e293b; /* Slate card background */
+  /* Dark theme as default - better for photography site */
+  --background: #0f172a;
+  --foreground: #ffffff;
+  --card: #1e293b;
   --card-foreground: #ffffff;
   --popover: #1e293b;
   --popover-foreground: #ffffff;
-  --primary: #3b82f6; /* Blue primary */
+  --primary: #3b82f6;
   --primary-foreground: #ffffff;
-  --secondary: #6366f1; /* Indigo secondary */
+  --secondary: #334155;
   --secondary-foreground: #ffffff;
   --muted: #334155;
   --muted-foreground: #cbd5e1;
-  --accent: #8b5cf6; /* Purple accent */
+  --accent: #8b5cf6;
   --accent-foreground: #ffffff;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
@@ -59,48 +59,49 @@
   --chart-4: #a855f7;
   --chart-5: #c084fc;
   --radius: 0.75rem;
-  --sidebar: #0f172a;
+  --sidebar: #1e293b;
   --sidebar-foreground: #ffffff;
-  --sidebar-primary: #1e293b;
+  --sidebar-primary: #3b82f6;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #3b82f6;
+  --sidebar-accent: #334155;
   --sidebar-accent-foreground: #ffffff;
   --sidebar-border: #334155;
   --sidebar-ring: #3b82f6;
 }
 
-.dark {
-  --background: #020617;
-  --foreground: #ffffff;
-  --card: #0f172a;
-  --card-foreground: #ffffff;
-  --popover: #0f172a;
-  --popover-foreground: #ffffff;
+.light {
+  /* Light mode - white background for dashboards */
+  --background: #ffffff;
+  --foreground: #0f172a;
+  --card: #f8fafc;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
   --primary: #3b82f6;
   --primary-foreground: #ffffff;
-  --secondary: #6366f1;
-  --secondary-foreground: #ffffff;
-  --muted: #1e293b;
-  --muted-foreground: #cbd5e1;
-  --accent: #8b5cf6;
-  --accent-foreground: #ffffff;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #0f172a;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --accent: #f1f5f9;
+  --accent-foreground: #0f172a;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
-  --border: #1e293b;
-  --input: #0f172a;
+  --border: #e2e8f0;
+  --input: #f8fafc;
   --ring: #3b82f6;
   --chart-1: #3b82f6;
   --chart-2: #6366f1;
   --chart-3: #8b5cf6;
   --chart-4: #a855f7;
   --chart-5: #c084fc;
-  --sidebar: #020617;
-  --sidebar-foreground: #ffffff;
-  --sidebar-primary: #0f172a;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #0f172a;
+  --sidebar-primary: #3b82f6;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #3b82f6;
-  --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #1e293b;
+  --sidebar-accent: #f1f5f9;
+  --sidebar-accent-foreground: #0f172a;
+  --sidebar-border: #e2e8f0;
   --sidebar-ring: #3b82f6;
 }
 
@@ -150,7 +151,8 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply text-foreground;
+    /* Don't apply background to body - let pages control their own background */
   }
 }
 

@@ -1,0 +1,165 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "search": "Search",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "confirm": "Confirm",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "submit": "Submit",
+    "reset": "Reset",
+    "filter": "Filter",
+    "sort": "Sort",
+    "view": "View",
+    "more": "More",
+    "less": "Less"
+  },
+  "navigation": {
+    "dashboard": "Dashboard",
+    "packages": "Packages",
+    "portfolio": "Portfolio",
+    "bookings": "Bookings",
+    "calendar": "Calendar",
+    "messages": "Messages",
+    "reviews": "Reviews",
+    "profile": "Profile",
+    "notifications": "Notifications",
+    "settings": "Settings",
+    "photographers": "Photographers",
+    "favorites": "Favorites",
+    "contracts": "Contracts",
+    "users": "Users",
+    "services": "Services",
+    "categories": "Categories",
+    "stats": "Statistics",
+    "issues": "Issues"
+  },
+  "auth": {
+    "login": "Login",
+    "signup": "Sign Up",
+    "logout": "Logout",
+    "email": "Email",
+    "password": "Password",
+    "name": "Name",
+    "confirmPassword": "Confirm Password",
+    "forgotPassword": "Forgot Password?",
+    "rememberMe": "Remember me",
+    "createAccount": "Create Account",
+    "alreadyHaveAccount": "Already have an account?",
+    "dontHaveAccount": "Don't have an account?",
+    "welcome": "Welcome"
+  },
+  "dashboard": {
+    "client": {
+      "title": "Client Dashboard",
+      "description": "Manage your bookings and discover photographers",
+      "statistics": {
+        "totalBookings": "Total Bookings",
+        "activeBookings": "Active Bookings",
+        "completedBookings": "Completed Bookings",
+        "totalSpent": "Total Spent"
+      }
+    },
+    "photographer": {
+      "title": "Photographer Dashboard",
+      "description": "Manage your packages, bookings and portfolio",
+      "statistics": {
+        "totalBookings": "Total Bookings",
+        "activeBookings": "Active Bookings",
+        "totalEarnings": "Total Earnings",
+        "averageRating": "Average Rating"
+      }
+    },
+    "admin": {
+      "title": "Admin Dashboard",
+      "description": "Manage users, services and platform statistics",
+      "statistics": {
+        "totalUsers": "Total Users",
+        "totalPhotographers": "Total Photographers",
+        "totalBookings": "Total Bookings",
+        "revenue": "Revenue"
+      }
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "appearance": {
+      "title": "Appearance",
+      "darkMode": "Dark Mode",
+      "darkModeDescription": "Switch between light and dark theme",
+      "language": "Website Language",
+      "languageDescription": "Change the language of the interface"
+    },
+    "notifications": {
+      "title": "Notifications",
+      "emailNotifications": "Email Notifications",
+      "emailNotificationsDescription": "Receive updates via email",
+      "pushNotifications": "Push Notifications",
+      "pushNotificationsDescription": "Receive browser push notifications",
+      "marketingEmails": "Marketing Emails",
+      "marketingEmailsDescription": "Receive promotional emails and offers"
+    },
+    "privacy": {
+      "title": "Privacy",
+      "profileVisibility": "Profile Visibility",
+      "profileVisibilityDescription": "Control who can see your profile",
+      "dataPrivacy": "Data Privacy",
+      "dataPrivacyDescription": "Your data is secure and encrypted"
+    },
+    "account": {
+      "title": "Account",
+      "deleteAccount": "Delete Account",
+      "changePassword": "Change Password"
+    }
+  },
+  "profile": {
+    "title": "Profile",
+    "personalInformation": "Personal Information",
+    "fullName": "Full Name",
+    "phone": "Phone Number",
+    "email": "Email Address",
+    "emailCannotBeChanged": "Email cannot be changed",
+    "stateRegion": "State/Region",
+    "language": "Language",
+    "quickInfo": "Quick Info",
+    "location": "Location",
+    "saveChanges": "Save Changes",
+    "saving": "Saving...",
+    "profileUpdated": "Profile updated successfully"
+  },
+  "bookings": {
+    "title": "Bookings",
+    "create": "Create Booking",
+    "noBookings": "No bookings yet",
+    "status": {
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    }
+  },
+  "messages": {
+    "title": "Messages",
+    "noMessages": "No messages yet",
+    "startConversation": "Start a conversation",
+    "typeMessage": "Type a message...",
+    "send": "Send"
+  },
+  "packages": {
+    "title": "Packages",
+    "noPackages": "No packages available",
+    "price": "Price",
+    "duration": "Duration",
+    "includes": "Includes",
+    "category": "Category"
+  }
+}
+

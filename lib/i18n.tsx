@@ -16,6 +16,7 @@ const STORAGE_KEY = "sawerni_locale"
 
 const MESSAGES: Record<Locale, Record<string, string>> = {
   en: {
+    // Navigation
     dashboard: "Dashboard",
     packages: "Packages",
     portfolio: "Portfolio",
@@ -25,8 +26,36 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     reviews: "Reviews",
     profile: "Profile",
     notifications: "Notifications",
+    settings: "Settings",
+    photographers: "Photographers",
+    favorites: "Favorites",
+    contracts: "Contracts",
+    users: "Users",
+    services: "Services",
+    categories: "Categories",
+    stats: "Statistics",
+    issues: "Issues",
+    // Common
+    save: "Save",
+    cancel: "Cancel",
+    delete: "Delete",
+    edit: "Edit",
+    create: "Create",
+    search: "Search",
+    loading: "Loading...",
+    error: "Error",
+    success: "Success",
+    // Settings
+    darkMode: "Dark Mode",
+    language: "Language",
+    emailNotifications: "Email Notifications",
+    pushNotifications: "Push Notifications",
+    marketingEmails: "Marketing Emails",
+    privacy: "Privacy",
+    appearance: "Appearance",
   },
   ar: {
+    // Navigation
     dashboard: "لوحة التحكم",
     packages: "الباقات",
     portfolio: "الأعمال",
@@ -36,6 +65,33 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     reviews: "التقييمات",
     profile: "الملف الشخصي",
     notifications: "الإشعارات",
+    settings: "الإعدادات",
+    photographers: "المصورون",
+    favorites: "المفضلة",
+    contracts: "العقود",
+    users: "المستخدمون",
+    services: "الخدمات",
+    categories: "الفئات",
+    stats: "الإحصائيات",
+    issues: "المشاكل",
+    // Common
+    save: "حفظ",
+    cancel: "إلغاء",
+    delete: "حذف",
+    edit: "تعديل",
+    create: "إنشاء",
+    search: "بحث",
+    loading: "جاري التحميل...",
+    error: "خطأ",
+    success: "نجح",
+    // Settings
+    darkMode: "الوضع الداكن",
+    language: "اللغة",
+    emailNotifications: "إشعارات البريد الإلكتروني",
+    pushNotifications: "الإشعارات المنبثقة",
+    marketingEmails: "رسائل التسويق",
+    privacy: "الخصوصية",
+    appearance: "المظهر",
   },
 }
 

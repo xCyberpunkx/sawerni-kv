@@ -75,6 +75,7 @@ export default function PhotographerPackagesPage() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [packageToDelete, setPackageToDelete] = useState<PackageDto | null>(null)
   const [currentImageIndex, setCurrentImageIndex] = useState<Record<string, number>>({})
+  const [showArchived, setShowArchived] = useState(false)
 
   useEffect(() => {
     const run = async () => {
@@ -333,9 +334,11 @@ export default function PhotographerPackagesPage() {
       })
     } catch (e: any) {
       setItems(prev)
-      setError(e?.message || "Failed to update package status")
+      setError(e?.message || "Failed to archive package")
     }
   }
+
+  const filteredItems = showArchived ? items : items.filter(pkg => pkg.isActive !== false)
 
   const nextImage = (pkgId: string, imageCount: number) => {
     setCurrentImageIndex(prev => ({
@@ -692,7 +695,18 @@ export default function PhotographerPackagesPage() {
       {/* Packages Grid */}
       <Card>
         <CardHeader>
-          <CardTitle>Your Service Packages</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>Your Service Packages</CardTitle>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowArchived(!showArchived)}
+              className="gap-2"
+            >
+              <Archive className="h-4 w-4" />
+              {showArchived ? 'Hide Archived' : 'Show Archived'}
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -710,9 +724,9 @@ export default function PhotographerPackagesPage() {
                 <p className="text-red-600 text-sm">{error}</p>
               </div>
             </div>
-          ) : items.length > 0 ? (
+          ) : filteredItems.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {items.map((pkg) => {
+              {filteredItems.map((pkg) => {
                 const images = pkg.images || []
                 const currentIdx = currentImageIndex[pkg.id] || 0
                 
@@ -828,7 +842,7 @@ export default function PhotographerPackagesPage() {
                               className="px-2 py-1 text-xs"
                               onClick={() => togglePackageStatus(pkg)}
                             >
-                              {pkg.isActive === false ? 'Activate' : 'Deactivate'}
+                              {pkg.isActive === false ? 'Unarchive' : 'Archive'}
                             </Button>
 
                             <Button variant="outline" size="sm" onClick={() => openEdit(pkg)}>
