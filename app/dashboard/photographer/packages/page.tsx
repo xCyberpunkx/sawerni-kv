@@ -11,14 +11,22 @@ import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Api, apiFetch } from "@/lib/api"
 import { mockAuth } from "@/lib/auth"
-import { Plus, Pencil, Trash2, Camera, Clock, Users, DollarSign, Calendar, Star, AlertCircle, Loader2, Package, TrendingUp } from "lucide-react"
+import { Plus, Pencil, Trash2, Camera, Clock, Users, DollarSign, Calendar, Star, AlertCircle, Loader2, Package, TrendingUp, ChevronLeft, ChevronRight, X } from "lucide-react"
+
+interface PackageImage {
+  id?: string
+  packageId?: string
+  url: string
+  meta?: any
+  createdAt?: string
+  order: number
+}
 
 interface PackageDto {
   id: string
   photographerId: string
   title: string
   description?: string
-  imageUrls?: string[]
   priceCents: number
   durationMinutes?: number
   category?: string
@@ -26,17 +34,18 @@ interface PackageDto {
   isActive?: boolean
   createdAt: string
   updatedAt?: string
+  images?: PackageImage[]
 }
 
 interface UpsertPackageDto {
   title: string
   description?: string
-  imageUrls?: string[]
   priceCents: number
   durationMinutes?: number
   category?: string
   includes?: string[]
   isActive?: boolean
+  images?: { url: string; order: number }[]
 }
 
 export default function PhotographerPackagesPage() {
@@ -51,27 +60,27 @@ export default function PhotographerPackagesPage() {
   const [form, setForm] = useState<UpsertPackageDto>({
     title: "",
     description: "",
-    imageUrls: [],
     priceCents: 0,
     durationMinutes: 60,
     category: "portrait",
     includes: [],
-    isActive: true
+    isActive: true,
+    images: []
   })
   const [newImageUrl, setNewImageUrl] = useState("")
-  const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null)
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [newInclude, setNewInclude] = useState("")
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [packageToDelete, setPackageToDelete] = useState<PackageDto | null>(null)
+  const [currentImageIndex, setCurrentImageIndex] = useState<Record<string, number>>({})
 
   useEffect(() => {
     const run = async () => {
       if (!user) return;
       try {
         const me = await Api.get<any>("/auth/me");
-        console.log(me); // This should now include photographer data
         const pid = me?.photographer?.id as string | undefined;
         if (!pid) return;
         setPhotographerId(pid);
@@ -88,7 +97,15 @@ export default function PhotographerPackagesPage() {
     setError("")
     try {
       const res = await Api.get<PackageDto[]>(`/packages/photographer/${photographerId}`)
-      setItems(res || [])
+      const packages = res || []
+      setItems(packages)
+      
+      // Initialize image indices
+      const indices: Record<string, number> = {}
+      packages.forEach(pkg => {
+        indices[pkg.id] = 0
+      })
+      setCurrentImageIndex(indices)
     } catch (e: any) {
       setError(e?.message || "Failed to load packages")
     } finally {
@@ -98,7 +115,6 @@ export default function PhotographerPackagesPage() {
 
   useEffect(() => {
     load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [photographerId])
 
   const resetForm = () => {
@@ -106,15 +122,16 @@ export default function PhotographerPackagesPage() {
     setForm({
       title: "",
       description: "",
-      imageUrls: [],
       priceCents: 0,
       durationMinutes: 60,
       category: "portrait",
       includes: [],
-      isActive: true
+      isActive: true,
+      images: []
     })
     setNewInclude("")
     setNewImageUrl("")
+    setSelectedFiles([])
   }
 
   const openCreate = () => {
@@ -127,12 +144,15 @@ export default function PhotographerPackagesPage() {
     setForm({
       title: pkg.title,
       description: pkg.description || "",
-      imageUrls: pkg.imageUrls || [],
       priceCents: pkg.priceCents,
       durationMinutes: pkg.durationMinutes || 60,
       category: pkg.category || "portrait",
       includes: pkg.includes || [],
-      isActive: pkg.isActive ?? true
+      isActive: pkg.isActive ?? true,
+      images: (pkg.images || []).map((img, idx) => ({
+        url: img.url,
+        order: img.order ?? idx
+      }))
     })
     setIsDialogOpen(true)
   }
@@ -155,24 +175,40 @@ export default function PhotographerPackagesPage() {
   const addImageUrl = () => {
     const url = newImageUrl.trim()
     if (!url) return
-    if (!form.imageUrls) setForm((f) => ({ ...f, imageUrls: [url] }))
-    else if (!form.imageUrls.includes(url)) setForm((f) => ({ ...f, imageUrls: [...f.imageUrls!, url] }))
+    const currentImages = form.images || []
+    if (!currentImages.some(img => img.url === url)) {
+      setForm(f => ({
+        ...f,
+        images: [...currentImages, { url, order: currentImages.length }]
+      }))
+    }
     setNewImageUrl("")
   }
 
-  const removeImageUrl = (url: string) => {
-    setForm(prev => ({ ...prev, imageUrls: prev.imageUrls?.filter(u => u !== url) || [] }))
+  const removeImage = (index: number) => {
+    setForm(prev => ({
+      ...prev,
+      images: (prev.images || []).filter((_, i) => i !== index).map((img, idx) => ({
+        ...img,
+        order: idx
+      }))
+    }))
+  }
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setSelectedFiles(Array.from(e.target.files))
+    }
   }
 
   const uploadFiles = async () => {
-    if (!selectedFiles || selectedFiles.length === 0) return
+    if (selectedFiles.length === 0) return
     setUploading(true)
     setError("")
     try {
       const fd = new FormData()
-      Array.from(selectedFiles).forEach((f) => fd.append("files", f))
+      selectedFiles.forEach((f) => fd.append("files", f))
 
-      // Assumes backend exposes a multipart upload endpoint at /uploads
       const res = await apiFetch<any>("/uploads", { method: "POST", body: fd, multipart: true })
 
       let urls: string[] = []
@@ -181,13 +217,20 @@ export default function PhotographerPackagesPage() {
       else if (res.url && typeof res.url === "string") urls = [res.url]
 
       if (urls.length > 0) {
-        setForm((prev) => ({ ...prev, imageUrls: [...(prev.imageUrls || []), ...urls] }))
+        const currentImages = form.images || []
+        const newImages = urls.map((url, idx) => ({
+          url,
+          order: currentImages.length + idx
+        }))
+        setForm((prev) => ({ ...prev, images: [...currentImages, ...newImages] }))
       } else {
         throw new Error("Upload succeeded but no URLs were returned")
       }
 
-      // clear selection
-      setSelectedFiles(null)
+      setSelectedFiles([])
+      if (document.getElementById('file-input')) {
+        (document.getElementById('file-input') as HTMLInputElement).value = ''
+      }
     } catch (e: any) {
       setError(e?.message || "Failed to upload images")
     } finally {
@@ -217,7 +260,6 @@ export default function PhotographerPackagesPage() {
     setError("")
     try {
       if (editingId) {
-        // optimistic update
         const prev = items
         setItems((old) => old.map((it) => (it.id === editingId ? { ...it, ...form, updatedAt: new Date().toISOString() } as PackageDto : it)))
         try {
@@ -228,19 +270,18 @@ export default function PhotographerPackagesPage() {
           throw e
         }
       } else {
-        // create optimistic entry with temp id
         const tempId = `temp_${Date.now()}`
         const optimistic: PackageDto = {
           id: tempId,
           photographerId: photographerId as string,
           title: form.title,
           description: form.description,
-          imageUrls: form.imageUrls,
           priceCents: form.priceCents,
           durationMinutes: form.durationMinutes,
           category: form.category,
           includes: form.includes,
           isActive: form.isActive,
+          images: form.images?.map(img => ({ ...img, id: `temp_img_${Math.random()}` })),
           createdAt: new Date().toISOString(),
         }
         setItems((old) => [optimistic, ...old])
@@ -293,6 +334,20 @@ export default function PhotographerPackagesPage() {
       setItems(prev)
       setError(e?.message || "Failed to update package status")
     }
+  }
+
+  const nextImage = (pkgId: string, imageCount: number) => {
+    setCurrentImageIndex(prev => ({
+      ...prev,
+      [pkgId]: ((prev[pkgId] || 0) + 1) % imageCount
+    }))
+  }
+
+  const prevImage = (pkgId: string, imageCount: number) => {
+    setCurrentImageIndex(prev => ({
+      ...prev,
+      [pkgId]: ((prev[pkgId] || 0) - 1 + imageCount) % imageCount
+    }))
   }
 
   const totalPackages = useMemo(() => items.length, [items])
@@ -349,7 +404,6 @@ export default function PhotographerPackagesPage() {
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Service Packages</h1>
@@ -362,7 +416,7 @@ export default function PhotographerPackagesPage() {
               New Package
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingId ? "Edit Package" : "Create New Package"}</DialogTitle>
               <DialogDescription>
@@ -395,16 +449,15 @@ export default function PhotographerPackagesPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="durationMinutes">Duration</Label>
+                  <Label htmlFor="durationMinutes">Duration (minutes)</Label>
                   <Input
                     id="durationMinutes"
                     type="number"
                     min="0"
                     value={form.durationMinutes}
                     onChange={(e) => setForm((f) => ({ ...f, durationMinutes: Number(e.target.value) }))}
-                    placeholder="60 (minutes)"
+                    placeholder="60"
                   />
-                  <p className="text-xs text-muted-foreground">Duration in minutes (60 = 1 hour)</p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="category">Category</Label>
@@ -436,6 +489,81 @@ export default function PhotographerPackagesPage() {
               </div>
 
               <div className="space-y-2">
+                <Label>Package Images</Label>
+                
+                {/* File Upload */}
+                <div className="space-y-3">
+                  <div className="flex gap-2">
+                    <Input
+                      id="file-input"
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleFileSelect}
+                      className="flex-1"
+                    />
+                    <Button 
+                      type="button" 
+                      onClick={uploadFiles} 
+                      disabled={uploading || selectedFiles.length === 0}
+                      variant="secondary"
+                    >
+                      {uploading ? (
+                        <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Uploading...</>
+                      ) : (
+                        <>Upload</>
+                      )}
+                    </Button>
+                  </div>
+
+                  {/* Selected Files Preview */}
+                  {selectedFiles.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {selectedFiles.map((f, i) => (
+                        <div key={i} className="relative w-20 h-20 rounded border overflow-hidden">
+                          <img src={URL.createObjectURL(f)} alt={f.name} className="w-full h-full object-cover" />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* URL Input */}
+                  <div className="flex gap-2">
+                    <Input
+                      value={newImageUrl}
+                      onChange={(e) => setNewImageUrl(e.target.value)}
+                      placeholder="Or paste image URL..."
+                      onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addImageUrl())}
+                    />
+                    <Button type="button" onClick={addImageUrl} variant="outline">
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  {/* Uploaded Images */}
+                  {form.images && form.images.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {form.images.map((img, index) => (
+                        <div key={index} className="relative w-24 h-24 rounded border overflow-hidden group">
+                          <img src={img.url} alt={`Image ${index + 1}`} className="w-full h-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => removeImage(index)}
+                            className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                          <div className="absolute bottom-1 left-1 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded">
+                            {index + 1}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-2">
                 <Label>What's Included</Label>
                 <div className="space-y-2">
                   <div className="flex gap-2">
@@ -450,32 +578,6 @@ export default function PhotographerPackagesPage() {
                     </Button>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={(e) => setSelectedFiles(e.target.files)}
-                      className="text-sm"
-                    />
-                    <Button type="button" onClick={uploadFiles} disabled={uploading || !selectedFiles || selectedFiles.length === 0} variant="ghost">
-                      {uploading ? (
-                        <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Uploading...</>
-                      ) : (
-                        <>Upload Selected</>
-                      )}
-                    </Button>
-                  </div>
-
-                  {selectedFiles && selectedFiles.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {Array.from(selectedFiles).map((f, i) => (
-                        <div key={i} className="w-24 h-16 overflow-hidden rounded border">
-                          <img src={URL.createObjectURL(f)} alt={f.name} className="w-full h-full object-cover" />
-                        </div>
-                      ))}
-                    </div>
-                  )}
                   <div className="flex flex-wrap gap-2">
                     {form.includes?.map((item, index) => (
                       <Badge key={index} variant="secondary" className="flex items-center gap-1">
@@ -489,37 +591,6 @@ export default function PhotographerPackagesPage() {
                         </button>
                       </Badge>
                     ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Images</Label>
-                <div className="space-y-2">
-                  <div className="flex gap-2">
-                    <Input
-                      value={newImageUrl}
-                      onChange={(e) => setNewImageUrl(e.target.value)}
-                      placeholder="https://.../image.jpg"
-                      onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addImageUrl())}
-                    />
-                    <Button type="button" onClick={addImageUrl} variant="outline">
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2 items-center">
-                    {form.imageUrls?.map((url, index) => (
-                      <div key={index} className="relative w-24 h-16 rounded overflow-hidden border">
-                        <img src={url} alt={`img-${index}`} className="w-full h-full object-cover" />
-                        <button type="button" onClick={() => removeImageUrl(url)} className="absolute top-0 right-0 m-1 p-1 bg-white rounded text-red-600">
-                          <Trash2 className="h-3 w-3" />
-                        </button>
-                      </div>
-                    ))}
-                    {!form.imageUrls || form.imageUrls.length === 0 ? (
-                      <div className="text-xs text-muted-foreground">No images added. You can paste image URLs above.</div>
-                    ) : null}
                   </div>
                 </div>
               </div>
@@ -640,100 +711,139 @@ export default function PhotographerPackagesPage() {
             </div>
           ) : items.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {items.map((pkg) => (
-                <Card key={pkg.id} className={`hover:shadow-lg transition-all ${pkg.isActive === false ? 'opacity-60' : ''}`}>
-                  <CardContent className="p-6">
-                    {pkg.imageUrls && pkg.imageUrls.length > 0 && (
-                      <div className="mb-4 h-40 overflow-hidden rounded-md">
-                        <img src={pkg.imageUrls[0]} alt={pkg.title} className="w-full h-full object-cover" />
-                      </div>
-                    )}
-                    <div className="space-y-4">
-                      {/* Header */}
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-lg truncate">{pkg.title}</h3>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Badge variant="outline" className="flex items-center gap-1">
-                              {getCategoryIcon(pkg.category)}
-                              {getCategoryName(pkg.category)}
-                            </Badge>
-                            <Badge variant={pkg.isActive === false ? "secondary" : "default"}>
-                              {pkg.isActive === false ? "Inactive" : "Active"}
-                            </Badge>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Price */}
-                      <div className="flex items-center justify-between">
-                        <span className="text-2xl font-bold text-primary">
-                          {(pkg.priceCents / 100).toLocaleString()} DA
-                        </span>
-                      </div>
-
-                      {/* Details */}
-                      <div className="space-y-2 text-sm">
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Clock className="h-4 w-4" />
-                          <span>{formatDuration(pkg.durationMinutes)}</span>
-                        </div>
-
-                        {pkg.description && (
-                          <p className="text-muted-foreground line-clamp-2">{pkg.description}</p>
-                        )}
-                      </div>
-
-                      {/* Included Items */}
-                      {pkg.includes && pkg.includes.length > 0 && (
-                        <div className="space-y-2">
-                          <p className="text-sm font-medium">Includes:</p>
-                          <div className="flex flex-wrap gap-1">
-                            {pkg.includes.slice(0, 3).map((item, index) => (
-                              <Badge key={index} variant="outline" className="text-xs">
-                                {item}
-                              </Badge>
-                            ))}
-                            {pkg.includes.length > 3 && (
-                              <Badge variant="outline" className="text-xs">
-                                +{pkg.includes.length - 3} more
-                              </Badge>
-                            )}
-                          </div>
+              {items.map((pkg) => {
+                const images = pkg.images || []
+                const currentIdx = currentImageIndex[pkg.id] || 0
+                
+                return (
+                  <Card key={pkg.id} className={`hover:shadow-lg transition-all ${pkg.isActive === false ? 'opacity-60' : ''}`}>
+                    <CardContent className="p-0">
+                      {/* Image Gallery */}
+                      {images.length > 0 && (
+                        <div className="relative h-48 bg-gray-100 overflow-hidden group">
+                          <img 
+                            src={images[currentIdx].url} 
+                            alt={pkg.title} 
+                            className="w-full h-full object-cover"
+                          />
+                          
+                          {images.length > 1 && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={() => prevImage(pkg.id, images.length)}
+                              >
+                                <ChevronLeft className="h-5 w-5" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={() => nextImage(pkg.id, images.length)}
+                              >
+                                <ChevronRight className="h-5 w-5" />
+                              </Button>
+                              
+                              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
+                                {images.map((_, idx) => (
+                                  <div
+                                    key={idx}
+                                    className={`h-1.5 rounded-full transition-all duration-300 ${
+                                      idx === currentIdx
+                                        ? "w-6 bg-white"
+                                        : "w-1.5 bg-white/50"
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                            </>
+                          )}
                         </div>
                       )}
-                      {/* Footer */}
-                      <div className="flex items-start justify-between gap-3 pt-2">
-                        {/* left side */}
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <Calendar className="h-3 w-3 shrink-0" />
-                          <span>{new Date(pkg.createdAt).toLocaleDateString()}</span>
+                      
+                      <div className="p-6 space-y-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-lg truncate">{pkg.title}</h3>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Badge variant="outline" className="flex items-center gap-1">
+                                {getCategoryIcon(pkg.category)}
+                                {getCategoryName(pkg.category)}
+                              </Badge>
+                              <Badge variant={pkg.isActive === false ? "secondary" : "default"}>
+                                {pkg.isActive === false ? "Inactive" : "Active"}
+                              </Badge>
+                            </div>
+                          </div>
                         </div>
 
-                        {/* right side – button strip */}
-                        <div className="flex flex-wrap items-center gap-1">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="px-2 py-1 text-xs leading-tight whitespace-normal"
-                            onClick={() => togglePackageStatus(pkg)}
-                          >
-                            {pkg.isActive === false ? 'Activate' : 'Deactivate'}
-                          </Button>
+                        <div className="flex items-center justify-between">
+                          <span className="text-2xl font-bold text-primary">
+                            {(pkg.priceCents / 100).toLocaleString()} DA
+                          </span>
+                        </div>
 
-                          <Button variant="outline" size="sm" onClick={() => openEdit(pkg)}>
-                            <Pencil className="h-4 w-4" />
-                          </Button>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Clock className="h-4 w-4" />
+                            <span>{formatDuration(pkg.durationMinutes)}</span>
+                          </div>
 
-                          <Button variant="destructive" size="sm" onClick={() => openDeleteConfirm(pkg)}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          {pkg.description && (
+                            <p className="text-muted-foreground line-clamp-2">{pkg.description}</p>
+                          )}
+                        </div>
+
+                        {pkg.includes && pkg.includes.length > 0 && (
+                          <div className="space-y-2">
+                            <p className="text-sm font-medium">Includes:</p>
+                            <div className="flex flex-wrap gap-1">
+                              {pkg.includes.slice(0, 3).map((item, index) => (
+                                <Badge key={index} variant="outline" className="text-xs">
+                                  {item}
+                                </Badge>
+                              ))}
+                              {pkg.includes.length > 3 && (
+                                <Badge variant="outline" className="text-xs">
+                                  +{pkg.includes.length - 3} more
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="flex items-center justify-between gap-2 pt-2 border-t">
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <Calendar className="h-3 w-3" />
+                            <span>{new Date(pkg.createdAt).toLocaleDateString()}</span>
+                          </div>
+
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="px-2 py-1 text-xs"
+                              onClick={() => togglePackageStatus(pkg)}
+                            >
+                              {pkg.isActive === false ? 'Activate' : 'Deactivate'}
+                            </Button>
+
+                            <Button variant="outline" size="sm" onClick={() => openEdit(pkg)}>
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+
+                            <Button variant="destructive" size="sm" onClick={() => openDeleteConfirm(pkg)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                )
+              })}
             </div>
           ) : (
             <div className="text-center py-12">
