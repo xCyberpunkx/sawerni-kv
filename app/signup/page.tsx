@@ -2,8 +2,8 @@
 
 import type React from "react"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { CheckCircle } from "lucide-react"
+import { CheckCircle, Eye, EyeOff } from "lucide-react"
 import { mockAuth } from "@/lib/auth"
 
 const algerianStates = [
@@ -44,6 +44,7 @@ const serviceTypes = [
 ]
 
 export default function SignupPage() {
+  const searchParams = useSearchParams()
   const [userType, setUserType] = useState<"client" | "photographer">("client")
   const [formData, setFormData] = useState({
     name: "",
@@ -60,6 +61,14 @@ export default function SignupPage() {
   const [error, setError] = useState("")
   const [success, setSuccess] = useState(false)
   const router = useRouter()
+
+  // Check URL params on mount
+  useEffect(() => {
+    const role = searchParams?.get("role")
+    if (role === "photographer") {
+      setUserType("photographer")
+    }
+  }, [searchParams])
 
   const handleGoogleSignup = async () => {
     setLoading(true)
@@ -106,7 +115,6 @@ export default function SignupPage() {
         password: formData.password,
         role: userType,
         state: formData.state,
-        serviceType: userType === "photographer" ? formData.serviceType : undefined,
       })
 
       if (result.success) {
@@ -223,13 +231,13 @@ export default function SignupPage() {
                 <Label htmlFor="name" className="text-blue-300 font-semibold text-sm">
                   Full Name
                 </Label>
-                <Input
+                  <Input
                   id="name"
                   type="text"
                   placeholder="Enter your full name"
                   value={formData.name}
                   onChange={(e) => handleInputChange("name", e.target.value)}
-                  className="bg-white border-0 text-[#2F3D7F] placeholder:text-slate-400 rounded-full pl-4 pr-4 h-14 shadow-lg transition-all duration-300 hover:shadow-xl focus:shadow-2xl focus:scale-[1.02]"
+                  className="bg-white border-0 text-black placeholder:text-slate-400 rounded-full pl-4 pr-4 h-14 shadow-lg transition-all duration-300 hover:shadow-xl focus:shadow-2xl focus:scale-[1.02]"
                   required
                 />
               </div>
@@ -246,7 +254,7 @@ export default function SignupPage() {
                   placeholder="Enter your phone number"
                   value={formData.phone}
                   onChange={(e) => handleInputChange("phone", e.target.value)}
-                  className="bg-white border-0 text-[#2F3D7F] placeholder:text-slate-400 rounded-full pl-4 pr-4 h-14 shadow-lg transition-all duration-300 hover:shadow-xl focus:shadow-2xl focus:scale-[1.02]"
+                  className="bg-white border-0 text-black placeholder:text-slate-400 rounded-full pl-4 pr-4 h-14 shadow-lg transition-all duration-300 hover:shadow-xl focus:shadow-2xl focus:scale-[1.02]"
                   required
                 />
               </div>
@@ -263,7 +271,7 @@ export default function SignupPage() {
                   placeholder="Enter your email address"
                   value={formData.email}
                   onChange={(e) => handleInputChange("email", e.target.value)}
-                  className="bg-white border-0 text-[#2F3D7F] placeholder:text-slate-400 rounded-full pl-4 pr-4 h-14 shadow-lg transition-all duration-300 hover:shadow-xl focus:shadow-2xl focus:scale-[1.02]"
+                  className="bg-white border-0 text-black placeholder:text-slate-400 rounded-full pl-4 pr-4 h-14 shadow-lg transition-all duration-300 hover:shadow-xl focus:shadow-2xl focus:scale-[1.02]"
                   required
                 />
               </div>
@@ -275,12 +283,12 @@ export default function SignupPage() {
                   Location
                 </Label>
                 <Select value={formData.state} onValueChange={(value) => handleInputChange("state", value)}>
-                  <SelectTrigger className="bg-white border-0 text-[#2F3D7F] rounded-full pl-4 pr-4 h-14 shadow-lg transition-all duration-300 hover:shadow-xl focus:shadow-2xl focus:scale-[1.02]">
+                  <SelectTrigger className="bg-white border-0 text-black rounded-full pl-4 pr-4 h-14 shadow-lg transition-all duration-300 hover:shadow-xl focus:shadow-2xl focus:scale-[1.02]">
                     <SelectValue placeholder="Select your location" />
                   </SelectTrigger>
                   <SelectContent className="bg-white border-slate-200">
                     {algerianStates.map((state) => (
-                      <SelectItem key={state} value={state} className="text-[#2F3D7F]">
+                      <SelectItem key={state} value={state} className="text-black">
                         {state}
                       </SelectItem>
                     ))}
@@ -288,27 +296,6 @@ export default function SignupPage() {
                 </Select>
               </div>
 
-              {userType === "photographer" && (
-                <div className="space-y-2 relative group">
-                  <div className="absolute -left-16 top-1/2 w-16 h-0.5 bg-gradient-to-r from-transparent via-blue-400 to-blue-400 hidden md:block transition-all duration-300 group-hover:via-blue-300 group-hover:to-blue-300"></div>
-                  <div className="absolute -left-20 top-1/2 w-3 h-3 bg-blue-400 rounded-full hidden md:block transform -translate-y-1/2 shadow-lg shadow-blue-400/50 group-hover:scale-125 transition-transform duration-300"></div>
-                  <Label htmlFor="serviceType" className="text-blue-300 font-semibold text-sm">
-                    Photography Service
-                  </Label>
-                  <Select value={formData.serviceType} onValueChange={(value) => handleInputChange("serviceType", value)}>
-                    <SelectTrigger className="bg-white border-0 text-[#2F3D7F] rounded-full pl-4 pr-4 h-14 shadow-lg transition-all duration-300 hover:shadow-xl focus:shadow-2xl focus:scale-[1.02]">
-                      <SelectValue placeholder="Select your photography service" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white border-slate-200">
-                      {serviceTypes.map((service) => (
-                        <SelectItem key={service} value={service} className="text-[#2F3D7F]">
-                          {service}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
 
               <div className="space-y-2 relative group">
                 <div className="absolute -left-16 top-1/2 w-16 h-0.5 bg-gradient-to-r from-transparent via-blue-400 to-blue-400 hidden md:block transition-all duration-300 group-hover:via-blue-300 group-hover:to-blue-300"></div>
@@ -316,15 +303,24 @@ export default function SignupPage() {
                 <Label htmlFor="password" className="text-blue-300 font-semibold text-sm">
                   Password
                 </Label>
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="••••••••••"
-                  value={formData.password}
-                  onChange={(e) => handleInputChange("password", e.target.value)}
-                  className="bg-white border-0 text-[#2F3D7F] placeholder:text-slate-400 rounded-full pl-4 pr-4 h-14 shadow-lg transition-all duration-300 hover:shadow-xl focus:shadow-2xl focus:scale-[1.02]"
-                  required
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••••"
+                    value={formData.password}
+                    onChange={(e) => handleInputChange("password", e.target.value)}
+                    className="bg-white border-0 text-black placeholder:text-slate-400 rounded-full pl-4 pr-12 h-14 shadow-lg transition-all duration-300 hover:shadow-xl focus:shadow-2xl focus:scale-[1.02]"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-black hover:text-blue-600 transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
               </div>
 
               <div className="space-y-2 relative group">
@@ -333,15 +329,24 @@ export default function SignupPage() {
                 <Label htmlFor="confirmPassword" className="text-blue-300 font-semibold text-sm">
                   Confirm Password
                 </Label>
-                <Input
-                  id="confirmPassword"
-                  type={showConfirmPassword ? "text" : "password"}
-                  placeholder="••••••••••"
-                  value={formData.confirmPassword}
-                  onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
-                  className="bg-white border-0 text-[#2F3D7F] placeholder:text-slate-400 rounded-full pl-4 pr-4 h-14 shadow-lg transition-all duration-300 hover:shadow-xl focus:shadow-2xl focus:scale-[1.02]"
-                  required
-                />
+                <div className="relative">
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="••••••••••"
+                    value={formData.confirmPassword}
+                    onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
+                    className="bg-white border-0 text-white placeholder:text-slate-400 rounded-full pl-4 pr-12 h-14 shadow-lg transition-all duration-300 hover:shadow-xl focus:shadow-2xl focus:scale-[1.02]"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-blue-600 transition-colors"
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
               </div>
 
               <Button

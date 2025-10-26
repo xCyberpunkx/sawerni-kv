@@ -66,33 +66,7 @@ export function DiscoverPhotographersSection() {
           </h2>
         </div>
 
-        {/* Filters */}
-        <div className="flex flex-wrap gap-4 justify-center mb-12 max-w-4xl mx-auto">
-          <Button
-            variant="outline"
-            className="bg-white/10 border-white/20 text-white hover:bg-white/20 backdrop-blur-sm rounded-full px-6"
-          >
-            <Calendar className="mr-2 h-4 w-4" />
-            Date
-            <ChevronDown className="ml-2 h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            className="bg-white/10 border-white/20 text-white hover:bg-white/20 backdrop-blur-sm rounded-full px-6"
-          >
-            <MapPin className="mr-2 h-4 w-4" />
-            Location
-            <ChevronDown className="ml-2 h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            className="bg-white/10 border-white/20 text-white hover:bg-white/20 backdrop-blur-sm rounded-full px-6"
-          >
-            Category
-            <ChevronDown className="ml-2 h-4 w-4" />
-          </Button>
-        </div>
-
+        
         {/* Photographer Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
           {photographers.map((photographer, index) => (

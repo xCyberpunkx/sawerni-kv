@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Eye, EyeOff } from "lucide-react"
 import { mockAuth } from "@/lib/auth"
 
 export default function LoginPage() {
@@ -162,7 +163,7 @@ export default function LoginPage() {
                   placeholder="Enter your email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="bg-white border-0 text-[#2F3D7F] placeholder:text-slate-400 rounded-full pl-4 pr-4 h-14 shadow-lg text-base transition-all duration-300 hover:shadow-xl focus:shadow-2xl focus:scale-[1.02]"
+                  className="bg-white border-0 text-white placeholder:text-slate-400 rounded-full pl-4 pr-4 h-14 shadow-lg text-base transition-all duration-300 hover:shadow-xl focus:shadow-2xl focus:scale-[1.02]"
                   required
                 />
               </div>
@@ -173,15 +174,24 @@ export default function LoginPage() {
                 <Label htmlFor="password" className="text-blue-300 font-semibold text-sm">
                   Password
                 </Label>
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="••••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="bg-white border-0 text-[#2F3D7F] placeholder:text-slate-400 rounded-full pl-4 pr-4 h-14 shadow-lg text-base transition-all duration-300 hover:shadow-xl focus:shadow-2xl focus:scale-[1.02]"
-                  required
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="bg-white border-0 text-white placeholder:text-slate-400 rounded-full pl-4 pr-12 h-14 shadow-lg text-base transition-all duration-300 hover:shadow-xl focus:shadow-2xl focus:scale-[1.02]"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-blue-600 transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
               </div>
 
               <div className="flex items-center justify-end">
@@ -230,7 +240,7 @@ export default function LoginPage() {
                       fill="#EA4335"
                     />
                   </svg>
-                  <span className="text-gray-700 font-medium">
+                  <span className="text-white font-medium">
                     {loading ? "Signing in..." : "Google"}
                   </span>
                 </Button>

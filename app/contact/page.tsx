@@ -27,8 +27,17 @@ export default function ContactPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    // Here you would typically send the form data to your backend
-    console.log("Form submitted:", formData)
+    
+    // Create mailto link with subject and body
+    const subject = encodeURIComponent(formData.subject)
+    const body = encodeURIComponent(
+      `Name: ${formData.name}\nEmail: ${formData.email}\n\nMessage:\n${formData.message}`
+    )
+    const mailtoLink = `mailto:support@sawerni.com?subject=${subject}&body=${body}`
+    
+    // Open email client
+    window.location.href = mailtoLink
+    
     setSubmitted(true)
     setTimeout(() => {
       setFormData({ name: "", email: "", subject: "", message: "" })

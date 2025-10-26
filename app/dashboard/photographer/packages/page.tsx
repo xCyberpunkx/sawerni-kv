@@ -694,20 +694,7 @@ export default function PhotographerPackagesPage() {
 
       {/* Packages Grid */}
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Your Service Packages</CardTitle>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowArchived(!showArchived)}
-              className="gap-2"
-            >
-              <Archive className="h-4 w-4" />
-              {showArchived ? 'Hide Archived' : 'Show Archived'}
-            </Button>
-          </div>
-        </CardHeader>
+        
         <CardContent>
           {loading ? (
             <div className="flex items-center justify-center py-12">

@@ -64,7 +64,7 @@ export default function HomePage() {
                   Find Photographers
                 </Button>
               </Link>
-              <Link href="/signup">
+              <Link href="/signup?role=photographer">
                 <Button
                   size="lg"
                   className="text-lg px-12 py-7 button-premium text-white shadow-2xl rounded-full font-semibold border-2"

@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Api } from "@/lib/api"
 import type { PaginatedResponse } from "@/lib/api-types"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { 
   Camera, 
   Calendar, 
@@ -65,6 +66,7 @@ type PackageWithPhotographer = {
 type SortOption = "price-low" | "price-high" | "rating" | "popular" | "newest"
 
 export default function ClientPackagesPage() {
+  const router = useRouter()
   const [packages, setPackages] = useState<PackageWithPhotographer[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
@@ -206,6 +208,11 @@ export default function ClientPackagesPage() {
       setEndTime("")
       
       showNotification("🎉 Booking confirmed! Your photography session has been scheduled successfully.")
+      
+      // Redirect to bookings page after 1.5 seconds
+      setTimeout(() => {
+        router.push("/dashboard/client/bookings")
+      }, 1500)
     } catch (e) {
       console.error("Booking failed:", e)
       showNotification("Booking failed. Please try again or contact support.", "error")
@@ -345,11 +352,7 @@ export default function ClientPackagesPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="text-center p-4">
-          <div className="text-2xl font-bold text-primary">{filteredAndSorted.length}</div>
-          <div className="text-sm text-muted-foreground">Total Packages</div>
-        </Card>
+      <div className="grid grid-cols-3 gap-4">
         <Card className="text-center p-4">
           <div className="text-2xl font-bold text-green-600">
             {Array.from(new Set(filteredAndSorted.map(p => p.photographerId))).length}

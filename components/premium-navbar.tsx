@@ -21,7 +21,7 @@ export function PremiumNavbar() {
         <div className="flex items-center justify-between h-20">
           <div className="flex items-center space-x-4">
             <Link href="/" className="flex items-center group">
-              <Image src="/sawerni-logo.png" alt="Sawerni Logo" width={160} height={60} className="h-16 w-auto" />
+              <Image src="/sawerni-logo.png" alt="Sawerni Logo" width={160} height={60} className="h-50 w-50" />
             </Link>
             <Link href="/signup">
               <Button
