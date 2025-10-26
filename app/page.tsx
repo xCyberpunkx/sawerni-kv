@@ -28,10 +28,16 @@ export default function HomePage() {
 
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-5xl mx-auto text-center">
-            <h1 className="text-7xl md:text-9xl text-balance mb-6 leading-tight text-white animate-fade-in-up tracking-tight drop-shadow-2xl font-normal font-adlam-display">
+            <h1
+              className="text-7xl md:text-9xl text-balance mb-6 leading-tight text-white animate-fade-in-up tracking-tight drop-shadow-2xl font-normal"
+              style={{ fontFamily: "var(--font-adlam-display)" }}
+            >
               SAWERNI
             </h1>
-            <p className="text-2xl md:text-3xl text-white/90 mb-8 font-medium drop-shadow-lg font-adlam-display">
+            <p
+              className="text-2xl md:text-3xl text-white/90 mb-8 font-medium drop-shadow-lg"
+              style={{ fontFamily: "var(--font-adlam-display)" }}
+            >
               كل لحظة تساهل تبقى ذكرى
             </p>
             <p className="text-xl md:text-2xl text-white/80 mb-4 max-w-4xl mx-auto text-balance leading-relaxed animate-fade-in-up animate-delay-100">
@@ -44,18 +50,34 @@ export default function HomePage() {
               Every moment deserves to become a memory
             </p>
 
-            <Link href="#how-it-works">
-              <Button
-                size="lg"
-                className="text-lg px-12 py-7 button-premium text-white shadow-2xl rounded-full font-semibold animate-fade-in-up animate-delay-400 border-2"
-                style={{
-                  backgroundColor: "#283886",
-                  borderColor: "#474EB8",
-                }}
-              >
-                Explore Now
-              </Button>
-            </Link>
+            <div className="flex flex-col sm:flex-row gap-8 justify-center animate-fade-in-up animate-delay-400">
+              <Link href="/signup">
+                <Button
+                  size="lg"
+                  className="text-lg px-12 py-7 button-premium text-white shadow-2xl rounded-full font-semibold border-2"
+                  style={{
+                    backgroundColor: "#283886",
+                    borderColor: "#474EB8",
+                  }}
+                >
+                  <Users className="mr-3 h-5 w-5" />
+                  Find Photographers
+                </Button>
+              </Link>
+              <Link href="/signup">
+                <Button
+                  size="lg"
+                  className="text-lg px-12 py-7 button-premium text-white shadow-2xl rounded-full font-semibold border-2"
+                  style={{
+                    backgroundColor: "#283886",
+                    borderColor: "#474EB8",
+                  }}
+                >
+                  <Camera className="mr-3 h-5 w-5" />
+                  Join as Photographer
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </section>
@@ -161,43 +183,6 @@ export default function HomePage() {
                 </p>
               </CardContent>
             </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-32 relative overflow-hidden bg-gradient-to-br from-[#2F3D7F] via-slate-800 to-slate-900">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 to-purple-600/10" />
-        <div className="container mx-auto px-4 text-center relative z-10">
-          <div className="max-w-5xl mx-auto animate-fade-in-up">
-            <h2 className="text-5xl md:text-7xl font-bold font-space-grotesk mb-8 text-balance text-white drop-shadow-lg">
-              Ready to Create Magic?
-            </h2>
-            <p className="text-xl text-white/80 mb-12 max-w-4xl mx-auto text-pretty leading-relaxed">
-              Join thousands of photographers and clients who trust Sawerni to create extraordinary memories. Begin your
-              journey with Algeria's premier photography platform today.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-8 justify-center">
-              <Link href="/signup">
-                <Button
-                  size="lg"
-                  className="text-xl px-12 py-8 button-premium bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-2xl border-2 border-blue-400/30"
-                >
-                  <Users className="mr-3 h-6 w-6" />
-                  Find Photographers
-                </Button>
-              </Link>
-              <Link href="/signup">
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="text-xl px-12 py-8 border-2 border-white/30 hover:bg-white/10 hover:border-white/50 transition-all duration-300 bg-transparent text-white backdrop-blur-sm"
-                >
-                  <Camera className="mr-3 h-6 w-6" />
-                  Join as Photographer
-                </Button>
-              </Link>
-            </div>
           </div>
         </div>
       </section>

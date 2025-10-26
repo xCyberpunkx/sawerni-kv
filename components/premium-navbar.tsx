@@ -55,13 +55,13 @@ export function PremiumNavbar() {
                 Log In
               </Link>
               <Link
-                href="#contact"
+                href="/contact"
                 className="text-white hover:text-white transition-colors duration-300 px-5 py-2 rounded-full hover:bg-white/20 text-sm font-medium"
               >
                 Contact
               </Link>
               <Link
-                href="#about"
+                href="/about"
                 className="text-white hover:text-white transition-colors duration-300 px-5 py-2 rounded-full hover:bg-white/20 text-sm font-medium"
               >
                 About Us
@@ -96,14 +96,14 @@ export function PremiumNavbar() {
                 <span>Log in</span>
               </Link>
               <Link
-                href="#contact"
+                href="/contact"
                 className="text-white hover:text-blue-300 transition-colors duration-300 flex items-center space-x-3 px-3 py-2 text-base"
               >
                 <Mail className="h-5 w-5" />
                 <span>Contact</span>
               </Link>
               <Link
-                href="#about"
+                href="/about"
                 className="text-white hover:text-blue-300 transition-colors duration-300 flex items-center space-x-3 px-3 py-2 text-base"
               >
                 <Info className="h-5 w-5" />
