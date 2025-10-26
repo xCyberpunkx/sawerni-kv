@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Api } from "@/lib/api"
+import { Api, apiFetch } from "@/lib/api"
 import { mockAuth } from "@/lib/auth"
 import { Plus, Pencil, Trash2, Camera, Clock, Users, DollarSign, Calendar, Star, AlertCircle, Loader2, Package, TrendingUp } from "lucide-react"
 
@@ -18,6 +18,7 @@ interface PackageDto {
   photographerId: string
   title: string
   description?: string
+  imageUrls?: string[]
   priceCents: number
   durationMinutes?: number
   category?: string
@@ -30,6 +31,7 @@ interface PackageDto {
 interface UpsertPackageDto {
   title: string
   description?: string
+  imageUrls?: string[]
   priceCents: number
   durationMinutes?: number
   category?: string
@@ -49,12 +51,16 @@ export default function PhotographerPackagesPage() {
   const [form, setForm] = useState<UpsertPackageDto>({
     title: "",
     description: "",
+    imageUrls: [],
     priceCents: 0,
     durationMinutes: 60,
     category: "portrait",
     includes: [],
     isActive: true
   })
+  const [newImageUrl, setNewImageUrl] = useState("")
+  const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null)
+  const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [newInclude, setNewInclude] = useState("")
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
@@ -100,6 +106,7 @@ export default function PhotographerPackagesPage() {
     setForm({
       title: "",
       description: "",
+      imageUrls: [],
       priceCents: 0,
       durationMinutes: 60,
       category: "portrait",
@@ -107,6 +114,7 @@ export default function PhotographerPackagesPage() {
       isActive: true
     })
     setNewInclude("")
+    setNewImageUrl("")
   }
 
   const openCreate = () => {
@@ -119,6 +127,7 @@ export default function PhotographerPackagesPage() {
     setForm({
       title: pkg.title,
       description: pkg.description || "",
+      imageUrls: pkg.imageUrls || [],
       priceCents: pkg.priceCents,
       durationMinutes: pkg.durationMinutes || 60,
       category: pkg.category || "portrait",
@@ -140,6 +149,49 @@ export default function PhotographerPackagesPage() {
         includes: [...(prev.includes || []), newInclude.trim()]
       }))
       setNewInclude("")
+    }
+  }
+
+  const addImageUrl = () => {
+    const url = newImageUrl.trim()
+    if (!url) return
+    if (!form.imageUrls) setForm((f) => ({ ...f, imageUrls: [url] }))
+    else if (!form.imageUrls.includes(url)) setForm((f) => ({ ...f, imageUrls: [...f.imageUrls!, url] }))
+    setNewImageUrl("")
+  }
+
+  const removeImageUrl = (url: string) => {
+    setForm(prev => ({ ...prev, imageUrls: prev.imageUrls?.filter(u => u !== url) || [] }))
+  }
+
+  const uploadFiles = async () => {
+    if (!selectedFiles || selectedFiles.length === 0) return
+    setUploading(true)
+    setError("")
+    try {
+      const fd = new FormData()
+      Array.from(selectedFiles).forEach((f) => fd.append("files", f))
+
+      // Assumes backend exposes a multipart upload endpoint at /uploads
+      const res = await apiFetch<any>("/uploads", { method: "POST", body: fd, multipart: true })
+
+      let urls: string[] = []
+      if (Array.isArray(res)) urls = res
+      else if (res.urls && Array.isArray(res.urls)) urls = res.urls
+      else if (res.url && typeof res.url === "string") urls = [res.url]
+
+      if (urls.length > 0) {
+        setForm((prev) => ({ ...prev, imageUrls: [...(prev.imageUrls || []), ...urls] }))
+      } else {
+        throw new Error("Upload succeeded but no URLs were returned")
+      }
+
+      // clear selection
+      setSelectedFiles(null)
+    } catch (e: any) {
+      setError(e?.message || "Failed to upload images")
+    } finally {
+      setUploading(false)
     }
   }
 
@@ -183,6 +235,7 @@ export default function PhotographerPackagesPage() {
           photographerId: photographerId as string,
           title: form.title,
           description: form.description,
+          imageUrls: form.imageUrls,
           priceCents: form.priceCents,
           durationMinutes: form.durationMinutes,
           category: form.category,
@@ -396,6 +449,33 @@ export default function PhotographerPackagesPage() {
                       <Plus className="h-4 w-4" />
                     </Button>
                   </div>
+
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={(e) => setSelectedFiles(e.target.files)}
+                      className="text-sm"
+                    />
+                    <Button type="button" onClick={uploadFiles} disabled={uploading || !selectedFiles || selectedFiles.length === 0} variant="ghost">
+                      {uploading ? (
+                        <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Uploading...</>
+                      ) : (
+                        <>Upload Selected</>
+                      )}
+                    </Button>
+                  </div>
+
+                  {selectedFiles && selectedFiles.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {Array.from(selectedFiles).map((f, i) => (
+                        <div key={i} className="w-24 h-16 overflow-hidden rounded border">
+                          <img src={URL.createObjectURL(f)} alt={f.name} className="w-full h-full object-cover" />
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   <div className="flex flex-wrap gap-2">
                     {form.includes?.map((item, index) => (
                       <Badge key={index} variant="secondary" className="flex items-center gap-1">
@@ -409,6 +489,37 @@ export default function PhotographerPackagesPage() {
                         </button>
                       </Badge>
                     ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Images</Label>
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <Input
+                      value={newImageUrl}
+                      onChange={(e) => setNewImageUrl(e.target.value)}
+                      placeholder="https://.../image.jpg"
+                      onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addImageUrl())}
+                    />
+                    <Button type="button" onClick={addImageUrl} variant="outline">
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 items-center">
+                    {form.imageUrls?.map((url, index) => (
+                      <div key={index} className="relative w-24 h-16 rounded overflow-hidden border">
+                        <img src={url} alt={`img-${index}`} className="w-full h-full object-cover" />
+                        <button type="button" onClick={() => removeImageUrl(url)} className="absolute top-0 right-0 m-1 p-1 bg-white rounded text-red-600">
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                    {!form.imageUrls || form.imageUrls.length === 0 ? (
+                      <div className="text-xs text-muted-foreground">No images added. You can paste image URLs above.</div>
+                    ) : null}
                   </div>
                 </div>
               </div>
@@ -532,6 +643,11 @@ export default function PhotographerPackagesPage() {
               {items.map((pkg) => (
                 <Card key={pkg.id} className={`hover:shadow-lg transition-all ${pkg.isActive === false ? 'opacity-60' : ''}`}>
                   <CardContent className="p-6">
+                    {pkg.imageUrls && pkg.imageUrls.length > 0 && (
+                      <div className="mb-4 h-40 overflow-hidden rounded-md">
+                        <img src={pkg.imageUrls[0]} alt={pkg.title} className="w-full h-full object-cover" />
+                      </div>
+                    )}
                     <div className="space-y-4">
                       {/* Header */}
                       <div className="flex items-start justify-between">
