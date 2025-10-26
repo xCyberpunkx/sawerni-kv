@@ -1,9 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { Api } from "@/lib/api"
-import type { PaginatedResponse, PackageModel, PhotographerModel } from "@/lib/api-types"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -12,6 +10,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Api } from "@/lib/api"
+import type { PaginatedResponse } from "@/lib/api-types"
 import Link from "next/link"
 import { 
   Camera, 
@@ -26,14 +26,40 @@ import {
   ArrowUpDown,
   Grid3X3,
   List,
-  Eye
+  Eye,
+  ChevronLeft,
+  ChevronRight,
+  Image as ImageIcon
 } from "lucide-react"
 
-type PackageWithPhotographer = PackageModel & { 
-  photographer?: PhotographerModel & {
-    rating?: number;
-    reviewCount?: number;
+type PackageImage = {
+  id: string
+  packageId?: string
+  url: string
+  meta?: any
+  createdAt?: string
+  order: number
+}
+
+type PackageWithPhotographer = {
+  id: string
+  photographerId: string
+  title: string
+  description: string
+  priceCents: number
+  category?: string
+  duration?: string
+  features?: string[]
+  createdAt: string
+  updatedAt?: string
+  photographer?: {
+    id: string
+    user?: { name: string }
+    state?: { name: string }
+    rating?: number
+    reviewCount?: number
   }
+  images: PackageImage[]
 }
 
 type SortOption = "price-low" | "price-high" | "rating" | "popular" | "newest"
@@ -48,8 +74,8 @@ export default function ClientPackagesPage() {
   const [favorites, setFavorites] = useState<Set<string>>(new Set())
   const [recentlyViewed, setRecentlyViewed] = useState<Set<string>>(new Set())
   const [notification, setNotification] = useState<{message: string; type: 'success' | 'error'} | null>(null)
+  const [imageIndices, setImageIndices] = useState<Record<string, number>>({})
 
-  // Booking dialog state
   const [selectedPackage, setSelectedPackage] = useState<PackageWithPhotographer | null>(null)
   const [startDate, setStartDate] = useState("")
   const [startTime, setStartTime] = useState("")
@@ -58,7 +84,6 @@ export default function ClientPackagesPage() {
   const [bookingLoading, setBookingLoading] = useState(false)
   const [showBookingDialog, setShowBookingDialog] = useState(false)
 
-  // Show notification
   const showNotification = (message: string, type: 'success' | 'error' = 'success') => {
     setNotification({ message, type })
     setTimeout(() => setNotification(null), 3000)
@@ -77,9 +102,18 @@ export default function ClientPackagesPage() {
             ...pkg.photographer,
             rating: Math.random() * 2 + 3, // Random rating between 3-5
             reviewCount: Math.floor(Math.random() * 100) + 10
-          } : undefined
+          } : undefined,
+          // Sort images by order
+          images: (pkg.images || []).sort((a, b) => a.order - b.order)
         }))
         setPackages(packagesWithRatings)
+        
+        // Initialize image indices
+        const indices: Record<string, number> = {}
+        packagesWithRatings.forEach((pkg: PackageWithPhotographer) => {
+          indices[pkg.id] = 0
+        })
+        setImageIndices(indices)
       } catch (e: any) {
         setError(e?.message || "Failed to load packages")
         showNotification("Failed to load packages. Please try again later.", "error")
@@ -90,18 +124,29 @@ export default function ClientPackagesPage() {
     run()
   }, [])
 
-  // Filter and sort packages
+  const nextImage = (packageId: string, imageCount: number) => {
+    setImageIndices(prev => ({
+      ...prev,
+      [packageId]: (prev[packageId] + 1) % imageCount
+    }))
+  }
+
+  const prevImage = (packageId: string, imageCount: number) => {
+    setImageIndices(prev => ({
+      ...prev,
+      [packageId]: (prev[packageId] - 1 + imageCount) % imageCount
+    }))
+  }
+
   const filteredAndSorted = useMemo(() => {
     let filtered = packages.filter((pkg) => {
       const matchesSearch = query.trim() === "" || 
         pkg.title?.toLowerCase().includes(query.toLowerCase()) ||
         pkg.description?.toLowerCase().includes(query.toLowerCase()) ||
         pkg.photographer?.user?.name?.toLowerCase().includes(query.toLowerCase())
-
       return matchesSearch
     })
 
-    // Sort packages
     switch (sortBy) {
       case "price-low":
         filtered.sort((a, b) => a.priceCents - b.priceCents)
@@ -114,10 +159,6 @@ export default function ClientPackagesPage() {
         break
       case "newest":
         filtered.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
-        break
-      case "popular":
-      default:
-        // Default sorting - could be based on views, bookings, etc.
         break
     }
 
@@ -145,14 +186,11 @@ export default function ClientPackagesPage() {
         return
       }
 
-      const start = startDateTime.toISOString()
-      const end = endDateTime.toISOString()
-
       await Api.post("/bookings", {
         photographerId: pkg.photographerId,
         packageId: pkg.id,
-        startAt: start,
-        endAt: end,
+        startAt: startDateTime.toISOString(),
+        endAt: endDateTime.toISOString(),
         location: {
           address: pkg.photographer?.state?.name ? `${pkg.photographer.state.name}, Algeria` : "Algeria",
           lat: 36.75,
@@ -207,9 +245,9 @@ export default function ClientPackagesPage() {
     }
   }
 
-  // Skeleton loader
   const PackageSkeleton = () => (
     <Card className="border-2">
+      <Skeleton className="h-48 w-full rounded-t-lg" />
       <CardContent className="p-6 space-y-4">
         <div className="flex items-center gap-3">
           <Skeleton className="h-12 w-12 rounded-full" />
@@ -218,14 +256,8 @@ export default function ClientPackagesPage() {
             <Skeleton className="h-3 w-1/2" />
           </div>
         </div>
-        <div className="space-y-2">
-          <Skeleton className="h-6 w-5/6" />
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-4/5" />
-        </div>
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-8 w-24" />
-        </div>
+        <Skeleton className="h-6 w-5/6" />
+        <Skeleton className="h-4 w-full" />
         <Skeleton className="h-10 w-full" />
       </CardContent>
     </Card>
@@ -233,7 +265,6 @@ export default function ClientPackagesPage() {
 
   return (
     <div className="p-6 space-y-8 max-w-7xl mx-auto">
-      {/* Custom Notification */}
       {notification && (
         <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg border transition-all duration-300 ${
           notification.type === 'success' 
@@ -255,7 +286,6 @@ export default function ClientPackagesPage() {
         </div>
       )}
 
-      {/* Header Section */}
       <div className="text-center space-y-4">
         <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
           Discover Photography Packages
@@ -266,7 +296,6 @@ export default function ClientPackagesPage() {
         </p>
       </div>
 
-      {/* Search and Controls */}
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
           <div className="relative w-full sm:w-96">
@@ -316,7 +345,6 @@ export default function ClientPackagesPage() {
         </div>
       </div>
 
-      {/* Stats Bar */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="text-center p-4">
           <div className="text-2xl font-bold text-primary">{filteredAndSorted.length}</div>
@@ -329,20 +357,15 @@ export default function ClientPackagesPage() {
           <div className="text-sm text-muted-foreground">Photographers</div>
         </Card>
         <Card className="text-center p-4">
-          <div className="text-2xl font-bold text-purple-600">
-            {favorites.size}
-          </div>
+          <div className="text-2xl font-bold text-purple-600">{favorites.size}</div>
           <div className="text-sm text-muted-foreground">Favorites</div>
         </Card>
         <Card className="text-center p-4">
-          <div className="text-2xl font-bold text-orange-600">
-            {recentlyViewed.size}
-          </div>
+          <div className="text-2xl font-bold text-orange-600">{recentlyViewed.size}</div>
           <div className="text-sm text-muted-foreground">Recently Viewed</div>
         </Card>
       </div>
 
-      {/* Results */}
       {loading && (
         <div className={`grid gap-6 ${viewMode === "grid" ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"}`}>
           {Array.from({ length: 6 }).map((_, i) => (
@@ -368,32 +391,92 @@ export default function ClientPackagesPage() {
                 viewMode === "list" ? "flex" : ""
               }`}
             >
-              {/* Favorite Button */}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute top-3 right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 backdrop-blur-sm"
-                onClick={() => toggleFavorite(pkg.id!)}
-              >
-                <Heart 
-                  className={`h-4 w-4 ${
-                    favorites.has(pkg.id!) ? "fill-red-500 text-red-500" : ""
-                  }`} 
-                />
-              </Button>
+              {/* Image Gallery Section */}
+              <div className={`relative ${viewMode === "list" ? "w-80" : "w-full"} h-48 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden`}>
+                {pkg.images && pkg.images.length > 0 ? (
+                  <>
+                    <img 
+                      src={pkg.images[imageIndices[pkg.id] || 0]?.url} 
+                      alt={pkg.title}
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                    
+                    {pkg.images.length > 1 && (
+                      <>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            prevImage(pkg.id, pkg.images.length)
+                          }}
+                        >
+                          <ChevronLeft className="h-5 w-5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            nextImage(pkg.id, pkg.images.length)
+                          }}
+                        >
+                          <ChevronRight className="h-5 w-5" />
+                        </Button>
+                        
+                        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
+                          {pkg.images.map((_, idx) => (
+                            <div
+                              key={idx}
+                              className={`h-1.5 rounded-full transition-all duration-300 ${
+                                idx === (imageIndices[pkg.id] || 0)
+                                  ? "w-6 bg-white"
+                                  : "w-1.5 bg-white/50"
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <ImageIcon className="h-16 w-16 text-gray-400" />
+                  </div>
+                )}
+                
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute top-3 right-3 z-10 bg-background/80 backdrop-blur-sm hover:bg-background"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    toggleFavorite(pkg.id)
+                  }}
+                >
+                  <Heart 
+                    className={`h-4 w-4 ${
+                      favorites.has(pkg.id) ? "fill-red-500 text-red-500" : ""
+                    }`} 
+                  />
+                </Button>
 
-              {/* Share Button */}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute top-3 right-12 z-10 opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 backdrop-blur-sm"
-                onClick={() => sharePackage(pkg)}
-              >
-                <Share2 className="h-4 w-4" />
-              </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute top-3 right-12 z-10 bg-background/80 backdrop-blur-sm hover:bg-background"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    sharePackage(pkg)
+                  }}
+                >
+                  <Share2 className="h-4 w-4" />
+                </Button>
+              </div>
 
               <CardContent className={`p-6 space-y-4 ${viewMode === "list" ? "flex-1 flex flex-col" : ""}`}>
-                {/* Photographer Info */}
                 <div className="flex items-center gap-3">
                   <Avatar className="h-12 w-12 ring-2 ring-primary/20">
                     <AvatarImage src="/placeholder.svg" />
@@ -425,7 +508,6 @@ export default function ClientPackagesPage() {
                   </Link>
                 </div>
 
-                {/* Package Details */}
                 <div className="flex-1">
                   <div className="flex items-start justify-between mb-2">
                     <h3 className="font-bold text-xl mb-1 flex-1">{pkg.title}</h3>
@@ -439,7 +521,6 @@ export default function ClientPackagesPage() {
                     {pkg.description}
                   </p>
 
-                  {/* Features */}
                   {pkg.features && pkg.features.length > 0 && (
                     <div className="space-y-2 mb-3">
                       {pkg.features.slice(0, 3).map((feature, index) => (
@@ -452,7 +533,6 @@ export default function ClientPackagesPage() {
                   )}
                 </div>
 
-                {/* Price and Action */}
                 <div className="flex items-center justify-between pt-4 border-t">
                   <div>
                     <span className="text-3xl font-bold text-primary">
@@ -465,13 +545,13 @@ export default function ClientPackagesPage() {
                     )}
                   </div>
                   
-                  <Dialog open={showBookingDialog} onOpenChange={setShowBookingDialog}>
+                  <Dialog open={showBookingDialog && selectedPackage?.id === pkg.id} onOpenChange={setShowBookingDialog}>
                     <DialogTrigger asChild>
                       <Button 
                         className="shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                         onClick={() => {
                           setSelectedPackage(pkg)
-                          addToRecentlyViewed(pkg.id!)
+                          addToRecentlyViewed(pkg.id)
                         }}
                       >
                         Book Now
@@ -482,7 +562,6 @@ export default function ClientPackagesPage() {
                         <DialogTitle className="text-xl">Confirm Booking</DialogTitle>
                       </DialogHeader>
                       <div className="space-y-6">
-                        {/* Package Summary */}
                         <div className="p-4 bg-gradient-to-r from-primary/5 to-accent/5 rounded-xl">
                           <h4 className="font-bold text-lg">{selectedPackage?.title}</h4>
                           <p className="text-sm text-muted-foreground mt-1">{selectedPackage?.description}</p>
@@ -508,7 +587,6 @@ export default function ClientPackagesPage() {
                           </div>
                         </div>
 
-                        {/* Booking Form */}
                         <div className="space-y-4">
                           <div className="space-y-3">
                             <h4 className="font-semibold text-sm text-primary flex items-center gap-2">
@@ -517,9 +595,7 @@ export default function ClientPackagesPage() {
                             </h4>
                             <div className="grid grid-cols-2 gap-3">
                               <div className="space-y-2">
-                                <Label htmlFor="start-date" className="text-xs font-medium">
-                                  Date
-                                </Label>
+                                <Label htmlFor="start-date" className="text-xs font-medium">Date</Label>
                                 <Input 
                                   id="start-date" 
                                   type="date" 
@@ -530,9 +606,7 @@ export default function ClientPackagesPage() {
                                 />
                               </div>
                               <div className="space-y-2">
-                                <Label htmlFor="start-time" className="text-xs font-medium">
-                                  Time
-                                </Label>
+                                <Label htmlFor="start-time" className="text-xs font-medium">Time</Label>
                                 <Input 
                                   id="start-time" 
                                   type="time" 
@@ -551,9 +625,7 @@ export default function ClientPackagesPage() {
                             </h4>
                             <div className="grid grid-cols-2 gap-3">
                               <div className="space-y-2">
-                                <Label htmlFor="end-date" className="text-xs font-medium">
-                                  Date
-                                </Label>
+                                <Label htmlFor="end-date" className="text-xs font-medium">Date</Label>
                                 <Input 
                                   id="end-date" 
                                   type="date" 
@@ -564,9 +636,7 @@ export default function ClientPackagesPage() {
                                 />
                               </div>
                               <div className="space-y-2">
-                                <Label htmlFor="end-time" className="text-xs font-medium">
-                                  Time
-                                </Label>
+                                <Label htmlFor="end-time" className="text-xs font-medium">Time</Label>
                                 <Input 
                                   id="end-time" 
                                   type="time" 
@@ -579,7 +649,6 @@ export default function ClientPackagesPage() {
                           </div>
                         </div>
 
-                        {/* Action Buttons */}
                         <div className="flex gap-3">
                           <Button 
                             className="flex-1 shadow-lg hover:shadow-xl transition-all duration-300" 
@@ -613,7 +682,6 @@ export default function ClientPackagesPage() {
         </div>
       )}
 
-      {/* Empty State */}
       {!loading && filteredAndSorted.length === 0 && (
         <Card className="text-center p-12">
           <div className="max-w-md mx-auto space-y-4">
@@ -626,9 +694,7 @@ export default function ClientPackagesPage() {
             </div>
             <Button 
               variant="outline" 
-              onClick={() => {
-                setQuery("")
-              }}
+              onClick={() => setQuery("")}
             >
               Clear search
             </Button>
