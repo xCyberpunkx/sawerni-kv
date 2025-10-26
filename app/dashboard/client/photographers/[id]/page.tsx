@@ -329,83 +329,6 @@ export default function PhotographerProfilePage() {
         <div className="lg:col-span-2 space-y-8">
           <Card className="shadow-lg border-0">
             <CardHeader className="pb-6">
-              <CardTitle className="text-2xl flex items-center gap-2">
-                <Camera className="h-6 w-6 text-primary" />
-                Portfolio Gallery
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {(gallery as GalleryImage[] || []).map((img: GalleryImage, index: number) => (
-                  <div
-                    key={index}
-                    className="aspect-square bg-muted rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-                  >
-                    <img
-                      src={img.url || `/portfolio-${(index % 3) + 1}.png`}
-                      alt={`Portfolio ${index + 1}`}
-                      className="w-full h-full object-cover hover:scale-110 transition-transform duration-500 cursor-pointer"
-                    />
-                  </div>
-                ))}
-                {(gallery as GalleryImage[] || []).length === 0 && (
-                  <div className="col-span-3 text-center py-12 text-muted-foreground">
-                    <Camera className="h-16 w-16 mx-auto mb-4 opacity-30" />
-                    <p className="text-lg font-semibold mb-2">No portfolio images</p>
-                    <p>This photographer hasn't uploaded any portfolio images yet.</p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-lg border-0">
-            <CardHeader className="pb-6">
-              <CardTitle className="text-2xl flex items-center gap-2">
-                <Star className="h-6 w-6 text-accent" />
-                Reviews & Testimonials
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {reviews.length > 0 ? (
-                reviews.map((review) => (
-                  <div key={review.id} className="border-b pb-6 last:border-b-0">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="flex">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            className={`h-5 w-5 ${
-                              i < review.rating ? "fill-accent text-accent" : "text-muted-foreground"
-                            }`}
-                          />
-                        ))}
-                      </div>
-                      <span className="text-sm text-muted-foreground font-medium">
-                        {new Date(review.createdAt).toLocaleDateString("en-US", {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                        })}
-                      </span>
-                    </div>
-                    <p className="text-muted-foreground leading-relaxed">{review.text}</p>
-                  </div>
-                ))
-              ) : (
-                <div className="text-center py-12 text-muted-foreground">
-                  <Star className="h-16 w-16 mx-auto mb-4 opacity-30" />
-                  <p className="text-lg font-semibold mb-2">No reviews yet</p>
-                  <p>Be the first to book and leave a review!</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="space-y-8">
-          <Card className="shadow-lg border-0">
-            <CardHeader className="pb-6">
               <CardTitle className="text-2xl">Available Packages</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -418,7 +341,6 @@ export default function PhotographerProfilePage() {
                     key={pkg.id}
                     className="border-2 hover:border-primary/50 transition-all duration-300 shadow-lg hover:shadow-xl overflow-hidden"
                   >
-                    {/* Image Gallery */}
                     {images.length > 0 && (
                       <div className="relative h-48 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden group">
                         <img 
@@ -613,6 +535,83 @@ export default function PhotographerProfilePage() {
                   <p>No packages available.</p>
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-lg border-0">
+            <CardHeader className="pb-6">
+              <CardTitle className="text-2xl flex items-center gap-2">
+                <Star className="h-6 w-6 text-accent" />
+                Reviews & Testimonials
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {reviews.length > 0 ? (
+                reviews.map((review) => (
+                  <div key={review.id} className="border-b pb-6 last:border-b-0">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="flex">
+                        {[...Array(5)].map((_, i) => (
+                          <Star
+                            key={i}
+                            className={`h-5 w-5 ${
+                              i < review.rating ? "fill-accent text-accent" : "text-muted-foreground"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <span className="text-sm text-muted-foreground font-medium">
+                        {new Date(review.createdAt).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        })}
+                      </span>
+                    </div>
+                    <p className="text-muted-foreground leading-relaxed">{review.text}</p>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Star className="h-16 w-16 mx-auto mb-4 opacity-30" />
+                  <p className="text-lg font-semibold mb-2">No reviews yet</p>
+                  <p>Be the first to book and leave a review!</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="space-y-8">
+          <Card className="shadow-lg border-0">
+            <CardHeader className="pb-6">
+              <CardTitle className="text-2xl flex items-center gap-2">
+                <Camera className="h-6 w-6 text-primary" />
+                Portfolio Gallery
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4">
+                {(gallery as GalleryImage[] || []).map((img: GalleryImage, index: number) => (
+                  <div
+                    key={index}
+                    className="aspect-square bg-muted rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                  >
+                    <img
+                      src={img.url || `/portfolio-${(index % 3) + 1}.png`}
+                      alt={`Portfolio ${index + 1}`}
+                      className="w-full h-full object-cover hover:scale-110 transition-transform duration-500 cursor-pointer"
+                    />
+                  </div>
+                ))}
+                {(gallery as GalleryImage[] || []).length === 0 && (
+                  <div className="col-span-2 text-center py-12 text-muted-foreground">
+                    <Camera className="h-16 w-16 mx-auto mb-4 opacity-30" />
+                    <p className="text-lg font-semibold mb-2">No portfolio images</p>
+                    <p>This photographer hasn't uploaded any portfolio images yet.</p>
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
 
