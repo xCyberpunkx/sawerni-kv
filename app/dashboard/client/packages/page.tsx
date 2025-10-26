@@ -30,7 +30,10 @@ import {
   Eye,
   ChevronLeft,
   ChevronRight,
-  Image as ImageIcon
+  Image as ImageIcon,
+  X,
+  Check,
+  Package as PackageIcon
 } from "lucide-react"
 
 type PackageImage = {
@@ -74,17 +77,19 @@ export default function ClientPackagesPage() {
   const [sortBy, setSortBy] = useState<SortOption>("popular")
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const [favorites, setFavorites] = useState<Set<string>>(new Set())
-  const [recentlyViewed, setRecentlyViewed] = useState<Set<string>>(new Set())
   const [notification, setNotification] = useState<{message: string; type: 'success' | 'error'} | null>(null)
   const [imageIndices, setImageIndices] = useState<Record<string, number>>({})
 
   const [selectedPackage, setSelectedPackage] = useState<PackageWithPhotographer | null>(null)
+  const [viewPackage, setViewPackage] = useState<PackageWithPhotographer | null>(null)
   const [startDate, setStartDate] = useState("")
   const [startTime, setStartTime] = useState("")
   const [endDate, setEndDate] = useState("")
   const [endTime, setEndTime] = useState("")
   const [bookingLoading, setBookingLoading] = useState(false)
   const [showBookingDialog, setShowBookingDialog] = useState(false)
+  const [showViewDialog, setShowViewDialog] = useState(false)
+  const [viewImageIndex, setViewImageIndex] = useState(0)
 
   const showNotification = (message: string, type: 'success' | 'error' = 'success') => {
     setNotification({ message, type })
@@ -97,20 +102,17 @@ export default function ClientPackagesPage() {
       setError("")
       try {
         const res = await Api.get<PaginatedResponse<PackageWithPhotographer>>("/packages?page=1&perPage=50")
-        // Add mock ratings for demonstration
         const packagesWithRatings = (res.items || []).map(pkg => ({
           ...pkg,
           photographer: pkg.photographer ? {
             ...pkg.photographer,
-            rating: Math.random() * 2 + 3, // Random rating between 3-5
+            rating: Math.random() * 2 + 3,
             reviewCount: Math.floor(Math.random() * 100) + 10
           } : undefined,
-          // Sort images by order
           images: (pkg.images || []).sort((a, b) => a.order - b.order)
         }))
         setPackages(packagesWithRatings)
         
-        // Initialize image indices
         const indices: Record<string, number> = {}
         packagesWithRatings.forEach((pkg: PackageWithPhotographer) => {
           indices[pkg.id] = 0
@@ -209,7 +211,6 @@ export default function ClientPackagesPage() {
       
       showNotification("🎉 Booking confirmed! Your photography session has been scheduled successfully.")
       
-      // Redirect to bookings page after 1.5 seconds
       setTimeout(() => {
         router.push("/dashboard/client/bookings")
       }, 1500)
@@ -225,18 +226,12 @@ export default function ClientPackagesPage() {
     const newFavorites = new Set(favorites)
     if (newFavorites.has(packageId)) {
       newFavorites.delete(packageId)
-      showNotification("Package removed from your favorites")
+      showNotification("Removed from favorites")
     } else {
       newFavorites.add(packageId)
-      showNotification("Package saved to your favorites!")
+      showNotification("Added to favorites! ❤️")
     }
     setFavorites(newFavorites)
-  }
-
-  const addToRecentlyViewed = (packageId: string) => {
-    const newRecentlyViewed = new Set(recentlyViewed)
-    newRecentlyViewed.add(packageId)
-    setRecentlyViewed(newRecentlyViewed)
   }
 
   const sharePackage = (pkg: PackageWithPhotographer) => {
@@ -248,7 +243,7 @@ export default function ClientPackagesPage() {
       })
     } else {
       navigator.clipboard.writeText(window.location.href)
-      showNotification("Package link copied to clipboard")
+      showNotification("Package link copied to clipboard! 🔗")
     }
   }
 
@@ -273,21 +268,21 @@ export default function ClientPackagesPage() {
   return (
     <div className="p-6 space-y-8 max-w-7xl mx-auto">
       {notification && (
-        <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg border transition-all duration-300 ${
+        <div className={`fixed top-4 right-4 z-50 p-4 rounded-xl shadow-2xl border-2 transition-all duration-300 backdrop-blur-sm ${
           notification.type === 'success' 
-            ? 'bg-green-50 border-green-200 text-green-800' 
-            : 'bg-red-50 border-red-200 text-red-800'
+            ? 'bg-green-50/95 border-green-300 text-green-800' 
+            : 'bg-red-50/95 border-red-300 text-red-800'
         }`}>
-          <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${
+          <div className="flex items-center gap-3">
+            <div className={`w-2 h-2 rounded-full animate-pulse ${
               notification.type === 'success' ? 'bg-green-500' : 'bg-red-500'
             }`} />
             <span className="font-medium">{notification.message}</span>
             <button 
               onClick={() => setNotification(null)}
-              className="ml-4 hover:opacity-70"
+              className="ml-4 hover:opacity-70 transition-opacity"
             >
-              ×
+              <X className="h-4 w-4" />
             </button>
           </div>
         </div>
@@ -352,23 +347,6 @@ export default function ClientPackagesPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
-        <Card className="text-center p-4">
-          <div className="text-2xl font-bold text-green-600">
-            {Array.from(new Set(filteredAndSorted.map(p => p.photographerId))).length}
-          </div>
-          <div className="text-sm text-muted-foreground">Photographers</div>
-        </Card>
-        <Card className="text-center p-4">
-          <div className="text-2xl font-bold text-purple-600">{favorites.size}</div>
-          <div className="text-sm text-muted-foreground">Favorites</div>
-        </Card>
-        <Card className="text-center p-4">
-          <div className="text-2xl font-bold text-orange-600">{recentlyViewed.size}</div>
-          <div className="text-sm text-muted-foreground">Recently Viewed</div>
-        </Card>
-      </div>
-
       {loading && (
         <div className={`grid gap-6 ${viewMode === "grid" ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"}`}>
           {Array.from({ length: 6 }).map((_, i) => (
@@ -390,18 +368,17 @@ export default function ClientPackagesPage() {
           {filteredAndSorted.map((pkg) => (
             <Card 
               key={pkg.id} 
-              className={`border-2 hover:border-primary/50 transition-all duration-300 group relative overflow-hidden ${
+              className={`border-2 hover:border-primary/50 transition-all duration-300 group relative overflow-hidden hover:shadow-xl ${
                 viewMode === "list" ? "flex" : ""
               }`}
             >
-              {/* Image Gallery Section */}
               <div className={`relative ${viewMode === "list" ? "w-80" : "w-full"} h-48 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden`}>
                 {pkg.images && pkg.images.length > 0 ? (
                   <>
                     <img 
                       src={pkg.images[imageIndices[pkg.id] || 0]?.url} 
                       alt={pkg.title}
-                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                     />
                     
                     {pkg.images.length > 1 && (
@@ -409,7 +386,7 @@ export default function ClientPackagesPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white opacity-0 group-hover:opacity-100 transition-all rounded-full"
                           onClick={(e) => {
                             e.stopPropagation()
                             prevImage(pkg.id, pkg.images.length)
@@ -420,7 +397,7 @@ export default function ClientPackagesPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white opacity-0 group-hover:opacity-100 transition-all rounded-full"
                           onClick={(e) => {
                             e.stopPropagation()
                             nextImage(pkg.id, pkg.images.length)
@@ -429,14 +406,14 @@ export default function ClientPackagesPage() {
                           <ChevronRight className="h-5 w-5" />
                         </Button>
                         
-                        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
+                        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 bg-black/40 backdrop-blur-sm px-3 py-1.5 rounded-full">
                           {pkg.images.map((_, idx) => (
                             <div
                               key={idx}
                               className={`h-1.5 rounded-full transition-all duration-300 ${
                                 idx === (imageIndices[pkg.id] || 0)
                                   ? "w-6 bg-white"
-                                  : "w-1.5 bg-white/50"
+                                  : "w-1.5 bg-white/60"
                               }`}
                             />
                           ))}
@@ -445,45 +422,53 @@ export default function ClientPackagesPage() {
                     )}
                   </>
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center">
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/5 to-purple-100/20">
                     <ImageIcon className="h-16 w-16 text-gray-400" />
                   </div>
                 )}
                 
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute top-3 right-3 z-10 bg-background/80 backdrop-blur-sm hover:bg-background"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    toggleFavorite(pkg.id)
-                  }}
-                >
-                  <Heart 
-                    className={`h-4 w-4 ${
-                      favorites.has(pkg.id) ? "fill-red-500 text-red-500" : ""
-                    }`} 
-                  />
-                </Button>
-
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute top-3 right-12 z-10 bg-background/80 backdrop-blur-sm hover:bg-background"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    sharePackage(pkg)
-                  }}
-                >
-                  <Share2 className="h-4 w-4" />
-                </Button>
+                <div className="absolute top-3 right-3 flex gap-2 z-10">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="bg-white/95 backdrop-blur-sm hover:bg-white hover:scale-110 transition-all duration-200 rounded-full shadow-lg"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      sharePackage(pkg)
+                    }}
+                  >
+                    <Share2 className="h-4 w-4 text-blue-600" />
+                  </Button>
+                  
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={`backdrop-blur-sm hover:scale-110 transition-all duration-200 rounded-full shadow-lg ${
+                      favorites.has(pkg.id) 
+                        ? "bg-red-50/95 hover:bg-red-100" 
+                        : "bg-white/95 hover:bg-white"
+                    }`}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      toggleFavorite(pkg.id)
+                    }}
+                  >
+                    <Heart 
+                      className={`h-4 w-4 transition-all duration-200 ${
+                        favorites.has(pkg.id) 
+                          ? "fill-red-500 text-red-500 scale-110" 
+                          : "text-gray-600"
+                      }`} 
+                    />
+                  </Button>
+                </div>
               </div>
 
               <CardContent className={`p-6 space-y-4 ${viewMode === "list" ? "flex-1 flex flex-col" : ""}`}>
                 <div className="flex items-center gap-3">
                   <Avatar className="h-12 w-12 ring-2 ring-primary/20">
                     <AvatarImage src="/placeholder.svg" />
-                    <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                    <AvatarFallback className="bg-gradient-to-br from-primary/20 to-purple-500/20 text-primary font-semibold">
                       {(pkg.photographer?.user?.name || "P").charAt(0)}
                     </AvatarFallback>
                   </Avatar>
@@ -503,19 +488,26 @@ export default function ClientPackagesPage() {
                       </span>
                     </div>
                   </div>
-                  <Link href={`/dashboard/client/photographers/${pkg.photographerId}`}>
-                    <Button variant="ghost" size="sm" className="hover:bg-secondary">
-                      <Eye className="h-4 w-4 mr-1" />
-                      View
-                    </Button>
-                  </Link>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="hover:bg-primary hover:text-white transition-all duration-200 border-2"
+                    onClick={() => {
+                      setViewPackage(pkg)
+                      setViewImageIndex(0)
+                      setShowViewDialog(true)
+                    }}
+                  >
+                    <Eye className="h-4 w-4 mr-1" />
+                    View
+                  </Button>
                 </div>
 
                 <div className="flex-1">
                   <div className="flex items-start justify-between mb-2">
                     <h3 className="font-bold text-xl mb-1 flex-1">{pkg.title}</h3>
                     {pkg.category && (
-                      <Badge variant="secondary" className="ml-2 shrink-0">
+                      <Badge variant="secondary" className="ml-2 shrink-0 bg-primary/10 text-primary">
                         {pkg.category}
                       </Badge>
                     )}
@@ -528,7 +520,7 @@ export default function ClientPackagesPage() {
                     <div className="space-y-2 mb-3">
                       {pkg.features.slice(0, 3).map((feature, index) => (
                         <div key={index} className="flex items-center gap-2 text-xs">
-                          <Zap className="h-3 w-3 text-green-500" />
+                          <Check className="h-3 w-3 text-green-500 flex-shrink-0" />
                           <span>{feature}</span>
                         </div>
                       ))}
@@ -538,146 +530,27 @@ export default function ClientPackagesPage() {
 
                 <div className="flex items-center justify-between pt-4 border-t">
                   <div>
-                    <span className="text-3xl font-bold text-primary">
+                    <span className="text-3xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
                       {(pkg.priceCents / 100).toLocaleString()} DA
                     </span>
                     {pkg.duration && (
-                      <div className="text-xs text-muted-foreground">
-                        {pkg.duration} session
+                      <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                        <Clock className="h-3 w-3" />
+                        {pkg.duration}
                       </div>
                     )}
                   </div>
                   
-                  <Dialog open={showBookingDialog && selectedPackage?.id === pkg.id} onOpenChange={setShowBookingDialog}>
-                    <DialogTrigger asChild>
-                      <Button 
-                        className="shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-                        onClick={() => {
-                          setSelectedPackage(pkg)
-                          addToRecentlyViewed(pkg.id)
-                        }}
-                      >
-                        Book Now
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-                      <DialogHeader>
-                        <DialogTitle className="text-xl">Confirm Booking</DialogTitle>
-                      </DialogHeader>
-                      <div className="space-y-6">
-                        <div className="p-4 bg-gradient-to-r from-primary/5 to-accent/5 rounded-xl">
-                          <h4 className="font-bold text-lg">{selectedPackage?.title}</h4>
-                          <p className="text-sm text-muted-foreground mt-1">{selectedPackage?.description}</p>
-                          <p className="text-2xl font-bold text-primary mt-2">
-                            {selectedPackage && (selectedPackage.priceCents / 100).toLocaleString()} DA
-                          </p>
-                          <div className="mt-3 space-y-2">
-                            <div className="flex items-center gap-2 text-sm">
-                              <Camera className="h-4 w-4" />
-                              <span>{selectedPackage?.photographer?.user?.name || "Photographer"}</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-sm">
-                              <MapPin className="h-4 w-4" />
-                              <span>{selectedPackage?.photographer?.state?.name || "Algeria"}</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-sm">
-                              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                              <span>
-                                {selectedPackage?.photographer?.rating?.toFixed(1) || "4.5"} 
-                                ({selectedPackage?.photographer?.reviewCount || 0} reviews)
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="space-y-4">
-                          <div className="space-y-3">
-                            <h4 className="font-semibold text-sm text-primary flex items-center gap-2">
-                              <Calendar className="h-4 w-4" />
-                              Start Date & Time
-                            </h4>
-                            <div className="grid grid-cols-2 gap-3">
-                              <div className="space-y-2">
-                                <Label htmlFor="start-date" className="text-xs font-medium">Date</Label>
-                                <Input 
-                                  id="start-date" 
-                                  type="date" 
-                                  value={startDate} 
-                                  onChange={(e) => setStartDate(e.target.value)} 
-                                  min={new Date().toISOString().split("T")[0]} 
-                                  className="text-sm" 
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label htmlFor="start-time" className="text-xs font-medium">Time</Label>
-                                <Input 
-                                  id="start-time" 
-                                  type="time" 
-                                  value={startTime} 
-                                  onChange={(e) => setStartTime(e.target.value)} 
-                                  className="text-sm" 
-                                />
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="space-y-3">
-                            <h4 className="font-semibold text-sm text-primary flex items-center gap-2">
-                              <Clock className="h-4 w-4" />
-                              End Date & Time
-                            </h4>
-                            <div className="grid grid-cols-2 gap-3">
-                              <div className="space-y-2">
-                                <Label htmlFor="end-date" className="text-xs font-medium">Date</Label>
-                                <Input 
-                                  id="end-date" 
-                                  type="date" 
-                                  value={endDate} 
-                                  onChange={(e) => setEndDate(e.target.value)} 
-                                  min={new Date().toISOString().split("T")[0]} 
-                                  className="text-sm" 
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label htmlFor="end-time" className="text-xs font-medium">Time</Label>
-                                <Input 
-                                  id="end-time" 
-                                  type="time" 
-                                  value={endTime} 
-                                  onChange={(e) => setEndTime(e.target.value)} 
-                                  className="text-sm" 
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex gap-3">
-                          <Button 
-                            className="flex-1 shadow-lg hover:shadow-xl transition-all duration-300" 
-                            onClick={handleBookNow} 
-                            disabled={bookingLoading || !startDate || !startTime || !endDate || !endTime}
-                          >
-                            {bookingLoading ? (
-                              <>
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                                Booking...
-                              </>
-                            ) : (
-                              "Continue Booking"
-                            )}
-                          </Button>
-                          <Button
-                            variant="outline"
-                            className="flex-1 border-2 hover:bg-secondary transition-all duration-300 bg-transparent"
-                            onClick={() => setShowBookingDialog(false)}
-                          >
-                            Cancel
-                          </Button>
-                        </div>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
+                  <Button 
+                    className="shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90"
+                    onClick={() => {
+                      setSelectedPackage(pkg)
+                      setShowBookingDialog(true)
+                    }}
+                  >
+                    <Calendar className="h-4 w-4 mr-2" />
+                    Book Now
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -704,6 +577,403 @@ export default function ClientPackagesPage() {
           </div>
         </Card>
       )}
+
+      {/* Package Details Dialog */}
+      <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl flex items-center gap-2">
+              <PackageIcon className="h-6 w-6 text-primary" />
+              Package Details
+            </DialogTitle>
+          </DialogHeader>
+          {viewPackage && (
+            <div className="space-y-6">
+              {/* Image Gallery */}
+              {viewPackage.images && viewPackage.images.length > 0 && (
+                <div className="relative h-80 bg-gray-100 rounded-xl overflow-hidden">
+                  <img 
+                    src={viewPackage.images[viewImageIndex]?.url} 
+                    alt={viewPackage.title}
+                    className="w-full h-full object-cover"
+                  />
+                  {viewPackage.images.length > 1 && (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white rounded-full"
+                        onClick={() => setViewImageIndex((viewImageIndex - 1 + viewPackage.images.length) % viewPackage.images.length)}
+                      >
+                        <ChevronLeft className="h-6 w-6" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white rounded-full"
+                        onClick={() => setViewImageIndex((viewImageIndex + 1) % viewPackage.images.length)}
+                      >
+                        <ChevronRight className="h-6 w-6" />
+                      </Button>
+                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 backdrop-blur-sm px-3 py-1.5 rounded-full text-white text-sm">
+                        {viewImageIndex + 1} / {viewPackage.images.length}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* Package Info */}
+              <div className="space-y-4">
+                <div>
+                  <div className="flex items-start justify-between mb-2">
+                    <h3 className="font-bold text-2xl">{viewPackage.title}</h3>
+                    {viewPackage.category && (
+                      <Badge className="bg-primary/10 text-primary">
+                        {viewPackage.category}
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-muted-foreground leading-relaxed">
+                    {viewPackage.description}
+                  </p>
+                </div>
+
+                {/* Photographer Info */}
+                <Card className="p-4 bg-gradient-to-br from-primary/5 to-purple-500/5">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-14 w-14 ring-2 ring-primary/30">
+                      <AvatarImage src="/placeholder.svg" />
+                      <AvatarFallback className="bg-primary/20 text-primary font-bold text-lg">
+                        {(viewPackage.photographer?.user?.name || "P").charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <p className="font-bold text-lg">{viewPackage.photographer?.user?.name || "Photographer"}</p>
+                      <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <MapPin className="h-3.5 w-3.5" />
+                          <span>{viewPackage.photographer?.state?.name || "Algeria"}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
+                          <span className="font-semibold text-foreground">
+                            {viewPackage.photographer?.rating?.toFixed(1) || "4.5"}
+                          </span>
+                          <span>({viewPackage.photographer?.reviewCount || 0} reviews)</span>
+                        </div>
+                      </div>
+                    </div>
+                    <Link href={`/dashboard/client/photographers/${viewPackage.photographerId}`}>
+                      <Button variant="outline" size="sm">
+                        View Profile
+                      </Button>
+                    </Link>
+                  </div>
+                </Card>
+
+                {/* Features */}
+                {viewPackage.features && viewPackage.features.length > 0 && (
+                  <div>
+                    <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                      <Zap className="h-5 w-5 text-primary" />
+                      What's Included
+                    </h4>
+                    <div className="grid md:grid-cols-2 gap-2">
+                      {viewPackage.features.map((feature, index) => (
+                        <div key={index} className="flex items-center gap-2 text-sm bg-green-50 border border-green-200 rounded-lg p-2">
+                          <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                          <span className="text-green-900">{feature}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Price & Duration */}
+                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-primary/10 to-purple-600/10 rounded-xl border-2 border-primary/20">
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Package Price</p>
+                    <p className="text-4xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+                      {(viewPackage.priceCents / 100).toLocaleString()} DA
+                    </p>
+                  </div>
+                  {viewPackage.duration && (
+                    <div className="text-right">
+                      <p className="text-sm text-muted-foreground mb-1">Duration</p>
+                      <div className="flex items-center gap-2 text-lg font-semibold">
+                        <Clock className="h-5 w-5 text-primary" />
+                        {viewPackage.duration}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-3 pt-2">
+                  <Button 
+                    className="flex-1 shadow-lg bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90"
+                    onClick={() => {
+                      setSelectedPackage(viewPackage)
+                      setShowViewDialog(false)
+                      setShowBookingDialog(true)
+                    }}
+                  >
+                    <Calendar className="h-4 w-4 mr-2" />
+                    Book This Package
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="border-2"
+                    onClick={() => sharePackage(viewPackage)}
+                  >
+                    <Share2 className="h-4 w-4 mr-2" />
+                    Share
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className={`border-2 ${
+                      favorites.has(viewPackage.id) 
+                        ? "border-red-300 bg-red-50 hover:bg-red-100" 
+                        : ""
+                    }`}
+                    onClick={() => toggleFavorite(viewPackage.id)}
+                  >
+                    <Heart 
+                      className={`h-4 w-4 ${
+                        favorites.has(viewPackage.id) 
+                          ? "fill-red-500 text-red-500" 
+                          : ""
+                      }`} 
+                    />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Enhanced Booking Dialog */}
+      <Dialog open={showBookingDialog} onOpenChange={setShowBookingDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl flex items-center gap-2">
+              <Calendar className="h-6 w-6 text-primary" />
+              Complete Your Booking
+            </DialogTitle>
+          </DialogHeader>
+          {selectedPackage && (
+            <div className="space-y-6">
+              {/* Package Preview with Image */}
+              <Card className="overflow-hidden">
+                <div className="flex gap-4">
+                  {selectedPackage.images && selectedPackage.images.length > 0 ? (
+                    <div className="w-32 h-32 flex-shrink-0">
+                      <img 
+                        src={selectedPackage.images[0]?.url} 
+                        alt={selectedPackage.title}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-32 h-32 flex-shrink-0 bg-gradient-to-br from-primary/10 to-purple-500/10 flex items-center justify-center">
+                      <PackageIcon className="h-12 w-12 text-primary/40" />
+                    </div>
+                  )}
+                  
+                  <div className="flex-1 p-4">
+                    <h4 className="font-bold text-lg mb-1">{selectedPackage.title}</h4>
+                    <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
+                      {selectedPackage.description}
+                    </p>
+                    
+                    <div className="space-y-1.5 text-sm">
+                      <div className="flex items-center gap-2">
+                        <Camera className="h-4 w-4 text-primary" />
+                        <span className="font-medium">{selectedPackage.photographer?.user?.name || "Photographer"}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-primary" />
+                        <span>{selectedPackage.photographer?.state?.name || "Algeria"}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                        <span className="font-semibold">
+                          {selectedPackage.photographer?.rating?.toFixed(1) || "4.5"}
+                        </span>
+                        <span className="text-muted-foreground">
+                          ({selectedPackage.photographer?.reviewCount || 0} reviews)
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-gradient-to-r from-primary/10 to-purple-600/10 p-4 border-t">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Total Price</p>
+                      <p className="text-2xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+                        {(selectedPackage.priceCents / 100).toLocaleString()} DA
+                      </p>
+                    </div>
+                    {selectedPackage.duration && (
+                      <Badge className="bg-primary/20 text-primary text-sm px-3 py-1">
+                        <Clock className="h-3 w-3 mr-1 inline" />
+                        {selectedPackage.duration}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </Card>
+
+              {/* Features Preview */}
+              {selectedPackage.features && selectedPackage.features.length > 0 && (
+                <Card className="p-4">
+                  <h4 className="font-semibold mb-3 flex items-center gap-2">
+                    <Check className="h-5 w-5 text-green-500" />
+                    Package Includes
+                  </h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    {selectedPackage.features.slice(0, 4).map((feature, index) => (
+                      <div key={index} className="flex items-center gap-2 text-sm">
+                        <div className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                        <span>{feature}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {selectedPackage.features.length > 4 && (
+                    <p className="text-xs text-muted-foreground mt-2">
+                      + {selectedPackage.features.length - 4} more features
+                    </p>
+                  )}
+                </Card>
+              )}
+
+              {/* Date & Time Selection */}
+              <div className="space-y-4">
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-base flex items-center gap-2">
+                    <Calendar className="h-5 w-5 text-primary" />
+                    Session Start
+                  </h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="start-date" className="text-sm font-medium">Date</Label>
+                      <Input 
+                        id="start-date" 
+                        type="date" 
+                        value={startDate} 
+                        onChange={(e) => setStartDate(e.target.value)} 
+                        min={new Date().toISOString().split("T")[0]} 
+                        className="text-sm" 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="start-time" className="text-sm font-medium">Time</Label>
+                      <Input 
+                        id="start-time" 
+                        type="time" 
+                        value={startTime} 
+                        onChange={(e) => setStartTime(e.target.value)} 
+                        className="text-sm" 
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-base flex items-center gap-2">
+                    <Clock className="h-5 w-5 text-primary" />
+                    Session End
+                  </h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="end-date" className="text-sm font-medium">Date</Label>
+                      <Input 
+                        id="end-date" 
+                        type="date" 
+                        value={endDate} 
+                        onChange={(e) => setEndDate(e.target.value)} 
+                        min={new Date().toISOString().split("T")[0]} 
+                        className="text-sm" 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="end-time" className="text-sm font-medium">Time</Label>
+                      <Input 
+                        id="end-time" 
+                        type="time" 
+                        value={endTime} 
+                        onChange={(e) => setEndTime(e.target.value)} 
+                        className="text-sm" 
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Booking Summary */}
+              <Card className="p-4 bg-blue-50 border-blue-200">
+                <h4 className="font-semibold mb-2 text-blue-900">Booking Summary</h4>
+                <div className="space-y-1 text-sm text-blue-800">
+                  {startDate && startTime && (
+                    <p>• Start: {new Date(`${startDate}T${startTime}`).toLocaleString('en-US', { 
+                      dateStyle: 'medium', 
+                      timeStyle: 'short' 
+                    })}</p>
+                  )}
+                  {endDate && endTime && (
+                    <p>• End: {new Date(`${endDate}T${endTime}`).toLocaleString('en-US', { 
+                      dateStyle: 'medium', 
+                      timeStyle: 'short' 
+                    })}</p>
+                  )}
+                  <p className="font-semibold pt-2 border-t border-blue-300">
+                    Total: {(selectedPackage.priceCents / 100).toLocaleString()} DA
+                  </p>
+                </div>
+              </Card>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3">
+                <Button 
+                  className="flex-1 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 text-base py-6" 
+                  onClick={handleBookNow} 
+                  disabled={bookingLoading || !startDate || !startTime || !endDate || !endTime}
+                >
+                  {bookingLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="h-5 w-5 mr-2" />
+                      Confirm Booking
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1 border-2 hover:bg-secondary transition-all duration-300 text-base py-6"
+                  onClick={() => {
+                    setShowBookingDialog(false)
+                    setStartDate("")
+                    setStartTime("")
+                    setEndDate("")
+                    setEndTime("")
+                  }}
+                  disabled={bookingLoading}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
