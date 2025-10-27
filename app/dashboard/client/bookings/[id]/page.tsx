@@ -30,21 +30,17 @@ import {
   Camera,
   Package,
   History,
-  Phone,
-  Mail,
-  ExternalLink,
-  Image as ImageIcon
+  ExternalLink
 } from "lucide-react"
 import { useState } from "react"
-import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Api } from "@/lib/api" // Import the Api utility
-import { toast } from "sonner" // Import toast for notifications
-import { useRouter } from "next/navigation" // Import router for navigation
+import { Api } from "@/lib/api"
+import { toast } from "sonner"
+import { useRouter } from "next/navigation"
 
 const stateColor: Record<string, string> = {
   requested: "bg-yellow-100 text-yellow-800",
@@ -58,7 +54,7 @@ const stateColor: Record<string, string> = {
 export default function BookingDetailPage() {
   const params = useParams()
   const id = params.id as string
-  const { data: bk, isLoading, error } = useBooking(id)
+  const { data: bk, isLoading, error, refetch } = useBooking(id)
   const updateState = useUpdateBookingState(id)
   const genContract = useGenerateContract()
   const signContract = useSignContract()
@@ -68,6 +64,7 @@ export default function BookingDetailPage() {
   const [reviewRating, setReviewRating] = useState(5)
   const [reviewText, setReviewText] = useState("")
   const [isCreatingConversation, setIsCreatingConversation] = useState(false)
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false)
   const router = useRouter()
 
   // Additional data hooks
@@ -117,7 +114,7 @@ export default function BookingDetailPage() {
       })
 
       // Redirect to messages page with the new conversation
-      router.push("/dashboard/client/messages")
+      router.push("/messages")
       toast.success("Conversation created successfully")
       
     } catch (error: any) {
@@ -125,6 +122,55 @@ export default function BookingDetailPage() {
       toast.error(error?.message || "Failed to start conversation")
     } finally {
       setIsCreatingConversation(false)
+    }
+  }
+
+  // Function to submit review
+  const handleSubmitReview = async () => {
+    if (!bk?.id) {
+      toast.error("Booking information not available")
+      return
+    }
+
+    if (reviewRating < 1 || reviewRating > 5) {
+      toast.error("Please select a rating between 1 and 5 stars")
+      return
+    }
+
+    setIsSubmittingReview(true)
+    try {
+      // Submit review using the API
+      const response = await Api.post("/reviews", {
+        bookingId: bk.id,
+        rating: reviewRating,
+        text: reviewText || undefined // Send undefined if empty to avoid sending empty string
+      })
+
+      // Refetch booking data to update the review status
+      await refetch()
+      
+      // Reset form and close
+      setShowReviewForm(false)
+      setReviewRating(5)
+      setReviewText("")
+      
+      toast.success("Review submitted successfully!")
+      
+    } catch (error: any) {
+      console.error("Failed to submit review:", error)
+      
+      // Handle specific error cases based on API documentation
+      if (error?.status === 403) {
+        toast.error("You are not allowed to review this booking")
+      } else if (error?.status === 400) {
+        toast.error("Review is only allowed after booking completion")
+      } else if (error?.status === 409) {
+        toast.error("You have already reviewed this booking")
+      } else {
+        toast.error(error?.message || "Failed to submit review")
+      }
+    } finally {
+      setIsSubmittingReview(false)
     }
   }
 
@@ -220,12 +266,12 @@ export default function BookingDetailPage() {
                 )}
               </>
             )}
-{/* 
+
             {bk.state === "in_progress" && (
               <Button size="sm" onClick={onComplete} disabled={updateState.isPending}>
                 <Check className="h-4 w-4 mr-1" /> Complete
               </Button>
-            )} */}
+            )}
 
             {bk.state === "completed" && !bk.review && (
               <Button size="sm" onClick={() => setShowReviewForm(true)}>
@@ -247,7 +293,7 @@ export default function BookingDetailPage() {
         </CardContent>
       </Card>
 
-  {/* Detailed Information Tabs */}
+      {/* Detailed Information Tabs */}
       <Tabs defaultValue="overview" className="space-y-4">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -572,7 +618,11 @@ export default function BookingDetailPage() {
                   <div className="space-y-4">
                     <div>
                       <Label htmlFor="rating">Rating</Label>
-                      <Select value={reviewRating.toString()} onValueChange={(value) => setReviewRating(parseInt(value))}>
+                      <Select 
+                        value={reviewRating.toString()} 
+                        onValueChange={(value) => setReviewRating(parseInt(value))}
+                        disabled={isSubmittingReview}
+                      >
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
@@ -593,11 +643,38 @@ export default function BookingDetailPage() {
                         value={reviewText}
                         onChange={(e) => setReviewText(e.target.value)}
                         className="mt-1"
+                        disabled={isSubmittingReview}
+                        maxLength={2000}
                       />
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {reviewText.length}/2000 characters
+                      </div>
                     </div>
                     <div className="flex gap-2">
-                      <Button size="sm">Submit Review</Button>
-                      <Button size="sm" variant="outline" onClick={() => setShowReviewForm(false)}>
+                      <Button 
+                        size="sm" 
+                        onClick={handleSubmitReview}
+                        disabled={isSubmittingReview}
+                      >
+                        {isSubmittingReview ? (
+                          <>
+                            <div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-primary border-r-transparent" />
+                            Submitting...
+                          </>
+                        ) : (
+                          "Submit Review"
+                        )}
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => {
+                          setShowReviewForm(false)
+                          setReviewRating(5)
+                          setReviewText("")
+                        }}
+                        disabled={isSubmittingReview}
+                      >
                         Cancel
                       </Button>
                     </div>
