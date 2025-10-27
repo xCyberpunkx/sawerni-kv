@@ -3,8 +3,8 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent } from "@/components/ui/card"
-import { formatDistanceToNow } from "date-fns"
+import { Card } from "@/components/ui/card"
+import { format } from "date-fns"
 
 interface Conversation {
   id: string
@@ -27,6 +27,7 @@ interface Conversation {
     attachments?: any[]
   }
   unreadCount: number
+  messages?: any[]
 }
 
 interface ChatListProps {
@@ -37,11 +38,30 @@ interface ChatListProps {
 }
 
 export function ChatList({ conversations, selectedChatId, onSelectChat, currentUserRole }: ChatListProps) {
-  const formatLastActive = (dateString: string) => {
+  const formatTime = (dateString: string) => {
     try {
-      return formatDistanceToNow(new Date(dateString), { addSuffix: true })
+      return format(new Date(dateString), 'HH:mm')
     } catch {
-      return "Unknown time"
+      return "Unknown"
+    }
+  }
+
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString)
+      const now = new Date()
+      const isToday = date.toDateString() === now.toDateString()
+      const isYesterday = new Date(now.setDate(now.getDate() - 1)).toDateString() === date.toDateString()
+      
+      if (isToday) {
+        return format(date, 'HH:mm')
+      } else if (isYesterday) {
+        return 'Yesterday'
+      } else {
+        return format(date, 'dd/MM/yy')
+      }
+    } catch {
+      return "Unknown"
     }
   }
 
@@ -51,101 +71,86 @@ export function ChatList({ conversations, selectedChatId, onSelectChat, currentU
     }
 
     const { lastMessage } = conversation
-    const isCurrentUser = lastMessage.senderId === currentUserRole
     
     if (lastMessage.attachments && lastMessage.attachments.length > 0) {
       const attachmentCount = lastMessage.attachments.length
-      return `${isCurrentUser ? "You" : lastMessage.sender.name} sent ${attachmentCount} attachment${attachmentCount > 1 ? 's' : ''}`
+      if (lastMessage.attachments[0].mimetype?.startsWith('image/')) {
+        return `📷 ${attachmentCount} image${attachmentCount > 1 ? 's' : ''}`
+      } else {
+        return `📎 ${attachmentCount} file${attachmentCount > 1 ? 's' : ''}`
+      }
     }
 
-    if (lastMessage.content) {
-      const preview = lastMessage.content.length > 50 
-        ? lastMessage.content.substring(0, 50) + '...'
-        : lastMessage.content
-      
-      return `${isCurrentUser ? "You" : lastMessage.sender.name}: ${preview}`
-    }
-
-    return `${isCurrentUser ? "You" : lastMessage.sender.name} sent a message`
+    return lastMessage.content || "Message"
   }
 
-  if (conversations.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-32 text-muted-foreground">
-        No conversations found
-      </div>
-    )
+  const getSenderPrefix = (conversation: Conversation) => {
+    if (!conversation.lastMessage) return ""
+    
+    // Don't show prefix for current user's messages
+    if (conversation.lastMessage.senderId === conversation.otherUser.id) {
+      return ""
+    }
+    
+    return "You: "
   }
 
   return (
-    <div className="space-y-1 p-2">
+    <div className="space-y-2 p-2">
       {conversations.map((conversation) => (
         <Card
           key={conversation.id}
-          className={`cursor-pointer transition-all hover:bg-accent/50 ${
-            selectedChatId === conversation.id 
-              ? "bg-accent border-primary/50" 
-              : "bg-transparent"
+          className={`p-3 cursor-pointer transition-colors ${
+            selectedChatId === conversation.id
+              ? "bg-muted border-primary"
+              : "hover:bg-muted/50"
           }`}
           onClick={() => onSelectChat(conversation.id)}
         >
-          <CardContent className="p-3">
-            <div className="flex items-start gap-3">
-              {/* Avatar */}
-              <div className="relative flex-shrink-0">
-                <Avatar className="h-12 w-12">
-                  <AvatarImage 
-                    src={conversation.otherUser.avatar} 
-                    alt={conversation.otherUser.name}
-                  />
-                  <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                    {conversation.otherUser.name
-                      .split(' ')
-                      .map(n => n[0])
-                      .join('')
-                      .toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                {conversation.otherUser.online && (
-                  <div className="absolute -bottom-1 -right-1">
-                    <div className="h-3 w-3 rounded-full bg-green-500 border-2 border-background" />
-                  </div>
-                )}
+          <div className="flex items-center gap-3">
+            {/* Avatar with online indicator */}
+            <div className="relative">
+              <Avatar className="h-12 w-12">
+                <AvatarImage src={conversation.otherUser.avatar} />
+                <AvatarFallback>
+                  {conversation.otherUser.name.split(' ').map(n => n[0]).join('')}
+                </AvatarFallback>
+              </Avatar>
+              {conversation.otherUser.online && (
+                <div className="absolute -bottom-1 -right-1 h-3 w-3 rounded-full bg-green-500 border-2 border-background" />
+              )}
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between">
+                <h4 className="font-semibold text-sm truncate">
+                  {conversation.otherUser.name}
+                </h4>
+                <div className="flex items-center gap-1">
+                  {conversation.lastMessage && (
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">
+                      {formatDate(conversation.lastMessage.createdAt)}
+                    </span>
+                  )}
+                  {conversation.unreadCount > 0 && (
+                    <Badge className="ml-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
+                      {conversation.unreadCount}
+                    </Badge>
+                  )}
+                </div>
               </div>
 
-              {/* Content */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-2">
-                  <h4 className="font-semibold text-sm truncate">
-                    {conversation.otherUser.name}
-                  </h4>
-                  <div className="flex items-center gap-1 flex-shrink-0">
-                    {conversation.lastMessage && (
-                      <span className="text-xs text-muted-foreground whitespace-nowrap">
-                        {formatDistanceToNow(new Date(conversation.lastMessage.createdAt), { addSuffix: true })}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <p className="text-sm text-muted-foreground truncate mt-1">
+              <div className="flex items-center justify-between mt-1">
+                <p className="text-sm text-muted-foreground truncate flex-1">
+                  <span className="text-xs">
+                    {getSenderPrefix(conversation)}
+                  </span>
                   {getLastMessagePreview(conversation)}
                 </p>
               </div>
             </div>
-
-            {/* Unread Badge */}
-            {conversation.unreadCount > 0 && (
-              <div className="flex justify-end mt-2">
-                <Badge 
-                  variant="default" 
-                  className="bg-blue-600 text-white text-xs px-2 py-0 h-5 min-w-[20px] flex items-center justify-center"
-                >
-                  {conversation.unreadCount > 99 ? '99+' : conversation.unreadCount}
-                </Badge>
-              </div>
-            )}
-          </CardContent>
+          </div>
         </Card>
       ))}
     </div>

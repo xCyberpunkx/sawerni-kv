@@ -5,6 +5,7 @@ import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Paperclip, Send, Image, File, RefreshCw } from "lucide-react"
 import { format } from "date-fns"
@@ -42,7 +43,7 @@ interface ChatInterfaceProps {
   onLoadMoreMessages: () => void
   hasMoreMessages: boolean
   loadingMoreMessages: boolean
-  onMessageSent?: () => void
+  onMessageSent?: () => void // Callback to refresh messages after sending
 }
 
 export function ChatInterface({
@@ -104,7 +105,8 @@ export function ChatInterface({
       })
 
       // ✅ Send message to database via POST /conversations/:id/messages
-      await Api.post(`/conversations/${conversation.id}/messages`, formData, {
+      // Backend returns the created message with sender info
+      const sentMessage = await Api.post(`/conversations/${conversation.id}/messages`, formData, {
         multipart: true
       })
 
