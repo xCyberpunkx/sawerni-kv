@@ -61,7 +61,7 @@ export function AdminSidebar({ className }: AdminSidebarProps) {
         )}>
           <div className={cn("flex items-center gap-3", collapsed && "flex-col gap-2")}>
             <Avatar className={cn(collapsed ? "h-10 w-10" : "h-12 w-12")}>
-              <AvatarImage src={user?.avatar || "/placeholder.svg"} />
+              <AvatarImage src={user?.avatar || "/placeholder.png"} />
               <AvatarFallback className="bg-primary text-primary-foreground">
                 {user?.name?.charAt(0) || "A"}
               </AvatarFallback>
@@ -84,21 +84,7 @@ export function AdminSidebar({ className }: AdminSidebarProps) {
         </div>
       </Link>
 
-      {/* Quick Stats */}
-      {!collapsed && (
-        <div className="p-4 border-b">
-          <div className="grid grid-cols-2 gap-3 text-center">
-            <div className="p-2 bg-primary/5 rounded-lg">
-              <div className="text-lg font-bold text-primary">156</div>
-              <div className="text-xs text-muted-foreground">Active users</div>
-            </div>
-            <div className="p-2 bg-accent/5 rounded-lg">
-              <div className="text-lg font-bold text-accent">89</div>
-              <div className="text-xs text-muted-foreground">Bookings today</div>
-            </div>
-          </div>
-        </div>
-      )}
+     
 
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-2">
