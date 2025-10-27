@@ -1,7 +1,7 @@
 // components/chat-interface.tsx
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -43,7 +43,7 @@ interface ChatInterfaceProps {
   onLoadMoreMessages: () => void
   hasMoreMessages: boolean
   loadingMoreMessages: boolean
-  onMessageSent?: () => void // Callback to refresh messages after sending
+  onMessageSent?: (newMessage: any) => void // Updated to pass the new message
 }
 
 export function ChatInterface({
@@ -58,14 +58,36 @@ export function ChatInterface({
   const [newMessage, setNewMessage] = useState("")
   const [sending, setSending] = useState(false)
   const [attachments, setAttachments] = useState<File[]>([])
+  const [optimisticMessages, setOptimisticMessages] = useState<any[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
 
+  // Combine actual messages with optimistic messages, removing duplicates and sorting
+  const displayMessages = useMemo(() => {
+    const actualMessages = conversation.messages || []
+    const combined = [...actualMessages, ...optimisticMessages]
+    
+    // Remove duplicates based on message id
+    const seen = new Set()
+    const uniqueMessages = combined.filter(message => {
+      if (seen.has(message.id)) {
+        return false
+      }
+      seen.add(message.id)
+      return true
+    })
+    
+    // Sort by creation time
+    return uniqueMessages.sort((a, b) => 
+      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    )
+  }, [conversation.messages, optimisticMessages])
+
   // Scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [conversation.messages])
+  }, [displayMessages])
 
   // Auto-scroll handling for loading more messages
   useEffect(() => {
@@ -91,43 +113,82 @@ export function ChatInterface({
     }
 
     setSending(true)
+    
+    // Create optimistic message with proper structure
+    const tempMessage = {
+      id: `temp-${Date.now()}`,
+      content: newMessage.trim(),
+      createdAt: new Date().toISOString(),
+      senderId: currentUserId,
+      sender: {
+        id: currentUserId,
+        name: "You"
+      },
+      conversationId: conversation.id, // Add conversationId
+      attachments: attachments.map(file => ({
+        id: `temp-attachment-${Date.now()}-${file.name}`,
+        originalName: file.name,
+        mimetype: file.type,
+        size: file.size,
+        url: URL.createObjectURL(file)
+      })),
+      isOptimistic: true
+    }
+
+    // Add to optimistic messages immediately
+    setOptimisticMessages(prev => [...prev, tempMessage])
+    
+    // Clear input fields immediately
+    const messageToSend = newMessage.trim()
+    const filesToSend = [...attachments]
+    setNewMessage("")
+    setAttachments([])
+    
+    // Scroll to bottom
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+    }, 100)
+
     try {
       const formData = new FormData()
       
       // Add content if available
-      if (newMessage.trim()) {
-        formData.append("content", newMessage.trim())
+      if (messageToSend) {
+        formData.append("content", messageToSend)
       }
       
       // Add attachments if any
-      attachments.forEach(file => {
+      filesToSend.forEach(file => {
         formData.append("attachments", file)
       })
 
-      // ✅ Send message to database via POST /conversations/:id/messages
-      // Backend returns the created message with sender info
+      // Send message to backend
       const sentMessage = await Api.post(`/conversations/${conversation.id}/messages`, formData, {
         multipart: true
       })
 
-      // Clear input fields immediately after successful send
-      setNewMessage("")
-      setAttachments([])
+      // Remove optimistic message
+      setOptimisticMessages(prev => prev.filter(msg => msg.id !== tempMessage.id))
       
-      // ✅ Notify parent to refresh messages from database
+      // Notify parent about the new message with the actual server response
       if (onMessageSent) {
-        onMessageSent()
+        onMessageSent({
+          ...sentMessage,
+          conversationId: conversation.id // Ensure conversationId is included
+        })
       }
-      
-      // Scroll to bottom to show the new message
-      setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-      }, 100)
       
       toast.success("Message sent successfully")
       
     } catch (error: any) {
       console.error("Failed to send message:", error)
+      
+      // Remove the failed optimistic message
+      setOptimisticMessages(prev => prev.filter(msg => msg.id !== tempMessage.id))
+      
+      // Restore the message and attachments for retry
+      setNewMessage(messageToSend)
+      setAttachments(filesToSend)
       
       if (error?.status === 401) {
         toast.error("Authentication failed. Please refresh the page and try again.")
@@ -220,16 +281,16 @@ export function ChatInterface({
         )}
 
         {/* Messages */}
-        {conversation.messages?.length === 0 ? (
+        {displayMessages.length === 0 ? (
           <div className="text-center text-muted-foreground py-8">
             <p>No messages yet</p>
             <p className="text-sm">Start the conversation by sending a message</p>
           </div>
         ) : (
-          conversation.messages?.map((message) => (
+          displayMessages.map((message) => (
             <div
               key={message.id}
-              className={`flex gap-3 ${isCurrentUser(message.senderId) ? 'flex-row-reverse' : 'flex-row'}`}
+              className={`flex gap-3 ${isCurrentUser(message.senderId) ? 'flex-row-reverse' : 'flex-row'} ${message.isOptimistic ? 'opacity-70' : ''}`}
             >
               {/* Avatar - only show for other user */}
               {!isCurrentUser(message.senderId) && (
@@ -297,6 +358,7 @@ export function ChatInterface({
                 {/* Timestamp */}
                 <p className="text-xs text-muted-foreground mt-1">
                   {formatMessageTime(message.createdAt)}
+                  {message.isOptimistic && " • Sending..."}
                 </p>
               </div>
             </div>

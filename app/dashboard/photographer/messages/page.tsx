@@ -170,6 +170,23 @@ export default function PhotographerMessagesPage() {
     loadConversations()
   }, [loadConversations])
 
+  // Add this function to handle new messages from ChatInterface
+  const handleMessageSent = useCallback((newMessage: any) => {
+    setConversations((prev) =>
+      prev.map((c) =>
+        c.id === newMessage.conversationId
+          ? {
+              ...c,
+              messages: [...(c.messages || []), newMessage],
+              lastMessage: newMessage,
+              lastActiveAt: new Date().toISOString(),
+              unreadCount: 0 // Reset unread count since we're the sender
+            }
+          : c
+      )
+    )
+  }, [])
+
   // Socket connection for real-time updates
   useEffect(() => {
     const token = typeof window !== "undefined" ? localStorage.getItem("sawerni_access_token") : null
@@ -185,10 +202,17 @@ export default function PhotographerMessagesPage() {
                   messages: [...(c.messages || []), message], 
                   lastMessage: message,
                   unreadCount: c.id === selectedChatId ? 0 : (c.unreadCount || 0) + 1,
-                  lastActiveAt: new Date().toISOString() // ✅ Updated to lastActiveAt
+                  lastActiveAt: new Date().toISOString()
                 }
-              : c,
-          ),
+              : {
+                  ...c,
+                  lastMessage: c.id === message.conversationId ? message : c.lastMessage,
+                  unreadCount: c.id === message.conversationId && c.id !== selectedChatId 
+                    ? (c.unreadCount || 0) + 1 
+                    : c.unreadCount,
+                  lastActiveAt: c.id === message.conversationId ? new Date().toISOString() : c.lastActiveAt
+                }
+          )
         )
         
         // If this is the current conversation, scroll to bottom
@@ -421,9 +445,6 @@ export default function PhotographerMessagesPage() {
 
   const totalUnreadCount = conversations.reduce((sum, conv) => sum + conv.unreadCount, 0)
 
-  // ✅ Removed - backend doesn't have archive endpoint
-  // ✅ handleArchiveConversation removed
-
   if (!currentUser) {
     return (
       <div className="p-6 flex items-center justify-center min-h-[400px]">
@@ -617,7 +638,6 @@ export default function PhotographerMessagesPage() {
                       </div>
                     </div>
                     
-                    {/* ✅ Removed Phone/Video/Archive options - not in backend */}
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="sm">
@@ -675,6 +695,7 @@ export default function PhotographerMessagesPage() {
                       onLoadMoreMessages={loadMoreMessages}
                       hasMoreMessages={hasMoreMessages}
                       loadingMoreMessages={loadingMoreMessages}
+                      onMessageSent={handleMessageSent}
                     />
                   )}
                   <div ref={messagesEndRef} />
