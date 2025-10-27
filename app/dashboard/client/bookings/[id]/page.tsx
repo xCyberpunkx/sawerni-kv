@@ -220,12 +220,12 @@ export default function BookingDetailPage() {
                 )}
               </>
             )}
-
+{/* 
             {bk.state === "in_progress" && (
               <Button size="sm" onClick={onComplete} disabled={updateState.isPending}>
                 <Check className="h-4 w-4 mr-1" /> Complete
               </Button>
-            )}
+            )} */}
 
             {bk.state === "completed" && !bk.review && (
               <Button size="sm" onClick={() => setShowReviewForm(true)}>
