@@ -42,6 +42,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Api } from "@/lib/api" // Import the Api utility
+import { toast } from "sonner" // Import toast for notifications
+import { useRouter } from "next/navigation" // Import router for navigation
 
 const stateColor: Record<string, string> = {
   requested: "bg-yellow-100 text-yellow-800",
@@ -64,6 +67,8 @@ export default function BookingDetailPage() {
   const [showReviewForm, setShowReviewForm] = useState(false)
   const [reviewRating, setReviewRating] = useState(5)
   const [reviewText, setReviewText] = useState("")
+  const [isCreatingConversation, setIsCreatingConversation] = useState(false)
+  const router = useRouter()
 
   // Additional data hooks
   const { data: photographerDetails } = usePhotographerDetails(bk?.photographerId || "")
@@ -75,6 +80,7 @@ export default function BookingDetailPage() {
   const onCancel = () => updateState.mutate({ toState: "cancelled_by_client" })
   const onConfirm = () => updateState.mutate({ toState: "confirmed" })
   const onComplete = () => updateState.mutate({ toState: "completed" })
+  
   const onGenerateContract = async () => {
     if (!bk?.id) return
     const res: any = await genContract.mutateAsync(bk.id)
@@ -82,18 +88,44 @@ export default function BookingDetailPage() {
     if (c?.id) setContractId(c.id)
     if (c?.pdfUrl) setPdfUrl(c.pdfUrl)
   }
+  
   const onSignContract = async () => {
-    // In a real UI, capture a signature from a canvas. Here, send a small dot PNG as data URL placeholder.
     const tinyPng =
       "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIW2P4//8/AwAI/AL+v+o5VwAAAABJRU5ErkJggg=="
     const targetId = contractId || id
     await signContract.mutateAsync({ id: targetId, signatureDataUrl: tinyPng, signerName: "Client" })
   }
+  
   const onDownload = () => {
     const url = pdfUrl || (contractId ? `/contracts/${contractId}/download` : "")
     if (!url) return
-    // If backend expects full URL, open absolute; if relative endpoint, open API base path
     window.open(url.startsWith("http") ? url : `${location.origin}${url}`, "_blank")
+  }
+
+  // Function to create conversation and redirect to messages
+  const handleMessagePhotographer = async () => {
+    if (!bk?.photographer?.user?.id) {
+      toast.error("Photographer information not available")
+      return
+    }
+
+    setIsCreatingConversation(true)
+    try {
+      // Create conversation using the API
+      const response = await Api.post("/conversations", {
+        participantId: bk.photographer.user.id
+      })
+
+      // Redirect to messages page with the new conversation
+      router.push("/dashboard/client/messages")
+      toast.success("Conversation created successfully")
+      
+    } catch (error: any) {
+      console.error("Failed to create conversation:", error)
+      toast.error(error?.message || "Failed to start conversation")
+    } finally {
+      setIsCreatingConversation(false)
+    }
   }
 
   if (isLoading) return <div className="p-6">Loading...</div>
@@ -201,14 +233,21 @@ export default function BookingDetailPage() {
               </Button>
             )}
 
-            <Button size="sm" variant="outline">
-              <MessageCircle className="h-4 w-4 mr-1" /> Message Photographer
+            {/* Updated Message Photographer Button */}
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={handleMessagePhotographer}
+              disabled={isCreatingConversation}
+            >
+              <MessageCircle className="h-4 w-4 mr-1" />
+              {isCreatingConversation ? "Creating Conversation..." : "Message Photographer"}
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Detailed Information Tabs */}
+  {/* Detailed Information Tabs */}
       <Tabs defaultValue="overview" className="space-y-4">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -580,5 +619,3 @@ export default function BookingDetailPage() {
     </div>
   )
 }
-
-
