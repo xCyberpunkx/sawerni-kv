@@ -72,7 +72,7 @@ export function PhotographerSidebar({ className }: PhotographerSidebarProps) {
           <div className={cn("flex items-center gap-3", collapsed && "flex-col gap-2")}>
             <div className="relative">
               <Avatar className={cn("ring-2 ring-primary/20", collapsed ? "h-10 w-10" : "h-14 w-14")}>
-                <AvatarImage src={user?.avatar || "/placeholder.svg"} />
+                <AvatarImage src={user?.avatar || "/placeholder.png"} />
                 <AvatarFallback className="bg-primary text-primary-foreground text-lg font-semibold">
                   {user?.name?.charAt(0) || "U"}
                 </AvatarFallback>
@@ -87,9 +87,7 @@ export function PhotographerSidebar({ className }: PhotographerSidebarProps) {
                   <div className="flex items-center gap-1 mt-1">
                     <Star className="h-4 w-4 fill-accent text-accent" />
                     <span className="text-sm font-semibold text-accent">4.8</span>
-                    <Badge variant="secondary" className="ml-2 text-xs bg-accent/10 text-accent">
-                      Pro
-                    </Badge>
+                  
                   </div>
                 </div>
                 <Button variant="ghost" size="sm" className="hover:bg-primary/10" onClick={(e) => e.preventDefault()}>

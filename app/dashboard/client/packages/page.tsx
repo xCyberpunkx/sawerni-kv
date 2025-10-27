@@ -289,7 +289,7 @@ export default function ClientPackagesPage() {
       )}
 
       <div className="text-center space-y-4">
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+        <h1 className="text-4xl font-bold text-foreground">
           Discover Photography Packages
         </h1>
         <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
@@ -422,7 +422,7 @@ export default function ClientPackagesPage() {
                     )}
                   </>
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/5 to-purple-100/20">
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/5 to-primary/10">
                     <ImageIcon className="h-16 w-16 text-gray-400" />
                   </div>
                 )}
@@ -468,7 +468,7 @@ export default function ClientPackagesPage() {
                 <div className="flex items-center gap-3">
                   <Avatar className="h-12 w-12 ring-2 ring-primary/20">
                     <AvatarImage src="/placeholder.svg" />
-                    <AvatarFallback className="bg-gradient-to-br from-primary/20 to-purple-500/20 text-primary font-semibold">
+                    <AvatarFallback className="bg-primary/10 text-primary font-semibold">
                       {(pkg.photographer?.user?.name || "P").charAt(0)}
                     </AvatarFallback>
                   </Avatar>
@@ -530,7 +530,7 @@ export default function ClientPackagesPage() {
 
                 <div className="flex items-center justify-between pt-4 border-t">
                   <div>
-                    <span className="text-3xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+                    <span className="text-3xl font-bold text-primary">
                       {(pkg.priceCents / 100).toLocaleString()} DA
                     </span>
                     {pkg.duration && (
@@ -542,7 +542,7 @@ export default function ClientPackagesPage() {
                   </div>
                   
                   <Button 
-                    className="shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90"
+                    className="shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                     onClick={() => {
                       setSelectedPackage(pkg)
                       setShowBookingDialog(true)
@@ -640,7 +640,7 @@ export default function ClientPackagesPage() {
                 </div>
 
                 {/* Photographer Info */}
-                <Card className="p-4 bg-gradient-to-br from-primary/5 to-purple-500/5">
+                <Card className="p-4 bg-muted/30">
                   <div className="flex items-center gap-3">
                     <Avatar className="h-14 w-14 ring-2 ring-primary/30">
                       <AvatarImage src="/placeholder.svg" />
@@ -691,10 +691,10 @@ export default function ClientPackagesPage() {
                 )}
 
                 {/* Price & Duration */}
-                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-primary/10 to-purple-600/10 rounded-xl border-2 border-primary/20">
+                <div className="flex items-center justify-between p-4 bg-primary/5 rounded-xl border-2 border-primary/20">
                   <div>
                     <p className="text-sm text-muted-foreground mb-1">Package Price</p>
-                    <p className="text-4xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+                    <p className="text-4xl font-bold text-primary">
                       {(viewPackage.priceCents / 100).toLocaleString()} DA
                     </p>
                   </div>
@@ -712,7 +712,7 @@ export default function ClientPackagesPage() {
                 {/* Action Buttons */}
                 <div className="flex gap-3 pt-2">
                   <Button 
-                    className="flex-1 shadow-lg bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90"
+                    className="flex-1 shadow-lg"
                     onClick={() => {
                       setSelectedPackage(viewPackage)
                       setShowViewDialog(false)
@@ -777,7 +777,7 @@ export default function ClientPackagesPage() {
                       />
                     </div>
                   ) : (
-                    <div className="w-32 h-32 flex-shrink-0 bg-gradient-to-br from-primary/10 to-purple-500/10 flex items-center justify-center">
+                    <div className="w-32 h-32 flex-shrink-0 bg-primary/10 flex items-center justify-center">
                       <PackageIcon className="h-12 w-12 text-primary/40" />
                     </div>
                   )}
@@ -810,11 +810,11 @@ export default function ClientPackagesPage() {
                   </div>
                 </div>
                 
-                <div className="bg-gradient-to-r from-primary/10 to-purple-600/10 p-4 border-t">
+                <div className="bg-primary/5 p-4 border-t">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-xs text-muted-foreground mb-1">Total Price</p>
-                      <p className="text-2xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+                      <p className="text-2xl font-bold text-primary">
                         {(selectedPackage.priceCents / 100).toLocaleString()} DA
                       </p>
                     </div>
@@ -939,7 +939,7 @@ export default function ClientPackagesPage() {
               {/* Action Buttons */}
               <div className="flex gap-3">
                 <Button 
-                  className="flex-1 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 text-base py-6" 
+                  className="flex-1 shadow-lg hover:shadow-xl transition-all duration-300 text-base py-6" 
                   onClick={handleBookNow} 
                   disabled={bookingLoading || !startDate || !startTime || !endDate || !endTime}
                 >

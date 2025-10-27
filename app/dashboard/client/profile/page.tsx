@@ -218,7 +218,6 @@ export default function ProfilePage() {
                     <SelectContent>
                       <SelectItem value="en">English</SelectItem>
                       <SelectItem value="ar">Arabic</SelectItem>
-                      <SelectItem value="fr">French</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
