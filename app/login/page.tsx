@@ -1,3 +1,4 @@
+
 "use client"
 
 import type React from "react"
@@ -52,21 +53,8 @@ export default function LoginPage() {
     }
   }
 
-  const handleGoogleLogin = async () => {
-    setLoading(true)
-    setError("")
-    
-    try {
-      // Simulate Google OAuth - in a real app, you'd integrate with Google OAuth
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      // For demo purposes, redirect to client dashboard
-      router.push("/dashboard/client")
-    } catch (err) {
-      setError("Google login failed. Please try again.")
-    } finally {
-      setLoading(false)
-    }
+  const handleGoogleLogin = () => {
+    window.location.href = "http://localhost:4000/api/v1/auth/oauth/google"
   }
 
   const handleForgotPassword = async () => {
@@ -241,7 +229,7 @@ export default function LoginPage() {
                     />
                   </svg>
                   <span className="text-white font-medium">
-                    {loading ? "Signing in..." : "Google"}
+                    Google
                   </span>
                 </Button>
               </div>

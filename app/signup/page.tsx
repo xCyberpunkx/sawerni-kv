@@ -1,3 +1,4 @@
+
 "use client"
 
 import type React from "react"
@@ -187,18 +188,8 @@ export default function SignupPage() {
     return isValid
   }
 
-  const handleGoogleSignup = async () => {
-    setLoading(true)
-    setError("")
-    
-    try {
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      router.push("/dashboard/client")
-    } catch (err) {
-      setError("Google signup failed. Please try again.")
-    } finally {
-      setLoading(false)
-    }
+  const handleGoogleSignup = () => {
+    window.location.href = "http://localhost:4000/api/v1/auth/oauth/google"
   }
 
   const handleSubmit = async (e?: React.FormEvent) => {
@@ -561,7 +552,7 @@ export default function SignupPage() {
                     />
                   </svg>
                   <span className="text-gray-700 font-medium">
-                    {loading ? "Signing up..." : "Google"}
+                    Google
                   </span>
                 </Button>
               </div>
