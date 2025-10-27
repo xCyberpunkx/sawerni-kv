@@ -170,9 +170,6 @@ export default function SignupPage() {
     let isValid = true
 
     const fieldsToValidate = ["name", "email", "phone", "password", "confirmPassword", "state"]
-    if (userType === "photographer") {
-      fieldsToValidate.push("serviceType")
-    }
 
     fieldsToValidate.forEach((field) => {
       const error = validateField(field, formData[field as keyof typeof formData])
@@ -216,6 +213,11 @@ export default function SignupPage() {
     }
 
     try {
+      console.log("gg", {name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        role: userType,
+        state: formData.state,})
       const result = await mockAuth.signup({
         name: formData.name,
         email: formData.email,
