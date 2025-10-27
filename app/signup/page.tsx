@@ -425,14 +425,14 @@ export default function SignupPage() {
                     handleBlur("state")
                   }}
                 >
-                  <SelectTrigger className={`bg-white border-0 text-white rounded-full pl-4 pr-4 h-14 shadow-lg transition-all duration-300 hover:shadow-xl focus:shadow-2xl focus:scale-[1.02] ${
+                  <SelectTrigger className={`bg-white border-0 text-black rounded-full pl-4 pr-4 h-14 shadow-lg transition-all duration-300 hover:shadow-xl focus:shadow-2xl focus:scale-[1.02] ${
                     validationErrors.state && touched.state ? "ring-2 ring-red-500" : ""
                   }`}>
                     <SelectValue placeholder="Select your location" />
                   </SelectTrigger>
                   <SelectContent className="bg-white border-slate-200">
                     {algerianStates.map((state) => (
-                      <SelectItem key={state} value={state} className="text-white">
+                      <SelectItem key={state} value={state} className="text-black">
                         {state}
                       </SelectItem>
                     ))}
@@ -460,7 +460,7 @@ export default function SignupPage() {
                     value={formData.password}
                     onChange={(e) => handleInputChange("password", e.target.value)}
                     onBlur={() => handleBlur("password")}
-                    className={`bg-white border-0 text-black placeholder:text-slate-400 rounded-full pl-4 pr-12 h-14 shadow-lg transition-all duration-300 hover:shadow-xl focus:shadow-2xl focus:scale-[1.02] ${
+                    className={`bg-white border-0 text-white placeholder:text-slate-400 rounded-full pl-4 pr-12 h-14 shadow-lg transition-all duration-300 hover:shadow-xl focus:shadow-2xl focus:scale-[1.02] ${
                       validationErrors.password && touched.password ? "ring-2 ring-red-500" : ""
                     }`}
                     required
@@ -468,7 +468,7 @@ export default function SignupPage() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-black hover:text-blue-600 transition-colors"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-blue-600 transition-colors"
                   >
                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
@@ -500,7 +500,7 @@ export default function SignupPage() {
                     value={formData.confirmPassword}
                     onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
                     onBlur={() => handleBlur("confirmPassword")}
-                    className={`bg-white border-0 text-black placeholder:text-slate-400 rounded-full pl-4 pr-12 h-14 shadow-lg transition-all duration-300 hover:shadow-xl focus:shadow-2xl focus:scale-[1.02] ${
+                    className={`bg-white border-0 text-white placeholder:text-slate-400 rounded-full pl-4 pr-12 h-14 shadow-lg transition-all duration-300 hover:shadow-xl focus:shadow-2xl focus:scale-[1.02] ${
                       validationErrors.confirmPassword && touched.confirmPassword ? "ring-2 ring-red-500" : ""
                     }`}
                     required
