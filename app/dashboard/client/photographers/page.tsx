@@ -195,22 +195,6 @@ export default function PhotographersPage() {
             />
           </div>
 
-          {/* Price Range Filter */}
-          {/* <div className="grid gap-2">
-            <Label htmlFor="price-range">Price range</Label>
-            <Select value={priceRange} onValueChange={setPriceRange}>
-              <SelectTrigger id="price-range">
-                <SelectValue placeholder="Any price" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">Any price</SelectItem>
-                <SelectItem value="budget">Budget (under 10,000 DA)</SelectItem>
-                <SelectItem value="medium">Medium (10,000 - 25,000 DA)</SelectItem>
-                <SelectItem value="premium">Premium (25,000+ DA)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div> */}
-
           {/* Clear Filters Button */}
           {hasActiveFilters && (
             <div className="flex items-end">
